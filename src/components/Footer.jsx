@@ -9,8 +9,8 @@ const footerLinks = {
     ],
     connect: [
         { name: 'Support Center', href: '/support' },
-        { name: 'Twitter / X', href: '#' },
-        { name: 'Discord Community', href: '#' },
+        { name: 'Twitter / X', href: 'https://twitter.com/wyscloudbase' },
+        { name: 'Discord Community', href: 'https://discord.gg/wyscloud' },
         { name: 'Contact Support', href: '/contact' },
     ],
     services: [
@@ -28,7 +28,7 @@ export default function Footer() {
             <div className="max-w-7xl mx-auto border-t border-white/10 pt-12">
                 <div className="grid md:grid-cols-5 gap-12 mb-32">
                     <div className="col-span-2">
-                        <h3 className="text-8xl md:text-[10rem] font-black tracking-tighter text-white opacity-10 select-none leading-none">
+                        <h3 className="text-8xl md:text-[10rem] font-black tracking-tighter text-white opacity-10 select-none leading-none pointer-events-none">
                             WYSCLOUD
                         </h3>
                     </div>
