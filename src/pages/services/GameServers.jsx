@@ -1,6 +1,13 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
+const fadeInUp = {
+    initial: { opacity: 0, y: 30 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: false, amount: 0.2 },
+    transition: { duration: 0.8, ease: "easeOut" }
+}
+
 export default function GameServers() {
     const games = [
         { name: 'Minecraft', icon: '⛏️', players: 'Up to 200', price: 5 },
@@ -24,7 +31,26 @@ export default function GameServers() {
                     >
                         <span className="text-cyan-400 font-mono text-sm uppercase tracking-widest mb-4 block">Game Servers</span>
                         <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6">
-                            Low-Latency<br /><span className="text-cyan-400">Gaming</span>
+                            <div className="overflow-hidden">
+                                <motion.span
+                                    initial={{ y: "100%" }}
+                                    animate={{ y: 0 }}
+                                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                                    className="block"
+                                >
+                                    Low-Latency
+                                </motion.span>
+                            </div>
+                            <div className="overflow-hidden text-cyan-400">
+                                <motion.span
+                                    initial={{ y: "100%" }}
+                                    animate={{ y: 0 }}
+                                    transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                                    className="block"
+                                >
+                                    Gaming
+                                </motion.span>
+                            </div>
                         </h1>
                         <p className="text-xl text-slate-400 max-w-2xl mb-10">
                             Premium game server hosting with instant deployment. Minecraft, Rust, CS2, and more — optimized for gaming with DDoS protection included.
@@ -42,7 +68,10 @@ export default function GameServers() {
             </section>
 
             {/* Game Selector */}
-            <section className="py-20 px-6 bg-white/5">
+            <motion.section
+                {...fadeInUp}
+                className="py-20 px-6 bg-white/5"
+            >
                 <div className="max-w-7xl mx-auto">
                     <h2 className="text-3xl font-bold mb-12 text-center">Popular Games</h2>
                     <div className="grid md:grid-cols-3 gap-8">
@@ -61,10 +90,13 @@ export default function GameServers() {
                         ))}
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* Features */}
-            <section className="py-20 px-6">
+            <motion.section
+                {...fadeInUp}
+                className="py-20 px-6"
+            >
                 <div className="max-w-7xl mx-auto">
                     <h2 className="text-3xl font-bold mb-12 text-center">Gaming Features</h2>
                     <div className="grid md:grid-cols-4 gap-6">
@@ -86,10 +118,13 @@ export default function GameServers() {
                         ))}
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* CTA */}
-            <section className="py-20 px-6 bg-gradient-to-b from-transparent to-orange-900/20">
+            <motion.section
+                {...fadeInUp}
+                className="py-20 px-6 bg-gradient-to-b from-transparent to-orange-900/20"
+            >
                 <div className="max-w-3xl mx-auto text-center">
                     <h2 className="text-4xl font-bold mb-6">Don&apos;t See Your Game?</h2>
                     <p className="text-slate-400 mb-8">We support 100+ games. Contact us for custom configurations.</p>
@@ -97,7 +132,7 @@ export default function GameServers() {
                         Request a Game
                     </Link>
                 </div>
-            </section>
+            </motion.section>
         </>
     )
 }

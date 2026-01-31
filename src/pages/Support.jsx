@@ -50,7 +50,16 @@ export default function Support() {
                         transition={{ duration: 0.6 }}
                     >
                         <h1 className="text-5xl md:text-6xl font-black tracking-tighter mb-6">
-                            How can we help?
+                            <div className="overflow-hidden">
+                                <motion.span
+                                    initial={{ y: "100%" }}
+                                    animate={{ y: 0 }}
+                                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                                    className="block"
+                                >
+                                    How can we help?
+                                </motion.span>
+                            </div>
                         </h1>
                         <div className="relative max-w-xl mx-auto">
                             <input

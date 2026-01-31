@@ -63,7 +63,16 @@ export default function Docs() {
                         transition={{ duration: 0.6 }}
                     >
                         <h1 className="text-5xl md:text-6xl font-black tracking-tighter mb-6">
-                            Documentation
+                            <div className="overflow-hidden">
+                                <motion.span
+                                    initial={{ y: "100%" }}
+                                    animate={{ y: 0 }}
+                                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                                    className="block"
+                                >
+                                    Documentation
+                                </motion.span>
+                            </div>
                         </h1>
                         <p className="text-xl text-slate-400 max-w-2xl">
                             Everything you need to build and scale on WysCloudBase.

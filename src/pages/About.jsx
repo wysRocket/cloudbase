@@ -1,6 +1,13 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
+const fadeInUp = {
+    initial: { opacity: 0, y: 30 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: false, amount: 0.2 },
+    transition: { duration: 0.8, ease: "easeOut" }
+}
+
 export default function About() {
     return (
         <>
@@ -14,7 +21,26 @@ export default function About() {
                         transition={{ duration: 0.6 }}
                     >
                         <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6">
-                            About <span className="text-cyan-400">WysCloudBase</span>
+                            <div className="overflow-hidden">
+                                <motion.span
+                                    initial={{ y: "100%" }}
+                                    animate={{ y: 0 }}
+                                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                                    className="block"
+                                >
+                                    About
+                                </motion.span>
+                            </div>
+                            <div className="overflow-hidden text-cyan-400">
+                                <motion.span
+                                    initial={{ y: "100%" }}
+                                    animate={{ y: 0 }}
+                                    transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                                    className="block"
+                                >
+                                    WysCloudBase
+                                </motion.span>
+                            </div>
                         </h1>
                         <p className="text-xl text-slate-400 max-w-2xl">
                             We&apos;re on a mission to make cloud infrastructure accessible to everyone — from students learning to code to enterprises scaling globally.
@@ -24,7 +50,10 @@ export default function About() {
             </section>
 
             {/* Story */}
-            <section className="py-20 px-6">
+            <motion.section
+                {...fadeInUp}
+                className="py-20 px-6"
+            >
                 <div className="max-w-4xl mx-auto">
                     <h2 className="text-3xl font-bold mb-8">Our Story</h2>
                     <div className="space-y-6 text-lg text-slate-300 leading-relaxed">
@@ -42,10 +71,13 @@ export default function About() {
                         </p>
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* Values */}
-            <section className="py-20 px-6 bg-white/5">
+            <motion.section
+                {...fadeInUp}
+                className="py-20 px-6 bg-white/5"
+            >
                 <div className="max-w-7xl mx-auto">
                     <h2 className="text-3xl font-bold mb-12 text-center">Our Values</h2>
                     <div className="grid md:grid-cols-3 gap-8">
@@ -62,10 +94,13 @@ export default function About() {
                         ))}
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* Stats */}
-            <section className="py-20 px-6">
+            <motion.section
+                {...fadeInUp}
+                className="py-20 px-6"
+            >
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                         {[
@@ -81,10 +116,13 @@ export default function About() {
                         ))}
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* CTA */}
-            <section className="py-20 px-6 bg-gradient-to-b from-transparent to-cyan-900/20">
+            <motion.section
+                {...fadeInUp}
+                className="py-20 px-6 bg-gradient-to-b from-transparent to-cyan-900/20"
+            >
                 <div className="max-w-3xl mx-auto text-center">
                     <h2 className="text-4xl font-bold mb-6">Join the Movement</h2>
                     <p className="text-slate-400 mb-8">Start building today with a 14-day free trial.</p>
@@ -92,7 +130,7 @@ export default function About() {
                         Get Started Free
                     </Link>
                 </div>
-            </section>
+            </motion.section>
         </>
     )
 }

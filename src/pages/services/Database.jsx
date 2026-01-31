@@ -1,6 +1,13 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
+const fadeInUp = {
+    initial: { opacity: 0, y: 30 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: false, amount: 0.2 },
+    transition: { duration: 0.8, ease: "easeOut" }
+}
+
 export default function Database() {
     return (
         <>
@@ -15,7 +22,26 @@ export default function Database() {
                     >
                         <span className="text-cyan-400 font-mono text-sm uppercase tracking-widest mb-4 block">Database Hosting</span>
                         <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6">
-                            Managed<br /><span className="text-cyan-400">Databases</span>
+                            <div className="overflow-hidden">
+                                <motion.span
+                                    initial={{ y: "100%" }}
+                                    animate={{ y: 0 }}
+                                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                                    className="block"
+                                >
+                                    Managed
+                                </motion.span>
+                            </div>
+                            <div className="overflow-hidden text-cyan-400">
+                                <motion.span
+                                    initial={{ y: "100%" }}
+                                    animate={{ y: 0 }}
+                                    transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                                    className="block"
+                                >
+                                    Databases
+                                </motion.span>
+                            </div>
                         </h1>
                         <p className="text-xl text-slate-400 max-w-2xl mb-10">
                             Secure, scalable database solutions. PostgreSQL, MySQL, Redis, and MongoDB — fully managed with automatic backups and high availability.
@@ -33,7 +59,10 @@ export default function Database() {
             </section>
 
             {/* Database Types */}
-            <section className="py-20 px-6 bg-white/5">
+            <motion.section
+                {...fadeInUp}
+                className="py-20 px-6 bg-white/5"
+            >
                 <div className="max-w-7xl mx-auto">
                     <h2 className="text-3xl font-bold mb-12 text-center">Supported Databases</h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -51,10 +80,13 @@ export default function Database() {
                         ))}
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* Features */}
-            <section className="py-20 px-6">
+            <motion.section
+                {...fadeInUp}
+                className="py-20 px-6"
+            >
                 <div className="max-w-7xl mx-auto">
                     <h2 className="text-3xl font-bold mb-12 text-center">Enterprise Features</h2>
                     <div className="grid md:grid-cols-3 gap-8">
@@ -74,10 +106,13 @@ export default function Database() {
                         ))}
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* Pricing */}
-            <section className="py-20 px-6 bg-white/5">
+            <motion.section
+                {...fadeInUp}
+                className="py-20 px-6 bg-gradient-to-b from-transparent to-emerald-900/20"
+            >
                 <div className="max-w-7xl mx-auto">
                     <h2 className="text-3xl font-bold mb-12 text-center">Database Pricing</h2>
                     <div className="grid md:grid-cols-3 gap-8">
@@ -105,7 +140,7 @@ export default function Database() {
                         ))}
                     </div>
                 </div>
-            </section>
+            </motion.section>
         </>
     )
 }

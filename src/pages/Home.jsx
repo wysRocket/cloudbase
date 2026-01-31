@@ -1,8 +1,38 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { motion, useMotionValue, useTransform, animate, useInView } from 'framer-motion'
+
+const fadeInUp = {
+    initial: { opacity: 0, y: 30 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: false, amount: 0.2 },
+    transition: { duration: 0.8, ease: "easeOut" }
+}
+
+const staggerContainer = {
+    initial: {},
+    whileInView: {
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+}
 
 export default function Home() {
+    const location = useLocation()
+
+    useEffect(() => {
+        if (location.hash) {
+            const id = location.hash.replace('#', '')
+            const element = document.getElementById(id)
+            if (element) {
+                setTimeout(() => {
+                    element.scrollIntoView({ behavior: 'smooth' })
+                }, 100)
+            }
+        }
+    }, [location])
+
     return (
         <>
             {/* HERO */}
@@ -19,8 +49,27 @@ export default function Home() {
                     transition={{ duration: 0.8 }}
                     className="relative z-10 max-w-4xl text-center"
                 >
-                    <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-6 leading-[0.9] animate-kinetic">
-                        Cloud Power<br /><span className="text-cyan-400">Simplified.</span>
+                    <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-6 leading-[0.9]">
+                        <div className="overflow-hidden">
+                            <motion.span
+                                initial={{ y: "100%" }}
+                                animate={{ y: 0 }}
+                                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                                className="block"
+                            >
+                                Cloud Power
+                            </motion.span>
+                        </div>
+                        <div className="overflow-hidden text-cyan-400">
+                            <motion.span
+                                initial={{ y: "100%" }}
+                                animate={{ y: 0 }}
+                                transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                                className="block"
+                            >
+                                Simplified.
+                            </motion.span>
+                        </div>
                     </h1>
                     <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
                         WysCloudBase gives you the raw muscle of DigitalOcean infrastructure without the headache of complex configurations. Build, scale, and innovate in minutes.
@@ -57,15 +106,24 @@ export default function Home() {
             </section>
 
             {/* BRUTALIST HOOK */}
-            <section className="py-32 px-6 max-w-7xl mx-auto text-center">
+            <motion.section
+                {...fadeInUp}
+                className="py-32 px-6 max-w-7xl mx-auto text-center"
+            >
                 <h2 className="text-4xl md:text-7xl font-bold tracking-tight leading-tight">
                     &quot;We built <span className="text-cyan-500">WysCloudBase</span> because high-performance cloud shouldn&apos;t require a PhD in systems engineering.&quot;
                 </h2>
-            </section>
+            </motion.section>
 
             {/* BENTO FEATURES */}
             <section id="features" className="py-24 px-6 max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                <motion.div
+                    variants={staggerContainer}
+                    initial="initial"
+                    whileInView="whileInView"
+                    viewport={{ once: false, amount: 0.1 }}
+                    className="grid grid-cols-1 md:grid-cols-12 gap-6"
+                >
                     {/* VPS Card */}
                     <Link to="/services/vps" className="md:col-span-8 glass p-10 rounded-[3rem] group hover:bg-white/10 transition-all overflow-hidden relative block">
                         <div className="relative z-10">
@@ -107,11 +165,14 @@ export default function Home() {
                             </svg>
                         </div>
                     </Link>
-                </div>
+                </motion.div>
             </section>
 
             {/* LIQUID GLASS MANIFESTO */}
-            <section className="py-32 bg-[#0d1425]">
+            <motion.section
+                {...fadeInUp}
+                className="py-32 bg-[#0d1425]"
+            >
                 <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-20 items-center">
                     <div className="relative">
                         <div className="w-full aspect-square glass rounded-[4rem] animate-slow-spin flex items-center justify-center border-white/5 opacity-40"></div>
@@ -141,10 +202,14 @@ export default function Home() {
                         </ul>
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* HOW IT WORKS */}
-            <section id="overview" className="py-24 px-6 max-w-7xl mx-auto grid md:grid-cols-2 gap-12">
+            <motion.section
+                {...fadeInUp}
+                id="overview"
+                className="py-24 px-6 max-w-7xl mx-auto grid md:grid-cols-2 gap-12"
+            >
                 <div className="sticky top-32 h-fit">
                     <h2 className="text-5xl font-bold mb-6">How It Works</h2>
                     <p className="text-xl text-slate-400 mb-8">We&apos;ve stripped away the fluff so you can focus on building. It&apos;s a simple three-step dance to global scale.</p>
@@ -182,32 +247,26 @@ export default function Home() {
                         </div>
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* STATISTICS */}
-            <section className="py-24 bg-gradient-to-b from-transparent to-cyan-900/10">
+            <motion.section
+                {...fadeInUp}
+                className="py-24 bg-gradient-to-b from-transparent to-cyan-900/10"
+            >
                 <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
-                    <div className="text-center">
-                        <div className="text-5xl font-black mb-2">12M+</div>
-                        <p className="text-cyan-400 font-mono text-sm uppercase">Servers Deployed</p>
-                    </div>
-                    <div className="text-center">
-                        <div className="text-5xl font-black mb-2">50k</div>
-                        <p className="text-cyan-400 font-mono text-sm uppercase">Active Developers</p>
-                    </div>
-                    <div className="text-center">
-                        <div className="text-5xl font-black mb-2">15</div>
-                        <p className="text-cyan-400 font-mono text-sm uppercase">Global Regions</p>
-                    </div>
-                    <div className="text-center">
-                        <div className="text-5xl font-black mb-2">0</div>
-                        <p className="text-cyan-400 font-mono text-sm uppercase">Hidden Fees</p>
-                    </div>
+                    <StatItem value={12} suffix="M+" label="Servers Deployed" />
+                    <StatItem value={50} suffix="k" label="Active Developers" />
+                    <StatItem value={15} label="Global Regions" />
+                    <StatItem value={0} label="Hidden Fees" />
                 </div>
-            </section>
+            </motion.section>
 
             {/* THE VOID */}
-            <section className="py-32 bg-black text-white relative overflow-hidden">
+            <motion.section
+                {...fadeInUp}
+                className="py-32 bg-black text-white relative overflow-hidden"
+            >
                 <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
                     <h2 className="text-4xl md:text-6xl font-bold mb-8">Stop fighting your infrastructure.</h2>
                     <p className="text-slate-400 text-xl max-w-2xl mx-auto mb-12">Every minute you spend configuring YAML files is a minute you aren&apos;t building your product. Scale shouldn&apos;t be scary.</p>
@@ -216,10 +275,14 @@ export default function Home() {
                 <div className="absolute inset-0 opacity-20 pointer-events-none">
                     <div className="aurora-blob w-[800px] h-[800px] bg-red-500/20 -top-1/2 -left-1/4"></div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* PRICING PREVIEW */}
-            <section id="pricing" className="py-32 px-6">
+            <motion.section
+                {...fadeInUp}
+                id="pricing"
+                className="py-32 px-6"
+            >
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-20">
                         <h2 className="text-5xl font-bold mb-4">Pick Your Power.</h2>
@@ -268,7 +331,7 @@ export default function Home() {
                                     Daily Backups Included
                                 </li>
                             </ul>
-                            <Link to="/pricing" className="w-full py-4 bg-cyan-600 rounded-2xl hover:bg-cyan-500 font-bold shadow-[0_0_20px_rgba(8,145,178,0.4)] text-center block">Choose Startup</Link>
+                            <Link to="/contact" className="w-full py-4 bg-cyan-600 rounded-2xl hover:bg-cyan-500 font-bold shadow-[0_0_20px_rgba(8,145,178,0.4)] text-center block">Choose Startup</Link>
                         </div>
 
                         {/* Enterprise */}
@@ -294,10 +357,13 @@ export default function Home() {
                         </div>
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* SOCIAL PULSE */}
-            <section className="py-24 bg-white/5">
+            <motion.section
+                {...fadeInUp}
+                className="py-24 bg-white/5"
+            >
                 <div className="max-w-7xl mx-auto px-6 overflow-hidden">
                     <div className="grid md:grid-cols-2 gap-24 items-center">
                         <div>
@@ -351,10 +417,13 @@ export default function Home() {
                         </div>
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* STICKY CARDS */}
-            <section className="py-32 max-w-5xl mx-auto px-6">
+            <motion.section
+                {...fadeInUp}
+                className="py-32 max-w-5xl mx-auto px-6"
+            >
                 <div className="space-y-24">
                     <div className="sticky top-24 glass p-12 rounded-[3rem] shadow-2xl bg-[#0d1425] border-cyan-500/20 h-[400px] flex flex-col justify-center">
                         <span className="text-cyan-400 font-mono mb-4">PHASE 01</span>
@@ -372,7 +441,7 @@ export default function Home() {
                         <p className="text-lg text-slate-400">Manage your entire empire from one dashboard. No command line required—unless you really want it.</p>
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* FAQ */}
             <FAQSection />
@@ -392,6 +461,29 @@ export default function Home() {
                 </div>
             </section>
         </>
+    )
+}
+
+// Stat Item Component with Animated Counter
+function StatItem({ value, suffix = '', label }) {
+    const count = useMotionValue(0)
+    const rounded = useTransform(count, (latest) => Math.round(latest))
+    const ref = useRef(null)
+    const isInView = useInView(ref, { once: true, amount: 0.5 })
+
+    useEffect(() => {
+        if (isInView) {
+            animate(count, value, { duration: 2, ease: "easeOut" })
+        }
+    }, [isInView, count, value])
+
+    return (
+        <div ref={ref} className="text-center">
+            <div className="text-5xl font-black mb-2">
+                <motion.span>{rounded}</motion.span>{suffix}
+            </div>
+            <p className="text-cyan-400 font-mono text-sm uppercase">{label}</p>
+        </div>
     )
 }
 

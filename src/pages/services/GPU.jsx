@@ -1,6 +1,13 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
+const fadeInUp = {
+    initial: { opacity: 0, y: 30 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: false, amount: 0.2 },
+    transition: { duration: 0.8, ease: "easeOut" }
+}
+
 export default function GPU() {
     return (
         <>
@@ -15,7 +22,26 @@ export default function GPU() {
                     >
                         <span className="text-cyan-400 font-mono text-sm uppercase tracking-widest mb-4 block">GPU Servers</span>
                         <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6">
-                            AI-Ready<br /><span className="text-cyan-400">GPU Power</span>
+                            <div className="overflow-hidden">
+                                <motion.span
+                                    initial={{ y: "100%" }}
+                                    animate={{ y: 0 }}
+                                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                                    className="block"
+                                >
+                                    AI-Ready
+                                </motion.span>
+                            </div>
+                            <div className="overflow-hidden text-cyan-400">
+                                <motion.span
+                                    initial={{ y: "100%" }}
+                                    animate={{ y: 0 }}
+                                    transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                                    className="block"
+                                >
+                                    GPU Power
+                                </motion.span>
+                            </div>
                         </h1>
                         <p className="text-xl text-slate-400 max-w-2xl mb-10">
                             NVIDIA-powered computing for machine learning, deep learning, and AI training. Rent computational power, not just hardware.
@@ -32,8 +58,11 @@ export default function GPU() {
                 </div>
             </section>
 
-            {/* GPU Types */}
-            <section className="py-20 px-6 bg-white/5">
+            {/* Why GPU */}
+            <motion.section
+                {...fadeInUp}
+                className="py-20 px-6 bg-white/5"
+            >
                 <div className="max-w-7xl mx-auto">
                     <h2 className="text-3xl font-bold mb-12 text-center">Available GPUs</h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -60,10 +89,13 @@ export default function GPU() {
                         ))}
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* Use Cases */}
-            <section className="py-20 px-6">
+            <motion.section
+                {...fadeInUp}
+                className="py-20 px-6"
+            >
                 <div className="max-w-7xl mx-auto">
                     <h2 className="text-3xl font-bold mb-12 text-center">Perfect For</h2>
                     <div className="grid md:grid-cols-4 gap-6">
@@ -84,10 +116,13 @@ export default function GPU() {
                         ))}
                     </div>
                 </div>
-            </section>
+            </motion.section>
 
             {/* CTA */}
-            <section className="py-20 px-6 bg-gradient-to-b from-transparent to-purple-900/20">
+            <motion.section
+                {...fadeInUp}
+                className="py-20 px-6 bg-gradient-to-b from-transparent to-purple-900/20"
+            >
                 <div className="max-w-3xl mx-auto text-center">
                     <h2 className="text-4xl font-bold mb-6">Need Custom GPU Configuration?</h2>
                     <p className="text-slate-400 mb-8">Our team can help you design the perfect GPU cluster for your workload.</p>
@@ -95,7 +130,7 @@ export default function GPU() {
                         Talk to an Expert
                     </Link>
                 </div>
-            </section>
+            </motion.section>
         </>
     )
 }

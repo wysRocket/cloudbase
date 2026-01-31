@@ -71,15 +71,13 @@ export default function Navbar() {
                                 </AnimatePresence>
                             </div>
                         ) : (
-                            link.href.startsWith('/#') ? (
-                                <a key={link.name} href={link.href} className="hover:text-cyan-400 transition-colors">
-                                    {link.name}
-                                </a>
-                            ) : (
-                                <Link key={link.name} to={link.href} className="hover:text-cyan-400 transition-colors">
-                                    {link.name}
-                                </Link>
-                            )
+                            <Link
+                                key={link.name}
+                                to={link.href}
+                                className="hover:text-cyan-400 transition-colors"
+                            >
+                                {link.name}
+                            </Link>
                         )
                     ))}
                     <Link
@@ -108,7 +106,7 @@ export default function Navbar() {
                         className="md:hidden absolute top-full left-0 w-full bg-[#0a0f1d] border-b border-white/10 overflow-hidden"
                     >
                         <div className="p-6 flex flex-col gap-4 text-center">
-                            <a href="/#overview" onClick={() => setMobileOpen(false)}>Overview</a>
+                            <Link to="/#overview" onClick={() => setMobileOpen(false)}>Overview</Link>
                             <div className="border-t border-white/10 pt-4">
                                 <p className="text-cyan-400 text-sm mb-2">Services</p>
                                 {navLinks[1].submenu.map((sub) => (

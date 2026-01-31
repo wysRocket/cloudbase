@@ -28,7 +28,26 @@ export default function Contact() {
                         transition={{ duration: 0.6 }}
                     >
                         <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6">
-                            Get in <span className="text-cyan-400">Touch</span>
+                            <div className="overflow-hidden">
+                                <motion.span
+                                    initial={{ y: "100%" }}
+                                    animate={{ y: 0 }}
+                                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                                    className="block"
+                                >
+                                    Get in
+                                </motion.span>
+                            </div>
+                            <div className="overflow-hidden text-cyan-400">
+                                <motion.span
+                                    initial={{ y: "100%" }}
+                                    animate={{ y: 0 }}
+                                    transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                                    className="block"
+                                >
+                                    Touch
+                                </motion.span>
+                            </div>
                         </h1>
                         <p className="text-xl text-slate-400 max-w-2xl">
                             Have questions? Want to start your cloud journey? We&apos;re here to help.
