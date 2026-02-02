@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { motion, useMotionValue, useTransform, animate, useInView, useScroll } from 'framer-motion'
+import { motion, useMotionValue, useTransform, animate, useInView } from 'framer-motion'
 import MagneticButton from '../components/MagneticButton'
 import TiltCard from '../components/TiltCard'
-import TextScramble from '../components/TextScramble'
 import ServerBuilder from '../components/ServerBuilder'
 import NetworkMap from '../components/NetworkMap'
 import TerminalPeek from '../components/TerminalPeek'
@@ -59,19 +58,27 @@ export default function Home() {
         }
     }, [location])
 
-    const { scrollY } = useScroll()
-    const y1 = useTransform(scrollY, [0, 500], [0, 200])
-    const y2 = useTransform(scrollY, [0, 500], [0, -150])
 
     return (
         <>
             {/* HERO */}
             <section className="relative min-h-[100vh] flex items-center justify-center overflow-hidden px-6">
-                <img src="/images/image-2.png" className="absolute inset-0 w-full h-full object-cover z-0 animate-subtle-zoom" loading="lazy" />
-                <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f1d]/80 via-[#0a0f1d]/40 to-[#0a0f1d] z-[1]"></div>
+                <div className="absolute inset-0 z-0">
+                    <img
+                        src="/images/premium_hero_bg.png"
+                        className="w-full h-full object-cover animate-subtle-zoom"
+                        loading="lazy"
+                        alt="Background"
+                    />
+                    {/* Atmospheric Overlays */}
+                    <div className="absolute inset-0 bg-[#020617]/40 z-[1]"></div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#020617]/20 to-[#020617] z-[2]"></div>
+                </div>
 
-                <motion.div style={{ y: y1 }} className="aurora-blob w-[500px] h-[500px] bg-cyan-500/20 top-[-10%] left-[-10%] animate-aurora" />
-                <motion.div style={{ y: y2, animationDelay: '-5s' }} className="aurora-blob w-[600px] h-[600px] bg-blue-600/20 bottom-[-20%] right-[-10%] animate-aurora" />
+                {/* Subgrid Mesh for Technical Feel */}
+                <div className="absolute inset-0 opacity-[0.15] z-[3] pointer-events-none"
+                    style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '48px 48px' }}>
+                </div>
 
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
@@ -99,22 +106,18 @@ export default function Home() {
                             ))}
                         </div>
                         <div className="overflow-hidden flex justify-center">
-                            {"Simplified.".split(" ").map((word, i) => (
-                                <div key={i} className="overflow-hidden text-cyan-400">
-                                    <motion.span
-                                        initial={{ y: "100%" }}
-                                        animate={{ y: 0 }}
-                                        transition={{
-                                            duration: 1,
-                                            delay: 0.5 + (i * 0.2),
-                                            ease: [0.16, 1, 0.3, 1]
-                                        }}
-                                        className="block drop-shadow-[0_0_30px_rgba(34,211,238,0.4)]"
-                                    >
-                                        {word}
-                                    </motion.span>
-                                </div>
-                            ))}
+                            <motion.span
+                                initial={{ y: "100%" }}
+                                animate={{ y: 0 }}
+                                transition={{
+                                    duration: 1,
+                                    delay: 0.5,
+                                    ease: [0.16, 1, 0.3, 1]
+                                }}
+                                className="block bg-gradient-to-r from-cyan-300 via-cyan-400 to-blue-500 bg-clip-text text-transparent"
+                            >
+                                Simplified.
+                            </motion.span>
                         </div>
                     </h1>
                     <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
@@ -353,65 +356,6 @@ export default function Home() {
                 <NetworkMap />
             </motion.section>
 
-            {/* THE CYBER-VOID */}
-            <motion.section
-                {...fadeInUp}
-                className="py-44 bg-black text-white relative overflow-hidden flex flex-col items-center justify-center min-h-[60vh]"
-            >
-                {/* 3D Infinity Grid */}
-                <div className="absolute inset-0 z-0 perspective-[1000px] overflow-hidden pointer-events-none">
-                    <motion.div
-                        initial={{ rotateX: 60, y: '20%' }}
-                        style={{
-                            transformStyle: 'preserve-3d',
-                            backgroundImage: `linear-gradient(to right, rgba(34,211,238,0.2) 1px, transparent 1px), linear-gradient(to bottom, rgba(34,211,238,0.2) 1px, transparent 1px)`,
-                            backgroundSize: '40px 40px',
-                            maskImage: 'radial-gradient(circle at center, black 40%, transparent 80%)'
-                        }}
-                        animate={{
-                            backgroundPositionY: ['0px', '40px']
-                        }}
-                        transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            ease: 'linear'
-                        }}
-                        className="absolute inset-0 w-[200%] h-[200%] left-1/2 -ml-[100%] top-[-50%]"
-                    />
-                </div>
-
-                {/* Central Pulse / Vanishing Point */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
-
-                <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-                    <h2 className="text-4xl md:text-7xl font-black mb-8 tracking-tighter uppercase italic">
-                        <TextScramble
-                            text="STOP FIGHTING YOUR"
-                            delay={0.5}
-                            className="block"
-                        />
-                        <TextScramble
-                            text="INFRASTRUCTURE."
-                            delay={1.2}
-                            className="text-cyan-400 drop-shadow-[0_0_30px_rgba(34,211,238,0.6)]"
-                        />
-                    </h2>
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
-                        transition={{ delay: 2 }}
-                        className="text-slate-400 text-xl max-w-2xl mx-auto mb-12"
-                    >
-                        Every minute you spend configuring YAML files is a minute you aren&apos;t building your product. Scale shouldn&apos;t be scary.
-                    </motion.p>
-                    <motion.div
-                        initial={{ scale: 0 }}
-                        whileInView={{ scale: 1 }}
-                        transition={{ delay: 2.2, type: 'spring' }}
-                        className="w-px h-32 bg-gradient-to-b from-cyan-500 via-cyan-500/50 to-transparent mx-auto"
-                    ></motion.div>
-                </div>
-            </motion.section>
 
             {/* PRICING PREVIEW */}
             <motion.section
