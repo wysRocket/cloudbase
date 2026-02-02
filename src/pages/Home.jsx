@@ -69,7 +69,7 @@ export default function Home() {
                     transition={{ duration: 0.8 }}
                     className="relative z-10 max-w-4xl text-center"
                 >
-                    <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-6 leading-[0.9]">
+                    <h1 className="text-7xl md:text-9xl font-black tracking-tighter mb-6 leading-[0.9]">
                         <div className="overflow-hidden">
                             <motion.span
                                 initial={{ y: "100%" }}
