@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll } from 'framer-motion'
+import LiveStatus from './LiveStatus'
 
 const navLinks = [
     { name: 'Overview', href: '/#overview' },
@@ -46,6 +47,9 @@ export default function Navbar() {
                     <Link to="/" className="flex items-center gap-2">
                         <img src="/images/image-1.png" className={`transition-all duration-300 ${scrolled ? 'h-8' : 'h-10'} w-auto`} alt="WysCloudBase Logo" loading="lazy" />
                         <span className="text-xl font-bold tracking-tighter">WysCloudBase</span>
+                        <div className="hidden lg:block ml-4">
+                            <LiveStatus />
+                        </div>
                     </Link>
 
                     {/* Desktop Nav */}

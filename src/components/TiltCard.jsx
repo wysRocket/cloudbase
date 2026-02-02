@@ -45,8 +45,9 @@ export default function TiltCard({ children, className = '' }) {
                 rotateX,
                 transformStyle: 'preserve-3d',
             }}
-            className={className}
+            className={`card-underglow-wrapper ${className}`}
         >
+            <div className="card-underglow-glow" />
             <div style={{ transform: 'translateZ(50px)', transformStyle: 'preserve-3d' }}>
                 {children}
             </div>
