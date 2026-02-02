@@ -66,6 +66,20 @@
     animation: marquee 30s linear infinite;
 }
 
+@keyframes shimmer {
+    0% {
+        transform: translateX(-200%) skewX(-20deg);
+    }
+
+    100% {
+        transform: translateX(200%) skewX(-20deg);
+    }
+}
+
+.animate-shimmer {
+    animation: shimmer 6s infinite linear;
+}
+
 .glass {
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(20px);
