@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { motion, useMotionValue, useTransform, animate, useInView } from 'framer-motion'
+import { motion, useMotionValue, useTransform, animate, useInView, useScroll } from 'framer-motion'
+import MagneticButton from '../components/MagneticButton'
+import TiltCard from '../components/TiltCard'
 
 const fadeInUp = {
     initial: { opacity: 0, y: 30 },
@@ -53,6 +55,10 @@ export default function Home() {
         }
     }, [location])
 
+    const { scrollY } = useScroll()
+    const y1 = useTransform(scrollY, [0, 500], [0, 200])
+    const y2 = useTransform(scrollY, [0, 500], [0, -150])
+
     return (
         <>
             {/* HERO */}
@@ -60,8 +66,8 @@ export default function Home() {
                 <img src="/images/image-2.png" className="absolute inset-0 w-full h-full object-cover z-0 animate-subtle-zoom" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f1d]/80 via-[#0a0f1d]/40 to-[#0a0f1d] z-[1]"></div>
 
-                <div className="aurora-blob w-[500px] h-[500px] bg-cyan-500/20 top-[-10%] left-[-10%] animate-aurora"></div>
-                <div className="aurora-blob w-[600px] h-[600px] bg-blue-600/20 bottom-[-20%] right-[-10%] animate-aurora" style={{ animationDelay: '-5s' }}></div>
+                <motion.div style={{ y: y1 }} className="aurora-blob w-[500px] h-[500px] bg-cyan-500/20 top-[-10%] left-[-10%] animate-aurora" />
+                <motion.div style={{ y: y2, animationDelay: '-5s' }} className="aurora-blob w-[600px] h-[600px] bg-blue-600/20 bottom-[-20%] right-[-10%] animate-aurora" />
 
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
@@ -69,38 +75,54 @@ export default function Home() {
                     transition={{ duration: 0.8 }}
                     className="relative z-10 max-w-4xl text-center"
                 >
-                    <h1 className="text-7xl md:text-9xl font-black tracking-tighter mb-6 leading-[0.9]">
-                        <div className="overflow-hidden">
-                            <motion.span
-                                initial={{ y: "100%" }}
-                                animate={{ y: 0 }}
-                                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                                className="block"
-                            >
-                                Cloud Power
-                            </motion.span>
+                    <h1 className="text-7xl md:text-9xl font-black tracking-tighter mb-6 leading-[1.0] md:leading-[0.9]">
+                        <div className="overflow-hidden flex justify-center flex-wrap gap-x-4 md:gap-x-8">
+                            {"Cloud Power".split(" ").map((word, i) => (
+                                <div key={i} className="overflow-hidden">
+                                    <motion.span
+                                        initial={{ y: "100%" }}
+                                        animate={{ y: 0 }}
+                                        transition={{
+                                            duration: 1,
+                                            delay: i * 0.2,
+                                            ease: [0.16, 1, 0.3, 1]
+                                        }}
+                                        className="block bg-gradient-to-b from-white to-slate-400 bg-clip-text text-transparent"
+                                    >
+                                        {word}
+                                    </motion.span>
+                                </div>
+                            ))}
                         </div>
-                        <div className="overflow-hidden text-cyan-400">
-                            <motion.span
-                                initial={{ y: "100%" }}
-                                animate={{ y: 0 }}
-                                transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                                className="block"
-                            >
-                                Simplified.
-                            </motion.span>
+                        <div className="overflow-hidden flex justify-center">
+                            {"Simplified.".split(" ").map((word, i) => (
+                                <div key={i} className="overflow-hidden text-cyan-400">
+                                    <motion.span
+                                        initial={{ y: "100%" }}
+                                        animate={{ y: 0 }}
+                                        transition={{
+                                            duration: 1,
+                                            delay: 0.5 + (i * 0.2),
+                                            ease: [0.16, 1, 0.3, 1]
+                                        }}
+                                        className="block drop-shadow-[0_0_30px_rgba(34,211,238,0.4)]"
+                                    >
+                                        {word}
+                                    </motion.span>
+                                </div>
+                            ))}
                         </div>
                     </h1>
                     <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
                         WysCloudBase gives you the raw muscle of DigitalOcean infrastructure without the headache of complex configurations. Build, scale, and innovate in minutes.
                     </p>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <Link to="/contact" className="px-8 py-4 bg-white text-black font-bold rounded-full hover:bg-cyan-400 hover:text-white transition-all transform hover:scale-105">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                        <MagneticButton to="/contact" variant="primary">
                             Deploy Your First Server
-                        </Link>
-                        <a href="#features" className="px-8 py-4 glass text-white font-bold rounded-full hover:bg-white/10 transition-all">
+                        </MagneticButton>
+                        <MagneticButton to="#features" variant="secondary">
                             Explore Services
-                        </a>
+                        </MagneticButton>
                     </div>
                 </motion.div>
             </section>
@@ -146,56 +168,64 @@ export default function Home() {
                 >
                     {/* VPS Card */}
                     <motion.div {...slideInLeft} className="md:col-span-8">
-                        <Link to="/services/vps" className="glass p-10 rounded-[3rem] group hover:bg-white/10 transition-all overflow-hidden relative block h-full">
-                            <ShimmerGlare />
-                            <div className="relative z-10">
-                                <span className="text-cyan-400 font-mono mb-4 block">01 / STABILITY</span>
-                                <h3 className="text-4xl font-bold mb-4">Lightning VPS Hosting</h3>
-                                <p className="text-slate-400 max-w-md">Blazing fast virtual private servers with NVMe storage. Spin up instances in 55 seconds flat.</p>
-                                <span className="mt-8 px-6 py-2 border border-white/20 rounded-full hover:bg-white hover:text-black transition-colors inline-block">View Plans</span>
-                            </div>
-                            <img src="/images/image-3.png" className="absolute -right-20 -bottom-20 w-80 h-auto opacity-30 group-hover:scale-110 transition-transform duration-700" loading="lazy" />
-                        </Link>
+                        <TiltCard>
+                            <Link to="/services/vps" className="glass p-10 rounded-[3rem] group hover:bg-white/10 transition-all overflow-hidden relative block h-full">
+                                <ShimmerGlare />
+                                <div className="relative z-10">
+                                    <span className="text-cyan-400 font-mono mb-4 block">01 / STABILITY</span>
+                                    <h3 className="text-4xl font-bold mb-4">Lightning VPS Hosting</h3>
+                                    <p className="text-slate-400 max-w-md">Blazing fast virtual private servers with NVMe storage. Spin up instances in 55 seconds flat.</p>
+                                    <span className="mt-8 px-6 py-2 border border-white/20 rounded-full hover:bg-white hover:text-black transition-colors inline-block">View Plans</span>
+                                </div>
+                                <img src="/images/image-3.png" className="absolute -right-20 -bottom-20 w-80 h-auto opacity-30 group-hover:scale-110 transition-transform duration-700" loading="lazy" />
+                            </Link>
+                        </TiltCard>
                     </motion.div>
 
                     {/* GPU Card */}
                     <motion.div {...slideInRight} className="md:col-span-4">
-                        <Link to="/services/gpu" className="glass p-10 rounded-[3rem] bg-gradient-to-br from-cyan-600/20 to-blue-900/40 border-cyan-500/30 block h-full relative overflow-hidden">
-                            <ShimmerGlare />
-                            <span className="text-cyan-300 font-mono mb-4 block">02 / AI READY</span>
-                            <h3 className="text-3xl font-bold mb-4">GPU Clusters</h3>
-                            <p className="text-slate-300">NVIDIA-powered computing for deep learning and AI training. Rent power, not just hardware.</p>
-                        </Link>
+                        <TiltCard h-full>
+                            <Link to="/services/gpu" className="glass p-10 rounded-[3rem] bg-gradient-to-br from-cyan-600/20 to-blue-900/40 border-cyan-500/30 block h-full relative overflow-hidden">
+                                <ShimmerGlare />
+                                <span className="text-cyan-300 font-mono mb-4 block">02 / AI READY</span>
+                                <h3 className="text-3xl font-bold mb-4">GPU Clusters</h3>
+                                <p className="text-slate-300">NVIDIA-powered computing for deep learning and AI training. Rent power, not just hardware.</p>
+                            </Link>
+                        </TiltCard>
                     </motion.div>
 
                     {/* Kubernetes Card */}
                     <motion.div {...slideInLeft} className="md:col-span-4">
-                        <Link to="/services/kubernetes" className="glass p-10 rounded-[3rem] flex flex-col justify-between block h-full relative overflow-hidden">
-                            <ShimmerGlare />
-                            <div>
-                                <h3 className="text-2xl font-bold mb-2">Kubernetes</h3>
-                                <p className="text-slate-400 text-sm">Intelligent orchestration made simple.</p>
-                            </div>
-                            <div className="mt-12 h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                                <div className="h-full bg-cyan-500 w-3/4 animate-pulse"></div>
-                            </div>
-                        </Link>
+                        <TiltCard h-full>
+                            <Link to="/services/kubernetes" className="glass p-10 rounded-[3rem] flex flex-col justify-between block h-full relative overflow-hidden">
+                                <ShimmerGlare />
+                                <div>
+                                    <h3 className="text-2xl font-bold mb-2">Kubernetes</h3>
+                                    <p className="text-slate-400 text-sm">Intelligent orchestration made simple.</p>
+                                </div>
+                                <div className="mt-12 h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                                    <div className="h-full bg-cyan-500 w-3/4 animate-pulse"></div>
+                                </div>
+                            </Link>
+                        </TiltCard>
                     </motion.div>
 
                     {/* Game Servers */}
                     <motion.div {...slideInRight} className="md:col-span-8">
-                        <Link to="/services/game-servers" className="glass p-10 rounded-[3rem] flex items-center gap-8 group block h-full relative overflow-hidden">
-                            <ShimmerGlare />
-                            <div className="flex-1 relative z-10">
-                                <h3 className="text-3xl font-bold mb-2">Game Server Hosting</h3>
-                                <p className="text-slate-400">Low-latency environments for Rust, Minecraft, and CS2. Instant deployment for your community.</p>
-                            </div>
-                            <div className="w-32 h-32 glass rounded-2xl flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform relative z-10">
-                                <svg className="w-16 h-16 text-cyan-400" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2m-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2m4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5m3-3c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5Z" />
-                                </svg>
-                            </div>
-                        </Link>
+                        <TiltCard>
+                            <Link to="/services/game-servers" className="glass p-10 rounded-[3rem] flex items-center gap-8 group block h-full relative overflow-hidden">
+                                <ShimmerGlare />
+                                <div className="flex-1 relative z-10">
+                                    <h3 className="text-3xl font-bold mb-2">Game Server Hosting</h3>
+                                    <p className="text-slate-400">Low-latency environments for Rust, Minecraft, and CS2. Instant deployment for your community.</p>
+                                </div>
+                                <div className="w-32 h-32 glass rounded-2xl flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform relative z-10">
+                                    <svg className="w-16 h-16 text-cyan-400" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2m-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2m4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5m3-3c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5Z" />
+                                    </svg>
+                                </div>
+                            </Link>
+                        </TiltCard>
                     </motion.div>
                 </motion.div>
             </section>
@@ -211,26 +241,27 @@ export default function Home() {
                         <img src="/images/image-4.png" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-auto drop-shadow-[0_0_50px_rgba(34,211,238,0.3)]" loading="lazy" />
                     </div>
                     <div>
-                        <h2 className="text-5xl font-bold mb-8 tracking-tight">Enterprise muscle without the mess.</h2>
+                        <h2 className="text-5xl font-bold mb-8 tracking-tight">Enterprise <span className="text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.4)]">muscle</span> without the mess.</h2>
                         <ul className="space-y-6">
-                            <li className="flex gap-4">
-                                <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center shrink-0 mt-1">
-                                    <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
-                                </div>
-                                <p className="text-lg"><strong>One-Click Magic.</strong> Don&apos;t waste time on SSH configs. Deploy with a single click and get your passwords instantly.</p>
-                            </li>
-                            <li className="flex gap-4">
-                                <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center shrink-0 mt-1">
-                                    <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
-                                </div>
-                                <p className="text-lg"><strong>Transparent Pricing.</strong> We hate hidden fees too. You only pay for what you use, down to the cent.</p>
-                            </li>
-                            <li className="flex gap-4">
-                                <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center shrink-0 mt-1">
-                                    <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
-                                </div>
-                                <p className="text-lg"><strong>Smart Scaling.</strong> Your traffic spiked? Our system recommends the perfect server size to keep you running fast.</p>
-                            </li>
+                            {[
+                                { title: 'One-Click Magic.', text: 'Don\'t waste time on SSH configs. Deploy with a single click and get your passwords instantly.' },
+                                { title: 'Transparent Pricing.', text: 'We hate hidden fees too. You only pay for what you use, down to the cent.' },
+                                { title: 'Smart Scaling.', text: 'Your traffic spiked? Our system recommends the perfect server size to keep you running fast.' },
+                            ].map((item, i) => (
+                                <motion.li
+                                    key={i}
+                                    initial={{ opacity: 0.2, x: -20 }}
+                                    whileInView={{ opacity: 1, x: 0 }}
+                                    viewport={{ amount: 0.8 }}
+                                    transition={{ duration: 0.5, delay: i * 0.1 }}
+                                    className="flex gap-4 group"
+                                >
+                                    <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center shrink-0 mt-1 group-hover:bg-cyan-500/40 transition-colors">
+                                        <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
+                                    </div>
+                                    <p className="text-lg"><strong>{item.title}</strong> {item.text}</p>
+                                </motion.li>
+                            ))}
                         </ul>
                     </div>
                 </div>
@@ -241,33 +272,47 @@ export default function Home() {
                 id="overview"
                 className="py-24 px-6 max-w-7xl mx-auto grid md:grid-cols-2 gap-12 overflow-hidden"
             >
-                <motion.div {...slideInLeft} className="sticky top-32 h-fit">
-                    <h2 className="text-5xl font-bold mb-6">How It Works</h2>
+                <div className="md:col-span-1 sticky top-32 h-fit">
+                    <h2 className="text-5xl font-bold mb-6">How It <span className="text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.4)]">Works</span></h2>
                     <p className="text-xl text-slate-400 mb-8">We&apos;ve stripped away the fluff so you can focus on building. It&apos;s a simple three-step dance to global scale.</p>
-                    <div className="space-y-4">
-                        <div className="p-6 glass rounded-2xl border-l-4 border-cyan-500 relative overflow-hidden">
-                            <ShimmerGlare />
-                            <div className="relative z-10">
-                                <span className="text-sm font-bold text-cyan-400 block mb-1">STEP 01</span>
-                                <h4 className="text-xl font-bold">Pick Your Base</h4>
-                            </div>
-                        </div>
-                        <div className="p-6 glass rounded-2xl border-l-4 border-white/5 opacity-40 hover:opacity-100 transition-opacity relative overflow-hidden">
-                            <ShimmerGlare />
-                            <div className="relative z-10">
-                                <span className="text-sm font-bold text-slate-500 block mb-1">STEP 02</span>
-                                <h4 className="text-xl font-bold">Configure Your Specs</h4>
-                            </div>
-                        </div>
-                        <div className="p-6 glass rounded-2xl border-l-4 border-white/5 opacity-40 hover:opacity-100 transition-opacity relative overflow-hidden">
-                            <ShimmerGlare />
-                            <div className="relative z-10">
-                                <span className="text-sm font-bold text-slate-500 block mb-1">STEP 03</span>
-                                <h4 className="text-xl font-bold">Blast Off</h4>
-                            </div>
-                        </div>
+                    <div className="space-y-4 relative">
+                        {/* Connecting Line SVG */}
+                        <svg className="absolute left-0 top-0 w-full h-full pointer-events-none z-0" style={{ overflow: 'visible' }}>
+                            <motion.path
+                                d="M 4 50 L 4 150 L 4 250"
+                                fill="none"
+                                stroke="#22d3ee"
+                                strokeWidth="2"
+                                strokeDasharray="1 10"
+                                initial={{ pathLength: 0, opacity: 0 }}
+                                whileInView={{ pathLength: 1, opacity: 0.3 }}
+                                viewport={{ amount: 0.5 }}
+                                transition={{ duration: 1.5, ease: "easeInOut" }}
+                            />
+                        </svg>
+
+                        {[
+                            { step: '01', title: 'Pick Your Base' },
+                            { step: '02', title: 'Configure Your Specs' },
+                            { step: '03', title: 'Blast Off' },
+                        ].map((item, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0.4, x: -20 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ amount: 0.8 }}
+                                transition={{ duration: 0.5, delay: i * 0.1 }}
+                                className={`p-6 glass rounded-2xl border-l-4 ${i === 0 ? 'border-cyan-500' : 'border-white/5'} relative overflow-hidden group`}
+                            >
+                                <ShimmerGlare />
+                                <div className="relative z-10">
+                                    <span className={`text-sm font-bold ${i === 0 ? 'text-cyan-400' : 'text-slate-500'} block mb-1`}>STEP {item.step}</span>
+                                    <h4 className="text-xl font-bold">{item.title}</h4>
+                                </div>
+                            </motion.div>
+                        ))}
                     </div>
-                </motion.div>
+                </div>
                 <motion.div {...slideInRight} className="space-y-12">
                     <div className="aspect-video glass rounded-[2rem] overflow-hidden group">
                         <img src="/images/image-5.png" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
@@ -328,85 +373,106 @@ export default function Home() {
             >
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-20">
-                        <h2 className="text-5xl font-bold mb-4">Pick Your Power.</h2>
+                        <h2 className="text-5xl font-bold mb-4">Pick Your <span className="text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.4)]">Power.</span></h2>
                         <p className="text-slate-400">Scalable plans for every project size.</p>
                     </div>
                     <div className="grid md:grid-cols-3 gap-8">
                         {/* Basic */}
-                        <div className="glass p-12 rounded-[3rem] border-white/5 flex flex-col hover:scale-105 transition-transform duration-500 relative overflow-hidden">
-                            <ShimmerGlare />
-                            <div className="relative z-10 flex flex-col h-full">
-                                <h4 className="text-2xl font-bold mb-2">Hobbyist</h4>
-                                <p className="text-slate-400 mb-8 text-sm">Perfect for side projects & blogs.</p>
-                                <div className="text-5xl font-black mb-8">$5<span className="text-lg font-normal text-slate-500">/mo</span></div>
-                                <ul className="space-y-4 mb-12 flex-1">
-                                    <li className="flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                        1GB RAM / 25GB NVMe
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                        1 vCPU
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                        Global CDN Access
-                                    </li>
-                                </ul>
-                                <Link to="/pricing" className="w-full py-4 glass rounded-2xl hover:bg-white/10 font-bold text-center block">Start Free Trial</Link>
-                            </div>
-                        </div>
+                        <motion.div className="md:col-span-1">
+                            <TiltCard>
+                                <div className="glass p-12 rounded-[3rem] border-white/5 flex flex-col hover:scale-105 transition-transform duration-500 relative overflow-hidden group h-full">
+                                    <ShimmerGlare />
+                                    {/* Spotlight Glow */}
+                                    <div className="absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(600px_circle_at_var(--mouse-x)_var(--mouse-y),rgba(34,211,238,0.1),transparent_40%)]" />
+
+                                    <div className="relative z-10 flex flex-col h-full">
+                                        <h4 className="text-2xl font-bold mb-2">Hobbyist</h4>
+                                        <p className="text-slate-400 mb-8 text-sm">Perfect for side projects & blogs.</p>
+                                        <div className="text-5xl font-black mb-8">$5<span className="text-lg font-normal text-slate-500">/mo</span></div>
+                                        <ul className="space-y-4 mb-12 flex-1">
+                                            <li className="flex items-center gap-2">
+                                                <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                1GB RAM / 25GB NVMe
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                1 vCPU
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                Global CDN Access
+                                            </li>
+                                        </ul>
+                                        <Link to="/pricing" className="w-full py-4 glass rounded-2xl hover:bg-white/10 font-bold text-center block">Start Free Trial</Link>
+                                    </div>
+                                </div>
+                            </TiltCard>
+                        </motion.div>
 
                         {/* Pro */}
-                        <div className="glass p-12 rounded-[3rem] border-cyan-500/50 bg-cyan-950/20 relative overflow-hidden transform scale-110 z-10">
-                            <ShimmerGlare />
-                            <div className="relative z-10 flex flex-col h-full">
-                                <div className="absolute top-6 right-6 bg-cyan-500 text-black text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">Popular</div>
-                                <h4 className="text-2xl font-bold mb-2">Startup</h4>
-                                <p className="text-slate-400 mb-8 text-sm">Scaling apps & growing traffic.</p>
-                                <div className="text-5xl font-black mb-8">$20<span className="text-lg font-normal text-slate-500">/mo</span></div>
-                                <ul className="space-y-4 mb-12 flex-1">
-                                    <li className="flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                        4GB RAM / 80GB NVMe
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                        2 vCPUs
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                        Daily Backups Included
-                                    </li>
-                                </ul>
-                                <Link to="/contact" className="w-full py-4 bg-cyan-600 rounded-2xl hover:bg-cyan-500 font-bold shadow-[0_0_20px_rgba(8,145,178,0.4)] text-center block">Choose Startup</Link>
-                            </div>
-                        </div>
+                        <motion.div className="md:col-span-1">
+                            <TiltCard>
+                                <div className="glass p-12 rounded-[3rem] border-cyan-500/50 bg-cyan-950/20 relative overflow-hidden transform scale-110 z-10 group h-full">
+                                    <ShimmerGlare />
+                                    {/* Spotlight Glow */}
+                                    <div className="absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(600px_circle_at_var(--mouse-x)_var(--mouse-y),rgba(34,211,238,0.2),transparent_40%)]" />
+
+                                    <div className="relative z-10 flex flex-col h-full">
+                                        <div className="absolute top-6 right-6 bg-cyan-500 text-black text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">Popular</div>
+                                        <h4 className="text-2xl font-bold mb-2">Startup</h4>
+                                        <p className="text-slate-400 mb-8 text-sm">Scaling apps & growing traffic.</p>
+                                        <div className="text-5xl font-black mb-8">$20<span className="text-lg font-normal text-slate-500">/mo</span></div>
+                                        <ul className="space-y-4 mb-12 flex-1">
+                                            <li className="flex items-center gap-2">
+                                                <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                4GB RAM / 80GB NVMe
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                2 vCPUs
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                Daily Backups Included
+                                            </li>
+                                        </ul>
+                                        <Link to="/contact" className="w-full py-4 bg-cyan-600 rounded-2xl hover:bg-cyan-500 font-bold shadow-[0_0_20px_rgba(8,145,178,0.4)] text-center block">Choose Startup</Link>
+                                    </div>
+                                </div>
+                            </TiltCard>
+                        </motion.div>
 
                         {/* Enterprise */}
-                        <div className="glass p-12 rounded-[3rem] border-white/5 flex flex-col hover:scale-105 transition-transform duration-500 relative overflow-hidden">
-                            <ShimmerGlare />
-                            <div className="relative z-10 flex flex-col h-full">
-                                <h4 className="text-2xl font-bold mb-2">Enterprise</h4>
-                                <p className="text-slate-400 mb-8 text-sm">Custom needs, global power.</p>
-                                <div className="text-5xl font-black mb-8">Custom</div>
-                                <ul className="space-y-4 mb-12 flex-1">
-                                    <li className="flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                        Dedicated GPUs
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                        24/7 Phone Support
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                        Isolated Private Network
-                                    </li>
-                                </ul>
-                                <Link to="/contact" className="w-full py-4 glass rounded-2xl hover:bg-white/10 font-bold text-center block">Contact Sales</Link>
-                            </div>
-                        </div>
+                        <motion.div className="md:col-span-1">
+                            <TiltCard>
+                                <div className="glass p-12 rounded-[3rem] border-white/5 flex flex-col hover:scale-105 transition-transform duration-500 relative overflow-hidden group h-full">
+                                    <ShimmerGlare />
+                                    {/* Spotlight Glow */}
+                                    <div className="absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(600px_circle_at_var(--mouse-x)_var(--mouse-y),rgba(34,211,238,0.1),transparent_40%)]" />
+
+                                    <div className="relative z-10 flex flex-col h-full">
+                                        <h4 className="text-2xl font-bold mb-2">Enterprise</h4>
+                                        <p className="text-slate-400 mb-8 text-sm">Custom needs, global power.</p>
+                                        <div className="text-5xl font-black mb-8">Custom</div>
+                                        <ul className="space-y-4 mb-12 flex-1">
+                                            <li className="flex items-center gap-2">
+                                                <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                Dedicated GPUs
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                24/7 Phone Support
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                Isolated Private Network
+                                            </li>
+                                        </ul>
+                                        <Link to="/contact" className="w-full py-4 glass rounded-2xl hover:bg-white/10 font-bold text-center block">Contact Sales</Link>
+                                    </div>
+                                </div>
+                            </TiltCard>
+                        </motion.div>
                     </div>
                 </div>
             </motion.section>
@@ -419,30 +485,36 @@ export default function Home() {
                 <div className="max-w-7xl mx-auto px-6 overflow-hidden">
                     <div className="grid md:grid-cols-2 gap-24 items-center">
                         <div>
-                            <h2 className="text-5xl font-bold mb-6">Built for everyone.</h2>
+                            <h2 className="text-5xl font-bold mb-6">Built for <span className="text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.4)]">everyone.</span></h2>
                             <div className="space-y-4">
-                                <motion.div
-                                    animate={{ y: [0, -10, 0] }}
-                                    transition={{ duration: 3, repeat: Infinity }}
-                                    className="glass p-6 rounded-2xl flex items-center gap-4"
-                                >
-                                    <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                                        <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                    </div>
-                                    <div>
-                                        <p className="font-bold">Deployment Successful</p>
-                                        <p className="text-xs text-slate-500">VPS-Tokyo-01 is now live.</p>
-                                    </div>
-                                </motion.div>
-                                <div className="glass p-6 rounded-2xl flex items-center gap-4 translate-x-12">
-                                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                        <svg className="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2Z" /></svg>
-                                    </div>
-                                    <div>
-                                        <p className="font-bold">Auto-scaling recommendation</p>
-                                        <p className="text-xs text-slate-500">Traffic up 40%. Ready to upgrade?</p>
-                                    </div>
-                                </div>
+                                {[
+                                    { label: 'Freelancers', icon: '👤', color: 'bg-green-500/20', text: 'green-400' },
+                                    { label: 'Startup Teams', icon: '🚀', color: 'bg-blue-500/20', text: 'blue-400' },
+                                    { label: 'Game Studios', icon: '🎮', color: 'bg-purple-500/20', text: 'purple-400' },
+                                    { label: 'Students', icon: '🎓', color: 'bg-orange-500/20', text: 'orange-400' },
+                                ].map((item, idx) => (
+                                    <motion.div
+                                        key={idx}
+                                        {...fadeInUp}
+                                        transition={{ delay: 0.2 + idx * 0.1 }}
+                                    >
+                                        <TiltCard>
+                                            <div className="glass p-6 rounded-2xl flex items-center gap-4 group relative overflow-hidden h-full">
+                                                <ShimmerGlare />
+                                                {/* Spotlight Glow */}
+                                                <div className="absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(400px_circle_at_var(--mouse-x)_var(--mouse-y),rgba(255,255,255,0.05),transparent_40%)]" />
+
+                                                <div className={`w-10 h-10 rounded-full ${item.color} flex items-center justify-center shrink-0 relative z-10`}>
+                                                    <span className="text-xl">{item.icon}</span>
+                                                </div>
+                                                <div className="relative z-10">
+                                                    <p className="font-bold text-white group-hover:text-cyan-400 transition-colors">{item.label}</p>
+                                                    <p className="text-xs text-slate-500">Optimized Performance</p>
+                                                </div>
+                                            </div>
+                                        </TiltCard>
+                                    </motion.div>
+                                ))}
                             </div>
                         </div>
                         <div className="columns-2 gap-6 space-y-6">
@@ -451,7 +523,7 @@ export default function Home() {
                                     <ShimmerGlare />
                                     <img src="/images/Freelancers.jpg" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-700" alt="Freelancers" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] to-transparent opacity-60"></div>
-                                    <h5 className="text-xl font-bold relative z-10">Freelancers</h5>
+                                    <h5 className="text-xl font-bold relative z-10"></h5>
                                 </Link>
                             </motion.div>
                             <motion.div {...slideInRight} transition={{ ...slideInRight.transition, delay: 0.2 }}>
@@ -459,7 +531,7 @@ export default function Home() {
                                     <ShimmerGlare />
                                     <img src="/images/Students.jpg" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-700" alt="Students" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] to-transparent opacity-60"></div>
-                                    <h5 className="text-xl font-bold relative z-10">Students</h5>
+                                    <h5 className="text-xl font-bold relative z-10"></h5>
                                 </Link>
                             </motion.div>
                             <motion.div {...slideInRight} transition={{ ...slideInRight.transition, delay: 0.1 }}>
@@ -467,7 +539,7 @@ export default function Home() {
                                     <ShimmerGlare />
                                     <img src="/images/Startups.jpg" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-700" alt="Startups" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] to-transparent opacity-60"></div>
-                                    <h5 className="text-xl font-bold relative z-10">Startups</h5>
+                                    <h5 className="text-xl font-bold relative z-10"></h5>
                                 </Link>
                             </motion.div>
                             <motion.div {...slideInRight} transition={{ ...slideInRight.transition, delay: 0.3 }}>
@@ -475,7 +547,7 @@ export default function Home() {
                                     <ShimmerGlare />
                                     <img src="/images/AILabs.jpg" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-700" alt="AI Labs" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] to-transparent opacity-60"></div>
-                                    <h5 className="text-xl font-bold relative z-10">AI Labs</h5>
+                                    <h5 className="text-xl font-bold relative z-10"></h5>
                                 </Link>
                             </motion.div>
                         </div>
@@ -529,8 +601,7 @@ export default function Home() {
                     </h2>
                     <p className="text-2xl text-slate-200 mb-12 font-medium">Your cloud journey starts with a single click. No credit card required for the first 14 days.</p>
                     <Link to="/contact" className="px-12 py-6 bg-white text-black text-xl font-black rounded-full hover:bg-cyan-400 hover:text-white transition-all transform hover:scale-110 shadow-[0_0_50px_rgba(255,255,255,0.3)] inline-block">
-                        Launch Your Dashboard
-                    </Link>
+                        Launch Your Dashboard</Link>
                 </div>
             </section>
         </>
@@ -581,7 +652,7 @@ function FAQSection() {
 
     return (
         <section id="faq" className="py-32 px-6 max-w-3xl mx-auto">
-            <h2 className="text-5xl font-bold mb-16 text-center">Questions?</h2>
+            <h2 className="text-5xl font-bold mb-16 text-center">Any <span className="text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.4)]">Questions?</span></h2>
             <div className="space-y-4">
                 {faqs.map((faq, i) => (
                     <div key={i} className="glass rounded-2xl overflow-hidden relative group">
