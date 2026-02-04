@@ -48,7 +48,7 @@ export default function Navbar() {
                 className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-500 origin-left z-[101]"
             />
 
-            <nav className={`fixed top-0 w-full z-[100] px-6 transition-all duration-300 border-b border-white/5 ${scrolled ? 'py-2 bg-black/80 backdrop-blur-xl' : 'py-4 glass'}`}>
+            <nav className={`fixed top-0 w-full z-[100] px-4 md:px-6 transition-all duration-300 border-b border-white/5 ${scrolled ? 'py-2 bg-black/80 backdrop-blur-xl' : 'py-4 glass'}`}>
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-2">

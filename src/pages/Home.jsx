@@ -86,7 +86,7 @@ export default function Home() {
                     transition={{ duration: 0.8 }}
                     className="relative z-10 max-w-4xl text-center"
                 >
-                    <h1 className="text-7xl md:text-9xl font-black tracking-tighter mb-6 leading-[1.0] md:leading-[0.9]">
+                    <h1 className="text-5xl md:text-9xl font-black tracking-tighter mb-6 leading-[1.0] md:leading-[0.9]">
                         <div className="overflow-hidden flex justify-center flex-wrap gap-x-4 md:gap-x-8">
                             {"Cloud Power".split(" ").map((word, i) => (
                                 <div key={i} className="overflow-hidden">

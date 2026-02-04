@@ -109,6 +109,12 @@ html {
     scroll-behavior: smooth;
 }
 
+html,
+body,
+#root {
+    @apply overflow-x-hidden w-full;
+}
+
 body {
     @apply bg-[#0a0f1d] text-slate-100 font-sans;
 }
