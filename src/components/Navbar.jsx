@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll } from 'framer-motion'
+import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
 import LiveStatus from './LiveStatus'
 
 const navLinks = [
@@ -25,7 +26,13 @@ export default function Navbar() {
     const [servicesOpen, setServicesOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false)
     const { scrollYProgress } = useScroll()
-    useLocation()
+    const location = useLocation()
+    const isLightPage = ['/sign-up', '/sign-in'].some(path => location.pathname.startsWith(path))
+
+    // Dynamic text colors
+    const textColor = (isLightPage && !scrolled) ? 'text-slate-900' : 'text-slate-100'
+    const hoverColor = (isLightPage && !scrolled) ? 'hover:text-cyan-600' : 'hover:text-cyan-400'
+    const iconColor = (isLightPage && !scrolled) ? 'text-slate-900' : 'text-current'
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 50)
@@ -46,14 +53,14 @@ export default function Navbar() {
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-2">
                         <img src="/images/image-1.png" className={`transition-all duration-300 ${scrolled ? 'h-8' : 'h-10'} w-auto`} alt="WysCloudBase Logo" loading="lazy" />
-                        <span className="text-xl font-bold tracking-tighter">WysCloudBase</span>
+                        <span className={`text-xl font-bold tracking-tighter transition-colors ${textColor}`}>WysCloudBase</span>
                         <div className="hidden lg:block ml-4">
                             <LiveStatus />
                         </div>
                     </Link>
 
                     {/* Desktop Nav */}
-                    <div className="hidden md:flex items-center gap-8 text-sm font-medium">
+                    <div className={`hidden md:flex items-center gap-8 text-sm font-medium transition-colors ${textColor}`}>
                         {navLinks.map((link) => (
                             link.submenu ? (
                                 <div
@@ -62,7 +69,7 @@ export default function Navbar() {
                                     onMouseEnter={() => setServicesOpen(true)}
                                     onMouseLeave={() => setServicesOpen(false)}
                                 >
-                                    <button className="hover:text-cyan-400 transition-colors flex items-center gap-1">
+                                    <button className={`${hoverColor} transition-colors flex items-center gap-1`}>
                                         {link.name}
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -74,13 +81,13 @@ export default function Navbar() {
                                                 initial={{ opacity: 0, y: 10 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, y: 10 }}
-                                                className="absolute top-full left-0 mt-2 w-48 glass rounded-xl py-2 border border-white/10"
+                                                className="absolute top-full left-0 mt-2 w-48 bg-[#0a0f1d] border border-white/10 rounded-xl py-2 shadow-xl"
                                             >
                                                 {link.submenu.map((sub) => (
                                                     <Link
                                                         key={sub.name}
                                                         to={sub.href}
-                                                        className="block px-4 py-2 hover:bg-white/10 hover:text-cyan-400 transition-colors"
+                                                        className="block px-4 py-2 text-slate-100 hover:bg-white/10 hover:text-cyan-400 transition-colors"
                                                     >
                                                         {sub.name}
                                                     </Link>
@@ -93,22 +100,40 @@ export default function Navbar() {
                                 <Link
                                     key={link.name}
                                     to={link.href}
-                                    className="hover:text-cyan-400 transition-colors"
+                                    className={`${hoverColor} transition-colors`}
                                 >
                                     {link.name}
                                 </Link>
                             )
                         ))}
-                        <Link
-                            to="/contact"
-                            className="bg-cyan-600 hover:bg-cyan-500 px-5 py-2 rounded-full text-white transition-all transform hover:scale-105"
-                        >
-                            Get Started
-                        </Link>
+                        <SignedOut>
+                            <Link
+                                to="/sign-in"
+                                className={`${hoverColor} transition-colors`}
+                            >
+                                Sign In
+                            </Link>
+                            <Link
+                                to="/contact"
+                                className="bg-cyan-600 hover:bg-cyan-500 px-5 py-2 rounded-full text-white transition-all transform hover:scale-105"
+                            >
+                                Contact Sales
+                            </Link>
+                        </SignedOut>
+                        <SignedIn>
+                            <UserButton
+                                afterSignOutUrl="/"
+                                appearance={{
+                                    elements: {
+                                        avatarBox: "w-10 h-10"
+                                    }
+                                }}
+                            />
+                        </SignedIn>
                     </div>
 
                     {/* Mobile Toggle */}
-                    <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2">
+                    <button onClick={() => setMobileOpen(!mobileOpen)} className={`md:hidden p-2 ${iconColor}`}>
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
                         </svg>
@@ -124,8 +149,8 @@ export default function Navbar() {
                             exit={{ opacity: 0, height: 0 }}
                             className="md:hidden absolute top-full left-0 w-full bg-[#0a0f1d] border-b border-white/10 overflow-hidden"
                         >
-                            <div className="p-6 flex flex-col gap-4 text-center">
-                                <Link to="/#overview" onClick={() => setMobileOpen(false)}>Overview</Link>
+                            <div className="p-6 flex flex-col gap-4 text-center text-slate-100">
+                                <Link to="/#overview" onClick={() => setMobileOpen(false)} className="hover:text-white transition-colors">Overview</Link>
                                 <div className="border-t border-white/10 pt-4">
                                     <p className="text-cyan-400 text-sm mb-2">Services</p>
                                     {navLinks[1].submenu.map((sub) => (
@@ -139,15 +164,29 @@ export default function Navbar() {
                                         </Link>
                                     ))}
                                 </div>
-                                <Link to="/pricing" onClick={() => setMobileOpen(false)}>Pricing</Link>
-                                <Link to="/docs" onClick={() => setMobileOpen(false)}>Docs</Link>
-                                <Link
-                                    to="/contact"
-                                    onClick={() => setMobileOpen(false)}
-                                    className="bg-cyan-600 py-3 rounded-lg"
-                                >
-                                    Get Started
-                                </Link>
+                                <Link to="/pricing" onClick={() => setMobileOpen(false)} className="hover:text-white transition-colors">Pricing</Link>
+                                <Link to="/docs" onClick={() => setMobileOpen(false)} className="hover:text-white transition-colors">Docs</Link>
+                                <SignedOut>
+                                    <Link
+                                        to="/sign-in"
+                                        onClick={() => setMobileOpen(false)}
+                                        className="border border-cyan-600 py-3 rounded-lg w-full block"
+                                    >
+                                        Sign In
+                                    </Link>
+                                    <Link
+                                        to="/contact"
+                                        onClick={() => setMobileOpen(false)}
+                                        className="bg-cyan-600 py-3 rounded-lg w-full block"
+                                    >
+                                        Contact Sales
+                                    </Link>
+                                </SignedOut>
+                                <SignedIn>
+                                    <div className="flex justify-center">
+                                        <UserButton afterSignOutUrl="/" />
+                                    </div>
+                                </SignedIn>
                             </div>
                         </motion.div>
                     )}
