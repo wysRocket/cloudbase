@@ -76,7 +76,7 @@ export default function Footer() {
                     </div>
                 </div>
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-slate-600">
-                    <p>© 2024 WysCloudBase. All rights reserved.</p>
+                    <p>© 2026 WysCloudBase. All rights reserved.</p>
                     <div className="flex gap-8">
                         <img
                             src="/images/image-7.png"

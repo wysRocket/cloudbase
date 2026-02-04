@@ -55,7 +55,7 @@ export default function VPS() {
                             High-performance NVMe SSD storage, lightning-fast network, and 99.9% uptime SLA. Deploy your server in under 60 seconds.
                         </p>
                         <div className="flex gap-4 flex-wrap">
-                            <Link to="/contact" className="px-8 py-4 bg-cyan-600 hover:bg-cyan-500 rounded-full font-bold transition-all">
+                            <Link to="/dashboard" className="px-8 py-4 bg-cyan-600 hover:bg-cyan-500 rounded-full font-bold transition-all">
                                 Deploy Now
                             </Link>
                             <Link to="/pricing" className="px-8 py-4 glass rounded-full font-bold hover:bg-white/10 transition-all">

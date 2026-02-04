@@ -18,29 +18,40 @@ import Contact from './pages/Contact'
 import SignInPage from './pages/SignInPage'
 import SignUpPage from './pages/SignUpPage'
 
+import DashboardLayout from './layouts/DashboardLayout'
+import Dashboard from './pages/dashboard/Dashboard'
+import NewService from './pages/dashboard/NewService'
+
 function App() {
     return (
-        <Layout>
-            <ScrollToTop />
-            <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/services/vps" element={<VPS />} />
-                <Route path="/services/kubernetes" element={<Kubernetes />} />
-                <Route path="/services/gpu" element={<GPU />} />
-                <Route path="/services/database" element={<Database />} />
-                <Route path="/services/game-servers" element={<GameServers />} />
-                <Route path="/pricing" element={<Pricing />} />
-                <Route path="/docs" element={<Docs />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/cookies" element={<Cookies />} />
-                <Route path="/support" element={<Support />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/sign-in/*" element={<SignInPage />} />
-                <Route path="/sign-up/*" element={<SignUpPage />} />
-            </Routes>
-        </Layout>
+        <Routes>
+            <Route path="/" element={<Layout><Home /></Layout>} />
+            <Route path="/services/vps" element={<Layout><VPS /></Layout>} />
+            <Route path="/services/kubernetes" element={<Layout><Kubernetes /></Layout>} />
+            <Route path="/services/gpu" element={<Layout><GPU /></Layout>} />
+            <Route path="/services/database" element={<Layout><Database /></Layout>} />
+            <Route path="/services/game-servers" element={<Layout><GameServers /></Layout>} />
+            <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
+            <Route path="/docs" element={<Layout><Docs /></Layout>} />
+            <Route path="/about" element={<Layout><About /></Layout>} />
+            <Route path="/privacy" element={<Layout><Privacy /></Layout>} />
+            <Route path="/terms" element={<Layout><Terms /></Layout>} />
+            <Route path="/cookies" element={<Layout><Cookies /></Layout>} />
+            <Route path="/support" element={<Layout><Support /></Layout>} />
+            <Route path="/contact" element={<Layout><Contact /></Layout>} />
+            <Route path="/sign-in/*" element={<Layout><SignInPage /></Layout>} />
+            <Route path="/sign-up/*" element={<Layout><SignUpPage /></Layout>} />
+
+            {/* Protected Dashboard Routes */}
+            <Route path="/dashboard/*" element={
+                <DashboardLayout>
+                    <Routes>
+                        <Route index element={<Dashboard />} />
+                        <Route path="new" element={<NewService />} />
+                    </Routes>
+                </DashboardLayout>
+            } />
+        </Routes>
     )
 }
 

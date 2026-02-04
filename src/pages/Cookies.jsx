@@ -11,7 +11,7 @@ export default function Cookies() {
                         transition={{ duration: 0.6 }}
                     >
                         <h1 className="text-5xl font-black tracking-tighter mb-6">Cookie Policy</h1>
-                        <p className="text-slate-400 mb-12">Last updated: January 2024</p>
+                        <p className="text-slate-400 mb-12">Last updated: January 2025</p>
                     </motion.div>
 
                     <div className="prose prose-invert prose-lg max-w-none space-y-8">

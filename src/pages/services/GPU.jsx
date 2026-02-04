@@ -47,7 +47,7 @@ export default function GPU() {
                             NVIDIA-powered computing for machine learning, deep learning, and AI training. Rent computational power, not just hardware.
                         </p>
                         <div className="flex gap-4 flex-wrap">
-                            <Link to="/contact" className="px-8 py-4 bg-cyan-600 hover:bg-cyan-500 rounded-full font-bold transition-all">
+                            <Link to="/dashboard" className="px-8 py-4 bg-cyan-600 hover:bg-cyan-500 rounded-full font-bold transition-all">
                                 Request GPU Access
                             </Link>
                             <Link to="/docs" className="px-8 py-4 glass rounded-full font-bold hover:bg-white/10 transition-all">

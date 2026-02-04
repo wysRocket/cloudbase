@@ -56,7 +56,7 @@ export default function GameServers() {
                             Premium game server hosting with instant deployment. Minecraft, Rust, CS2, and more — optimized for gaming with DDoS protection included.
                         </p>
                         <div className="flex gap-4 flex-wrap">
-                            <Link to="/contact" className="px-8 py-4 bg-cyan-600 hover:bg-cyan-500 rounded-full font-bold transition-all">
+                            <Link to="/dashboard" className="px-8 py-4 bg-cyan-600 hover:bg-cyan-500 rounded-full font-bold transition-all">
                                 Start Gaming
                             </Link>
                             <Link to="/docs" className="px-8 py-4 glass rounded-full font-bold hover:bg-white/10 transition-all">
@@ -82,7 +82,7 @@ export default function GameServers() {
                                 <p className="text-slate-400 mb-4">{game.players} players</p>
                                 <div className="flex justify-between items-center">
                                     <span className="text-2xl font-bold text-cyan-400">From ${game.price}/mo</span>
-                                    <Link to="/contact" className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-sm font-bold transition-all">
+                                    <Link to="/dashboard" className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-sm font-bold transition-all">
                                         Deploy
                                     </Link>
                                 </div>

@@ -47,7 +47,7 @@ export default function Kubernetes() {
                             Managed Kubernetes clusters that scale with your applications. Deploy, manage, and scale containerized workloads with ease.
                         </p>
                         <div className="flex gap-4 flex-wrap">
-                            <Link to="/contact" className="px-8 py-4 bg-cyan-600 hover:bg-cyan-500 rounded-full font-bold transition-all">
+                            <Link to="/dashboard" className="px-8 py-4 bg-cyan-600 hover:bg-cyan-500 rounded-full font-bold transition-all">
                                 Create Cluster
                             </Link>
                             <Link to="/docs" className="px-8 py-4 glass rounded-full font-bold hover:bg-white/10 transition-all">

@@ -124,7 +124,7 @@ export default function Home() {
                         WysCloudBase gives you the raw muscle of DigitalOcean infrastructure without the headache of complex configurations. Build, scale, and innovate in minutes.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                        <MagneticButton to="/contact" variant="primary">
+                        <MagneticButton to="/dashboard" variant="primary">
                             Deploy Your First Server
                         </MagneticButton>
                         <MagneticButton to="#features" variant="secondary">
@@ -592,7 +592,7 @@ export default function Home() {
                         Build. Scale.<br /><span className="text-cyan-400">Innovate.</span>
                     </h2>
                     <p className="text-2xl text-slate-200 mb-12 font-medium">Your cloud journey starts with a single click. No credit card required for the first 14 days.</p>
-                    <Link to="/contact" className="px-12 py-6 bg-white text-black text-xl font-black rounded-full hover:bg-cyan-400 hover:text-white transition-all transform hover:scale-110 shadow-[0_0_50px_rgba(255,255,255,0.3)] inline-block">
+                    <Link to="/dashboard" className="px-12 py-6 bg-white text-black text-xl font-black rounded-full hover:bg-cyan-400 hover:text-white transition-all transform hover:scale-110 shadow-[0_0_50px_rgba(255,255,255,0.3)] inline-block">
                         Launch Your Dashboard</Link>
                 </div>
             </section>
