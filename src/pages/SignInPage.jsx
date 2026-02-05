@@ -12,9 +12,10 @@ export default function SignInPage() {
                 {/* Clerk Sign In */}
                 <div className="w-full max-w-md">
                     <SignIn
-                        routing="path"
-                        path="/sign-in"
+                        routing="virtual"
                         signUpUrl="/sign-up"
+                        fallbackRedirectUrl="/dashboard"
+                        forceRedirectUrl="/dashboard"
                         appearance={{
                             elements: {
                                 rootBox: "w-full",
