@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import TiltCard from './TiltCard'
 
 const CONFIGS = {
@@ -80,7 +81,7 @@ export default function ServerBuilder() {
     )
 
     return (
-        <section className="py-48 px-6 max-w-7xl mx-auto overflow-hidden">
+        <section className="py-24 md:py-48 px-6 max-w-7xl mx-auto overflow-hidden">
             <div className="grid lg:grid-cols-2 gap-24 items-center">
                 <div className="order-1 lg:order-1 relative">
                     <div className="absolute -left-24 top-1/2 -translate-y-1/2 w-1 h-64 bg-gradient-to-b from-transparent via-cyan-500/50 to-transparent hidden lg:block" />
@@ -210,9 +211,9 @@ export default function ServerBuilder() {
                                     <span>NVMe: ${pricing.diskCost.toFixed(0)}</span>
                                 </div>
 
-                                <button className="w-full py-6 bg-white text-black text-xl font-black rounded-[2rem] hover:bg-cyan-400 hover:text-white transition-all transform hover:scale-[1.02] active:scale-95 shadow-[0_20px_40px_rgba(0,0,0,0.3)]">
+                                <Link to="/dashboard" className="block w-full py-6 bg-white text-black text-xl font-black rounded-[2rem] hover:bg-cyan-400 hover:text-white transition-all transform hover:scale-[1.02] active:scale-95 shadow-[0_20px_40px_rgba(0,0,0,0.3)]">
                                     Initialize Dashboard
-                                </button>
+                                </Link>
                                 <p className="mt-6 text-slate-500 text-xs font-medium opacity-50 uppercase tracking-widest">Prorated per-second billing</p>
                             </div>
                         </div>

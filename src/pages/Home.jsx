@@ -52,9 +52,19 @@ export default function Home() {
             const element = document.getElementById(id)
             if (element) {
                 setTimeout(() => {
-                    element.scrollIntoView({ behavior: 'smooth' })
+                    const navbarHeight = 80 // Approximate navbar height
+                    const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
+                    const offsetPosition = elementPosition - navbarHeight
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    })
                 }, 100)
             }
+        } else {
+            // If no hash, scroll to top
+            window.scrollTo(0, 0)
         }
     }, [location])
 
@@ -114,13 +124,13 @@ export default function Home() {
                                     delay: 0.5,
                                     ease: [0.16, 1, 0.3, 1]
                                 }}
-                                className="block bg-gradient-to-r from-cyan-300 via-cyan-400 to-blue-500 bg-clip-text text-transparent"
+                                className="block bg-gradient-to-r from-cyan-300 via-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-wider"
                             >
                                 Simplified.
                             </motion.span>
                         </div>
                     </h1>
-                    <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
+                    <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed tracking-wide">
                         WysCloudBase gives you the raw muscle of DigitalOcean infrastructure without the headache of complex configurations. Build, scale, and innovate in minutes.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -136,15 +146,22 @@ export default function Home() {
 
             {/* LOGO MARQUEE */}
             <section className="py-12 bg-white/5 border-y border-white/5 overflow-hidden">
-                <div className="flex gap-12 animate-marquee whitespace-nowrap items-center opacity-50 hover:opacity-100 transition-opacity">
-                    <div className="flex gap-24 shrink-0 px-12">
+                <div className="flex gap-24 animate-marquee whitespace-nowrap items-center opacity-50 hover:opacity-100 transition-opacity">
+                    <div className="flex gap-24 shrink-0">
                         <span className="text-2xl font-bold italic tracking-widest uppercase">DigitalOcean</span>
                         <span className="text-2xl font-bold italic tracking-widest uppercase">NVIDIA GPU</span>
                         <span className="text-2xl font-bold italic tracking-widest uppercase">Kubernetes</span>
                         <span className="text-2xl font-bold italic tracking-widest uppercase">Redis</span>
                         <span className="text-2xl font-bold italic tracking-widest uppercase">PostgreSQL</span>
                     </div>
-                    <div className="flex gap-24 shrink-0 px-12">
+                    <div className="flex gap-24 shrink-0">
+                        <span className="text-2xl font-bold italic tracking-widest uppercase">DigitalOcean</span>
+                        <span className="text-2xl font-bold italic tracking-widest uppercase">NVIDIA GPU</span>
+                        <span className="text-2xl font-bold italic tracking-widest uppercase">Kubernetes</span>
+                        <span className="text-2xl font-bold italic tracking-widest uppercase">Redis</span>
+                        <span className="text-2xl font-bold italic tracking-widest uppercase">PostgreSQL</span>
+                    </div>
+                    <div className="flex gap-24 shrink-0">
                         <span className="text-2xl font-bold italic tracking-widest uppercase">DigitalOcean</span>
                         <span className="text-2xl font-bold italic tracking-widest uppercase">NVIDIA GPU</span>
                         <span className="text-2xl font-bold italic tracking-widest uppercase">Kubernetes</span>
@@ -157,9 +174,9 @@ export default function Home() {
             {/* BRUTALIST HOOK */}
             <motion.section
                 {...fadeInUp}
-                className="py-32 px-6 max-w-7xl mx-auto text-center"
+                className="py-16 md:py-32 px-6 max-w-7xl mx-auto text-center"
             >
-                <h2 className="text-4xl md:text-7xl font-black tracking-tighter leading-[1.1]">
+                <h2 className="text-4xl md:text-7xl font-black tracking-wider leading-[1.1]">
                     &quot;Elite <span className="text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.4)]">Infrastructure</span>. Zero Complexity.&quot;
                 </h2>
             </motion.section>
@@ -245,7 +262,7 @@ export default function Home() {
             {/* LIQUID GLASS MANIFESTO */}
             <motion.section
                 {...fadeInUp}
-                className="py-32 bg-[#0d1425]"
+                className="py-16 md:py-32 bg-[#0d1425]"
             >
                 <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-20 items-center">
                     <div className="relative">
@@ -361,7 +378,7 @@ export default function Home() {
             <motion.section
                 {...fadeInUp}
                 id="pricing"
-                className="py-32 px-6"
+                className="py-16 md:py-32 px-6"
             >
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-20">
@@ -395,7 +412,7 @@ export default function Home() {
                                                 Global CDN Access
                                             </li>
                                         </ul>
-                                        <Link to="/pricing" className="w-full py-4 glass rounded-2xl hover:bg-white/10 font-bold text-center block">Start Free Trial</Link>
+                                        <Link to="/sign-up?plan=hobbyist" className="w-full py-4 glass rounded-2xl hover:bg-white/10 font-bold text-center block">Start Free Trial</Link>
                                     </div>
                                 </div>
                             </TiltCard>
@@ -428,7 +445,7 @@ export default function Home() {
                                                 Daily Backups Included
                                             </li>
                                         </ul>
-                                        <Link to="/contact" className="w-full py-4 bg-cyan-600 rounded-2xl hover:bg-cyan-500 font-bold shadow-[0_0_20px_rgba(8,145,178,0.4)] text-center block">Choose Startup</Link>
+                                        <Link to="/sign-up?plan=startup" className="w-full py-4 bg-cyan-600 rounded-2xl hover:bg-cyan-500 font-bold shadow-[0_0_20px_rgba(8,145,178,0.4)] text-center block">Choose Startup</Link>
                                     </div>
                                 </div>
                             </TiltCard>
@@ -472,7 +489,7 @@ export default function Home() {
             {/* SOCIAL PULSE */}
             <motion.section
                 {...fadeInUp}
-                className="py-24 bg-white/5"
+                className="py-16 md:py-24 bg-white/5"
             >
                 <div className="max-w-7xl mx-auto px-6 overflow-hidden">
                     <div className="grid md:grid-cols-2 gap-24 items-center">
@@ -513,7 +530,7 @@ export default function Home() {
                             <motion.div {...slideInRight}>
                                 <Link to="/about" className="glass rounded-3xl p-6 aspect-square flex items-end block relative overflow-hidden group">
                                     <ShimmerGlare />
-                                    <img src="/images/Freelancers.jpg" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-700" alt="Freelancers" />
+                                    <img src="/images/Freelancers.jpg" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-700" alt="Freelancers" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] to-transparent opacity-60"></div>
                                     <h5 className="text-xl font-bold relative z-10"></h5>
                                 </Link>
@@ -521,7 +538,7 @@ export default function Home() {
                             <motion.div {...slideInRight} transition={{ ...slideInRight.transition, delay: 0.2 }}>
                                 <Link to="/about" className="glass rounded-3xl p-6 h-80 flex items-end block relative overflow-hidden group">
                                     <ShimmerGlare />
-                                    <img src="/images/Students.jpg" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-700" alt="Students" />
+                                    <img src="/images/Students.jpg" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-700" alt="Students" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] to-transparent opacity-60"></div>
                                     <h5 className="text-xl font-bold relative z-10"></h5>
                                 </Link>
@@ -529,7 +546,7 @@ export default function Home() {
                             <motion.div {...slideInRight} transition={{ ...slideInRight.transition, delay: 0.1 }}>
                                 <Link to="/about" className="glass rounded-3xl p-6 h-64 flex items-end block relative overflow-hidden group">
                                     <ShimmerGlare />
-                                    <img src="/images/Startups.jpg" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-700" alt="Startups" />
+                                    <img src="/images/Startups.jpg" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-700" alt="Startups" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] to-transparent opacity-60"></div>
                                     <h5 className="text-xl font-bold relative z-10"></h5>
                                 </Link>
@@ -537,7 +554,7 @@ export default function Home() {
                             <motion.div {...slideInRight} transition={{ ...slideInRight.transition, delay: 0.3 }}>
                                 <Link to="/services/gpu" className="glass rounded-3xl p-6 aspect-video flex items-end block relative overflow-hidden group">
                                     <ShimmerGlare />
-                                    <img src="/images/AILabs.jpg" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-700" alt="AI Labs" />
+                                    <img src="/images/AILabs.jpg" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-700" alt="AI Labs" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] to-transparent opacity-60"></div>
                                     <h5 className="text-xl font-bold relative z-10"></h5>
                                 </Link>
@@ -550,31 +567,31 @@ export default function Home() {
             {/* STICKY CARDS */}
             <motion.section
                 {...fadeInUp}
-                className="py-32 max-w-5xl mx-auto px-6"
+                className="py-16 md:py-32 max-w-5xl mx-auto px-6"
             >
-                <div className="space-y-24">
-                    <div className="sticky top-24 glass p-12 rounded-[3rem] shadow-2xl bg-[#0d1425] border-cyan-500/20 h-[400px] flex flex-col justify-center overflow-hidden relative group">
+                <div className="space-y-12">
+                    <div className="sticky top-24 glass p-8 md:p-12 rounded-[3rem] shadow-2xl bg-[#0d1425] border-cyan-500/20 h-[350px] md:h-[400px] flex flex-col justify-center overflow-hidden relative group">
                         <ShimmerGlare />
                         <div className="relative z-10">
-                            <span className="text-cyan-400 font-mono mb-4 block">PHASE 01</span>
-                            <h3 className="text-4xl font-bold mb-4">Instant Provisioning</h3>
-                            <p className="text-lg text-slate-400">We don&apos;t make you wait. Our API talks to DigitalOcean instantly, handing you the keys to your new home in under a minute.</p>
+                            <span className="text-cyan-400 font-mono mb-4 block text-xs md:text-sm">PHASE 01</span>
+                            <h3 className="text-2xl md:text-4xl font-bold mb-4">Instant Provisioning</h3>
+                            <p className="text-base md:text-lg text-slate-400">We don&apos;t make you wait. Our API talks to DigitalOcean instantly, handing you the keys to your new home in under a minute.</p>
                         </div>
                     </div>
-                    <div className="sticky top-28 glass p-12 rounded-[3rem] shadow-2xl bg-[#111a31] border-cyan-500/20 h-[400px] flex flex-col justify-center translate-y-4 overflow-hidden relative group">
+                    <div className="sticky top-28 glass p-8 md:p-12 rounded-[3rem] shadow-2xl bg-[#111a31] border-cyan-500/20 h-[350px] md:h-[400px] flex flex-col justify-center translate-y-4 overflow-hidden relative group">
                         <ShimmerGlare />
                         <div className="relative z-10">
-                            <span className="text-cyan-400 font-mono mb-4 block">PHASE 02</span>
-                            <h3 className="text-4xl font-bold mb-4">Zero Configuration</h3>
-                            <p className="text-lg text-slate-400">Passwords? Emailed. IP? Assigned. OS? Pre-installed. You just log in and start your project immediately.</p>
+                            <span className="text-cyan-400 font-mono mb-4 block text-xs md:text-sm">PHASE 02</span>
+                            <h3 className="text-2xl md:text-4xl font-bold mb-4">Zero Configuration</h3>
+                            <p className="text-base md:text-lg text-slate-400">Passwords? Emailed. IP? Assigned. OS? Pre-installed. You just log in and start your project immediately.</p>
                         </div>
                     </div>
-                    <div className="sticky top-32 glass p-12 rounded-[3rem] shadow-2xl bg-[#15203d] border-cyan-500/20 h-[400px] flex flex-col justify-center translate-y-8 overflow-hidden relative group">
+                    <div className="sticky top-32 glass p-8 md:p-12 rounded-[3rem] shadow-2xl bg-[#15203d] border-cyan-500/20 h-[350px] md:h-[400px] flex flex-col justify-center translate-y-8 overflow-hidden relative group">
                         <ShimmerGlare />
                         <div className="relative z-10">
-                            <span className="text-cyan-400 font-mono mb-4 block">PHASE 03</span>
-                            <h3 className="text-4xl font-bold mb-4">Unified Control</h3>
-                            <p className="text-lg text-slate-400">Manage your entire empire from one dashboard. No command line required—unless you really want it.</p>
+                            <span className="text-cyan-400 font-mono mb-4 block text-xs md:text-sm">PHASE 03</span>
+                            <h3 className="text-2xl md:text-4xl font-bold mb-4">Unified Control</h3>
+                            <p className="text-base md:text-lg text-slate-400">Manage your entire empire from one dashboard. No command line required—unless you really want it.</p>
                         </div>
                     </div>
                 </div>
@@ -584,7 +601,7 @@ export default function Home() {
             <FAQSection />
 
             {/* CTA */}
-            <section id="cta" className="py-48 px-6 relative overflow-hidden">
+            <section id="cta" className="py-24 md:py-48 px-6 relative overflow-hidden">
                 <div className="absolute inset-0 bg-cyan-600/20 z-0"></div>
                 <img src="/images/image-6.png" className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-30 z-0" loading="lazy" />
                 <div className="relative z-10 max-w-4xl mx-auto text-center">
@@ -643,7 +660,7 @@ function FAQSection() {
     ]
 
     return (
-        <section id="faq" className="py-32 px-6 max-w-3xl mx-auto">
+        <section id="faq" className="py-16 md:py-32 px-6 max-w-3xl mx-auto">
             <h2 className="text-5xl font-bold mb-16 text-center">Any <span className="text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.4)]">Questions?</span></h2>
             <div className="space-y-4">
                 {faqs.map((faq, i) => (

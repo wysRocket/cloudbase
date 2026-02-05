@@ -110,19 +110,25 @@ export default function Navbar() {
                         ))}
                         <SignedOut>
                             <Link
-                                to="/sign-in"
-                                className={`${hoverColor} transition-colors`}
-                            >
-                                Sign In
-                            </Link>
-                            <Link
                                 to="/contact"
                                 className="bg-cyan-600 hover:bg-cyan-500 px-5 py-2 rounded-full text-white transition-all transform hover:scale-105"
                             >
                                 Contact Sales
                             </Link>
+                            <Link
+                                to="/sign-in"
+                                className={`${hoverColor} transition-colors`}
+                            >
+                                Sign In
+                            </Link>
                         </SignedOut>
                         <SignedIn>
+                            <Link
+                                to="/dashboard"
+                                className={`${hoverColor} transition-colors`}
+                            >
+                                Account
+                            </Link>
                             <UserButton
                                 afterSignOutUrl="/"
                                 appearance={{
@@ -154,7 +160,7 @@ export default function Navbar() {
                             <div className="p-6 flex flex-col gap-4 text-center text-slate-100">
                                 <Link to="/#overview" onClick={() => setMobileOpen(false)} className="hover:text-white transition-colors">Overview</Link>
                                 <div className="border-t border-white/10 pt-4">
-                                    <p className="text-cyan-400 text-sm mb-2">Services</p>
+                                    <p className="text-cyan-400 text-sm mb-2 font-semibold">Services</p>
                                     {navLinks[1].submenu.map((sub) => (
                                         <Link
                                             key={sub.name}
@@ -170,21 +176,28 @@ export default function Navbar() {
                                 <Link to="/docs" onClick={() => setMobileOpen(false)} className="hover:text-white transition-colors">Docs</Link>
                                 <SignedOut>
                                     <Link
-                                        to="/sign-in"
-                                        onClick={() => setMobileOpen(false)}
-                                        className="border border-cyan-600 py-3 rounded-lg w-full block"
-                                    >
-                                        Sign In
-                                    </Link>
-                                    <Link
                                         to="/contact"
                                         onClick={() => setMobileOpen(false)}
                                         className="bg-cyan-600 py-3 rounded-lg w-full block"
                                     >
                                         Contact Sales
                                     </Link>
+                                    <Link
+                                        to="/sign-in"
+                                        onClick={() => setMobileOpen(false)}
+                                        className="border border-cyan-600 py-3 rounded-lg w-full block"
+                                    >
+                                        Sign In
+                                    </Link>
                                 </SignedOut>
                                 <SignedIn>
+                                    <Link
+                                        to="/dashboard"
+                                        onClick={() => setMobileOpen(false)}
+                                        className="border border-cyan-600 py-3 rounded-lg w-full block"
+                                    >
+                                        Account
+                                    </Link>
                                     <div className="flex justify-center">
                                         <UserButton afterSignOutUrl="/" />
                                     </div>

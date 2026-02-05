@@ -46,7 +46,7 @@
     }
 
     100% {
-        transform: translateX(-50%);
+        transform: translateX(calc(-100% / 3));
     }
 }
 
@@ -63,7 +63,7 @@
 }
 
 .animate-marquee {
-    animation: marquee 30s linear infinite;
+    animation: marquee 40s linear infinite;
 }
 
 @keyframes shimmer {
@@ -133,11 +133,6 @@ body {
     pointer-events: none;
     z-index: 10001;
     mix-blend-mode: difference;
-    transition: transform 0.1s ease;
-}
-
-.cursor-dot.hovered {
-    transform: scale(2);
 }
 
 .cursor-ring {
@@ -148,12 +143,6 @@ body {
     position: fixed;
     pointer-events: none;
     z-index: 10000;
-    transition: all 0.15s ease-out;
-}
-
-.cursor-ring.hovered {
-    transform: scale(1.5);
-    border-color: rgba(34, 211, 238, 0.8);
 }
 
 /* Card Underglow (Halo Style) */

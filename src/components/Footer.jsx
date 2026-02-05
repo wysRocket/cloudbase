@@ -9,8 +9,6 @@ const footerLinks = {
     ],
     connect: [
         { name: 'Support Center', href: '/support' },
-        { name: 'Twitter / X', href: 'https://twitter.com/wyscloudbase' },
-        { name: 'Discord Community', href: 'https://discord.gg/wyscloud' },
         { name: 'Contact Support', href: '/contact' },
     ],
     services: [
@@ -75,14 +73,43 @@ export default function Footer() {
                         </ul>
                     </div>
                 </div>
-                <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-slate-600">
-                    <p>© 2026 WysCloudBase. All rights reserved.</p>
-                    <div className="flex gap-8">
-                        <img
-                            src="/images/image-7.png"
-                            className="h-6 w-auto grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all"
-                            alt="Infrastructure Partner"
-                        />
+                <div className="flex flex-col gap-6 mb-12">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 text-sm text-slate-600">
+                        <div className="flex flex-col gap-2">
+                            <p>© 2026 WysCloudBase. All rights reserved.</p>
+                            <p className="text-xs">WysCloudBase LLC | Registration: DE-12345678 | VAT: US-987654321</p>
+                        </div>
+                        <div className="flex gap-8 items-center">
+                            <div className="flex items-center gap-4">
+                                <span className="text-xs text-slate-500 uppercase tracking-wider">We Accept:</span>
+                                <div className="flex gap-3 items-center">
+                                    <svg className="h-6 w-auto opacity-50 hover:opacity-100 transition-opacity" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect width="48" height="32" rx="4" fill="#1A1F71"/>
+                                        <text x="24" y="20" fontSize="10" fill="white" textAnchor="middle" fontWeight="bold">VISA</text>
+                                    </svg>
+                                    <svg className="h-6 w-auto opacity-50 hover:opacity-100 transition-opacity" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect width="48" height="32" rx="4" fill="#EB001B"/>
+                                        <circle cx="18" cy="16" r="8" fill="#FF5F00"/>
+                                        <circle cx="30" cy="16" r="8" fill="#F79E1B"/>
+                                    </svg>
+                                    <svg className="h-6 w-auto opacity-50 hover:opacity-100 transition-opacity" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect width="48" height="32" rx="4" fill="white" stroke="#E5E7EB"/>
+                                        <text x="24" y="14" fontSize="7" fill="#5F6368" textAnchor="middle" fontWeight="600">Google</text>
+                                        <text x="24" y="22" fontSize="7" fill="#5F6368" textAnchor="middle" fontWeight="600">Pay</text>
+                                    </svg>
+                                    <svg className="h-6 w-auto opacity-50 hover:opacity-100 transition-opacity" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect width="48" height="32" rx="4" fill="black"/>
+                                        <text x="10" y="20" fontSize="10" fill="white" fontWeight="bold"></text>
+                                        <text x="24" y="20" fontSize="8" fill="white" textAnchor="middle" fontWeight="600">Pay</text>
+                                    </svg>
+                                </div>
+                            </div>
+                            <img
+                                src="/images/image-7.png"
+                                className="h-6 w-auto grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all"
+                                alt="Infrastructure Partner"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

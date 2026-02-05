@@ -12,6 +12,7 @@ export default function Docs() {
                 { title: 'Quick Start Guide', desc: 'Deploy your first server in under 5 minutes' },
                 { title: 'Account Setup', desc: 'Configure your account and billing' },
                 { title: 'Dashboard Overview', desc: 'Learn the main dashboard features' },
+                { title: 'First Deployment', desc: 'Step-by-step guide to your first deployment' },
             ]
         },
         'vps': {
