@@ -3,7 +3,6 @@ import { useUser } from '@clerk/clerk-react'
 import { useEffect } from 'react'
 import DashboardSidebar from '../components/dashboard/DashboardSidebar'
 import SmoothScroll from '../components/SmoothScroll'
-import CustomCursor from '../components/CustomCursor'
 
 export default function DashboardLayout({ children }) {
     const { isLoaded, isSignedIn } = useUser()
@@ -11,7 +10,7 @@ export default function DashboardLayout({ children }) {
 
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
-            navigate('/sign-in')
+            navigate('/sign-in', { replace: true })
         }
     }, [isLoaded, isSignedIn, navigate])
 
@@ -26,7 +25,6 @@ export default function DashboardLayout({ children }) {
     return (
         <div className="bg-[#0a0f1d] min-h-screen text-slate-100 font-sans selection:bg-cyan-500 selection:text-white">
             <SmoothScroll />
-            <CustomCursor />
 
             <div className="flex h-screen overflow-hidden">
                 <DashboardSidebar />

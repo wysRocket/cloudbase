@@ -52,8 +52,8 @@ export default function Navbar() {
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-2">
-                        <div className={`transition-all duration-300 ${scrolled ? 'h-8' : 'h-10'} w-auto overflow-hidden`}>
-                            <img src="/images/logo-n.png" className="h-full w-auto object-cover scale-150" alt="WysCloudBase Logo" loading="lazy" />
+                        <div className={`transition-all duration-300 ${scrolled ? 'h-8' : 'h-10'} w-auto`}>
+                            <img src="/images/logo-1n.svg" className="h-full w-auto object-contain" alt="WysCloudBase Logo" />
                         </div>
                         <span className={`text-xl font-bold tracking-tighter transition-colors ${textColor}`}>WysCloudBase</span>
                         <div className="hidden lg:block ml-4">
