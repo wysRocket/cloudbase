@@ -24,14 +24,14 @@ const staggerContainer = {
 }
 
 const slideInLeft = {
-    initial: { opacity: 0, x: -100 },
+    initial: { opacity: 0, x: -50 },
     whileInView: { opacity: 1, x: 0 },
     viewport: { once: false, amount: 0.2 },
     transition: { duration: 0.8, ease: "easeOut" }
 }
 
 const slideInRight = {
-    initial: { opacity: 0, x: 100 },
+    initial: { opacity: 0, x: 50 },
     whileInView: { opacity: 1, x: 0 },
     viewport: { once: false, amount: 0.2 },
     transition: { duration: 0.8, ease: "easeOut" }
@@ -279,7 +279,7 @@ export default function Home() {
                             ].map((item, i) => (
                                 <motion.li
                                     key={i}
-                                    initial={{ opacity: 0.2, x: -20 }}
+                                    initial={{ opacity: 0.2, x: -10 }}
                                     whileInView={{ opacity: 1, x: 0 }}
                                     viewport={{ amount: 0.8 }}
                                     transition={{ duration: 0.5, delay: i * 0.1 }}
@@ -327,7 +327,7 @@ export default function Home() {
                         ].map((item, i) => (
                             <motion.div
                                 key={i}
-                                initial={{ opacity: 0.4, x: -20 }}
+                                initial={{ opacity: 0.4, x: -10 }}
                                 whileInView={{ opacity: 1, x: 0 }}
                                 viewport={{ amount: 0.8 }}
                                 transition={{ duration: 0.5, delay: i * 0.1 }}
