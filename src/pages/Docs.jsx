@@ -1,56 +1,27 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
+import { docsData } from '../data/docsData'
+
+// Simple fallback renderer if react-markdown isn't installed or desired yet, 
+// though for this task I will just render lines or simple HTML structure if needed.
+// Given constraints, I'll update it to render the content string cleanly.
 
 export default function Docs() {
     const [activeSection, setActiveSection] = useState('getting-started')
+    const [activeArticle, setActiveArticle] = useState(null)
 
-    const sections = {
-        'getting-started': {
-            title: 'Getting Started',
-            content: [
-                { title: 'Quick Start Guide', desc: 'Deploy your first server in under 5 minutes' },
-                { title: 'Account Setup', desc: 'Configure your account and billing' },
-                { title: 'Dashboard Overview', desc: 'Learn the main dashboard features' },
-                { title: 'First Deployment', desc: 'Step-by-step guide to your first deployment' },
-            ]
-        },
-        'vps': {
-            title: 'VPS Hosting',
-            content: [
-                { title: 'Creating a VPS', desc: 'Step-by-step VPS deployment' },
-                { title: 'SSH Access', desc: 'Connecting to your server' },
-                { title: 'Server Management', desc: 'Reboots, snapshots, and more' },
-                { title: 'Scaling Resources', desc: 'Upgrade CPU, RAM, and storage' },
-            ]
-        },
-        'kubernetes': {
-            title: 'Kubernetes',
-            content: [
-                { title: 'Creating Clusters', desc: 'Deploy managed Kubernetes' },
-                { title: 'kubectl Setup', desc: 'Configure local kubectl access' },
-                { title: 'Deployments', desc: 'Deploy your applications' },
-                { title: 'Ingress & Load Balancers', desc: 'Expose your services' },
-            ]
-        },
-        'database': {
-            title: 'Databases',
-            content: [
-                { title: 'Creating Databases', desc: 'PostgreSQL, MySQL, Redis, MongoDB' },
-                { title: 'Connection Strings', desc: 'Connect your applications' },
-                { title: 'Backups & Restore', desc: 'Manage your data safely' },
-                { title: 'Scaling', desc: 'Resize your database' },
-            ]
-        },
-        'api': {
-            title: 'API Reference',
-            content: [
-                { title: 'Authentication', desc: 'API keys and tokens' },
-                { title: 'VPS Endpoints', desc: 'Manage VPS via API' },
-                { title: 'Database Endpoints', desc: 'Manage databases via API' },
-                { title: 'Rate Limits', desc: 'API usage limits' },
-            ]
-        }
+    const sections = docsData
+
+    const handleArticleClick = (article) => {
+        setActiveArticle(article)
+        // Scroll to top of content
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+
+    const handleSectionChange = (key) => {
+        setActiveSection(key)
+        setActiveArticle(null)
     }
 
     return (
@@ -76,7 +47,7 @@ export default function Docs() {
                             </div>
                         </h1>
                         <p className="text-xl text-slate-400 max-w-2xl">
-                            Everything you need to build and scale on WysCloudBase.
+                            Everything you need to build and scale on WysCloudTop.
                         </p>
                     </motion.div>
                 </div>
@@ -92,10 +63,11 @@ export default function Docs() {
                             {Object.entries(sections).map(([key, section]) => (
                                 <li key={key}>
                                     <button
-                                        onClick={() => setActiveSection(key)}
-                                        className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${activeSection === key ? 'bg-cyan-600 text-white' : 'hover:bg-white/10'
+                                        onClick={() => handleSectionChange(key)}
+                                        className={`w-full text-left px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${activeSection === key ? 'bg-cyan-600/20 text-cyan-400 border border-cyan-500/30' : 'hover:bg-white/10 text-slate-400 hover:text-white'
                                             }`}
                                     >
+                                        <span>{section.icon}</span>
                                         {section.title}
                                     </button>
                                 </li>
@@ -104,23 +76,76 @@ export default function Docs() {
                     </nav>
 
                     {/* Content */}
-                    <div className="md:col-span-3">
-                        <h2 className="text-3xl font-bold mb-8">{sections[activeSection].title}</h2>
-                        <div className="space-y-4">
-                            {sections[activeSection].content.map((item, i) => (
-                                <div key={i} className="glass p-6 rounded-2xl hover:bg-white/10 transition-all cursor-pointer group">
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <h3 className="text-xl font-bold mb-1 group-hover:text-cyan-400 transition-colors">{item.title}</h3>
-                                            <p className="text-slate-400">{item.desc}</p>
-                                        </div>
-                                        <svg className="w-6 h-6 text-slate-400 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                        </svg>
+                    <div className="md:col-span-3 min-h-[600px]">
+                        {activeArticle ? (
+                            <motion.div
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="glass p-8 rounded-2xl"
+                            >
+                                <button
+                                    onClick={() => setActiveArticle(null)}
+                                    className="mb-6 text-sm text-cyan-400 hover:text-cyan-300 flex items-center gap-2 transition-colors"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                    Back to {sections[activeSection].title}
+                                </button>
+
+                                <article className="prose prose-invert max-w-none">
+                                    {/* Simple Markdown Rendering Fallback */}
+                                    <div className="whitespace-pre-wrap font-sans text-slate-300">
+                                        {activeArticle.content.split('\n').map((line, i) => {
+                                            if (line.startsWith('# ')) return <h1 key={i} className="text-3xl font-bold text-white mb-6 mt-2">{line.replace('# ', '')}</h1>
+                                            if (line.startsWith('## ')) return <h2 key={i} className="text-2xl font-bold text-white mb-4 mt-8">{line.replace('## ', '')}</h2>
+                                            if (line.startsWith('### ')) return <h3 key={i} className="text-xl font-bold text-white mb-3 mt-6">{line.replace('### ', '')}</h3>
+                                            if (line.startsWith('- ')) return <li key={i} className="ml-4 mb-2">{line.replace('- ', '')}</li>
+                                            if (line.startsWith('1. ')) return <li key={i} className="ml-4 mb-2 list-decimal">{line.replace(/^\d+\. /, '')}</li>
+                                            if (line.startsWith('```')) return null // Skip code block markers for simple render
+                                            if (line.trim() === '') return <br key={i} />
+                                            return <p key={i} className="mb-4 leading-relaxed">{line}</p>
+                                        })}
                                     </div>
+                                </article>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                            >
+                                <h2 className="text-3xl font-bold mb-2 flex items-center gap-3">
+                                    <span className="text-4xl">{sections[activeSection].icon}</span>
+                                    {sections[activeSection].title}
+                                </h2>
+                                <p className="text-slate-400 mb-8 text-lg">{sections[activeSection].description}</p>
+
+                                <div className="space-y-4">
+                                    {sections[activeSection].articles.map((item, i) => (
+                                        <motion.div
+                                            key={i}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: i * 0.05 }}
+                                            onClick={() => handleArticleClick(item)}
+                                            className="glass p-6 rounded-2xl hover:bg-white/10 transition-all cursor-pointer group border border-white/5 hover:border-cyan-500/30"
+                                        >
+                                            <div className="flex justify-between items-center">
+                                                <div>
+                                                    <h3 className="text-xl font-bold mb-2 group-hover:text-cyan-400 transition-colors">{item.title}</h3>
+                                                    <p className="text-slate-400">{item.desc}</p>
+                                                </div>
+                                                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-cyan-500/20 transition-colors">
+                                                    <svg className="w-5 h-5 text-slate-400 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
+                            </motion.div>
+                        )}
                     </div>
                 </div>
             </section>
@@ -131,7 +156,7 @@ export default function Docs() {
                     <h2 className="text-3xl font-bold mb-4">Need Help?</h2>
                     <p className="text-slate-400 mb-8">Can&apos;t find what you&apos;re looking for? Our support team is here to help.</p>
                     <div className="flex gap-4 justify-center flex-wrap">
-                        <Link to="/support" className="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-full font-bold transition-all">
+                        <Link to="/support" className="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-full font-bold transition-all shadow-lg shadow-cyan-500/20">
                             Visit Support Center
                         </Link>
                         <Link to="/contact" className="px-6 py-3 glass rounded-full font-bold hover:bg-white/10 transition-all">
