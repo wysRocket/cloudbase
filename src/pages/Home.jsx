@@ -124,13 +124,13 @@ export default function Home() {
                                     delay: 0.5,
                                     ease: [0.16, 1, 0.3, 1]
                                 }}
-                                className="block bg-gradient-to-r from-cyan-300 via-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-wider"
+                                className="block bg-gradient-to-r from-cyan-300 via-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-[0.15em]"
                             >
                                 Simplified.
                             </motion.span>
                         </div>
                     </h1>
-                    <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed tracking-wide">
+                    <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed tracking-[0.03em]">
                         WysCloudBase gives you the raw muscle of DigitalOcean infrastructure without the headache of complex configurations. Build, scale, and innovate in minutes.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -146,28 +146,16 @@ export default function Home() {
 
             {/* LOGO MARQUEE */}
             <section className="py-12 bg-white/5 border-y border-white/5 overflow-hidden">
-                <div className="flex gap-24 animate-marquee whitespace-nowrap items-center opacity-50 hover:opacity-100 transition-opacity">
-                    <div className="flex gap-24 shrink-0">
-                        <span className="text-2xl font-bold italic tracking-widest uppercase">DigitalOcean</span>
-                        <span className="text-2xl font-bold italic tracking-widest uppercase">NVIDIA GPU</span>
-                        <span className="text-2xl font-bold italic tracking-widest uppercase">Kubernetes</span>
-                        <span className="text-2xl font-bold italic tracking-widest uppercase">Redis</span>
-                        <span className="text-2xl font-bold italic tracking-widest uppercase">PostgreSQL</span>
-                    </div>
-                    <div className="flex gap-24 shrink-0">
-                        <span className="text-2xl font-bold italic tracking-widest uppercase">DigitalOcean</span>
-                        <span className="text-2xl font-bold italic tracking-widest uppercase">NVIDIA GPU</span>
-                        <span className="text-2xl font-bold italic tracking-widest uppercase">Kubernetes</span>
-                        <span className="text-2xl font-bold italic tracking-widest uppercase">Redis</span>
-                        <span className="text-2xl font-bold italic tracking-widest uppercase">PostgreSQL</span>
-                    </div>
-                    <div className="flex gap-24 shrink-0">
-                        <span className="text-2xl font-bold italic tracking-widest uppercase">DigitalOcean</span>
-                        <span className="text-2xl font-bold italic tracking-widest uppercase">NVIDIA GPU</span>
-                        <span className="text-2xl font-bold italic tracking-widest uppercase">Kubernetes</span>
-                        <span className="text-2xl font-bold italic tracking-widest uppercase">Redis</span>
-                        <span className="text-2xl font-bold italic tracking-widest uppercase">PostgreSQL</span>
-                    </div>
+                <div className="flex gap-12 md:gap-24 animate-marquee whitespace-nowrap items-center opacity-50 hover:opacity-100 transition-opacity">
+                    {[...Array(4)].map((_, groupIndex) => (
+                        <div key={groupIndex} className="flex gap-12 md:gap-24 shrink-0">
+                            <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase">DigitalOcean</span>
+                            <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase">NVIDIA GPU</span>
+                            <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase">Kubernetes</span>
+                            <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase">Redis</span>
+                            <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase">PostgreSQL</span>
+                        </div>
+                    ))}
                 </div>
             </section>
 
@@ -299,27 +287,12 @@ export default function Home() {
             {/* HOW IT WORKS */}
             <section
                 id="overview"
-                className="py-24 px-6 max-w-7xl mx-auto grid md:grid-cols-2 gap-12 overflow-hidden"
+                className="py-24 px-4 md:px-6 max-w-7xl mx-auto grid md:grid-cols-2 gap-12"
             >
-                <div className="md:col-span-1 sticky top-32 h-fit">
-                    <h2 className="text-5xl font-bold mb-6">How It <span className="text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.4)]">Works</span></h2>
-                    <p className="text-xl text-slate-400 mb-8">We&apos;ve stripped away the fluff so you can focus on building. It&apos;s a simple three-step dance to global scale.</p>
-                    <div className="space-y-4 relative">
-                        {/* Connecting Line SVG */}
-                        <svg className="absolute left-0 top-0 w-full h-full pointer-events-none z-0" style={{ overflow: 'visible' }}>
-                            <motion.path
-                                d="M 4 50 L 4 150 L 4 250"
-                                fill="none"
-                                stroke="#22d3ee"
-                                strokeWidth="2"
-                                strokeDasharray="1 10"
-                                initial={{ pathLength: 0, opacity: 0 }}
-                                whileInView={{ pathLength: 1, opacity: 0.3 }}
-                                viewport={{ amount: 0.5 }}
-                                transition={{ duration: 1.5, ease: "easeInOut" }}
-                            />
-                        </svg>
-
+                <div className="md:col-span-1 md:sticky md:top-32 h-fit">
+                    <h2 className="text-4xl md:text-5xl font-bold mb-6">How It <span className="text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.4)]">Works</span></h2>
+                    <p className="text-lg md:text-xl text-slate-400 mb-8">We&apos;ve stripped away the fluff so you can focus on building. It&apos;s a simple three-step dance to global scale.</p>
+                    <div className="space-y-4">
                         {[
                             { step: '01', title: 'Pick Your Base' },
                             { step: '02', title: 'Configure Your Specs' },
@@ -345,11 +318,17 @@ export default function Home() {
                         ))}
                     </div>
                 </div>
-                <motion.div {...slideInRight} className="space-y-12">
-                    <div className="aspect-video glass rounded-[2rem] overflow-hidden group">
-                        <img src="/images/image-5.png" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
+                <motion.div
+                    initial={{ opacity: 0, x: 0 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: false, amount: 0.2 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="space-y-12 w-full"
+                >
+                    <div className="aspect-video glass rounded-3xl md:rounded-[2rem] overflow-hidden group w-full">
+                        <img src="/images/image-5.png" className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700" loading="lazy" alt="Platform Overview" />
                     </div>
-                    <div className="p-8 h-[400px]">
+                    <div className="p-4 md:p-8 h-[300px] md:h-[400px] w-full">
                         <TerminalPeek />
                     </div>
                 </motion.div>
@@ -530,7 +509,7 @@ export default function Home() {
                             <motion.div {...slideInRight}>
                                 <Link to="/about" className="glass rounded-3xl p-6 aspect-square flex items-end block relative overflow-hidden group">
                                     <ShimmerGlare />
-                                    <img src="/images/Freelancers.jpg" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-700" alt="Freelancers" />
+                                    <img src="/images/Freelancers.jpg" className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" alt="Freelancers" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] to-transparent opacity-60"></div>
                                     <h5 className="text-xl font-bold relative z-10"></h5>
                                 </Link>
@@ -538,7 +517,7 @@ export default function Home() {
                             <motion.div {...slideInRight} transition={{ ...slideInRight.transition, delay: 0.2 }}>
                                 <Link to="/about" className="glass rounded-3xl p-6 h-80 flex items-end block relative overflow-hidden group">
                                     <ShimmerGlare />
-                                    <img src="/images/Students.jpg" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-700" alt="Students" />
+                                    <img src="/images/Students.jpg" className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" alt="Students" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] to-transparent opacity-60"></div>
                                     <h5 className="text-xl font-bold relative z-10"></h5>
                                 </Link>
@@ -546,7 +525,7 @@ export default function Home() {
                             <motion.div {...slideInRight} transition={{ ...slideInRight.transition, delay: 0.1 }}>
                                 <Link to="/about" className="glass rounded-3xl p-6 h-64 flex items-end block relative overflow-hidden group">
                                     <ShimmerGlare />
-                                    <img src="/images/Startups.jpg" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-700" alt="Startups" />
+                                    <img src="/images/Startups.jpg" className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" alt="Startups" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] to-transparent opacity-60"></div>
                                     <h5 className="text-xl font-bold relative z-10"></h5>
                                 </Link>
@@ -554,7 +533,7 @@ export default function Home() {
                             <motion.div {...slideInRight} transition={{ ...slideInRight.transition, delay: 0.3 }}>
                                 <Link to="/services/gpu" className="glass rounded-3xl p-6 aspect-video flex items-end block relative overflow-hidden group">
                                     <ShimmerGlare />
-                                    <img src="/images/AILabs.jpg" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-700" alt="AI Labs" />
+                                    <img src="/images/AILabs.jpg" className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" alt="AI Labs" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] to-transparent opacity-60"></div>
                                     <h5 className="text-xl font-bold relative z-10"></h5>
                                 </Link>

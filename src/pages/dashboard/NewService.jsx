@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useDashboard } from '../../context/DashboardContext'
 
 const serviceTypes = [
-    { id: 'vps', name: 'Virtual Private Server', icon: 'server', description: 'High-performance NVMe VPS', price: 'From $5/mo' },
-    { id: 'k8s', name: 'Kubernetes Cluster', icon: 'cubes', description: 'Managed K8s control plane', price: 'From $40/mo' },
-    { id: 'db', name: 'Managed Database', icon: 'database', description: 'Postgres, MySQL, Redis', price: 'From $15/mo' },
-    { id: 'gpu', name: 'GPU Instance', icon: 'chip', description: 'NVIDIA H100 / A100', price: 'From $2/hr' },
+    { id: 'vps', name: 'Virtual Private Server', icon: 'server', description: 'High-performance NVMe VPS', price: 'From $5/mo', typeName: 'VPS (Standard)' },
+    { id: 'k8s', name: 'Kubernetes Cluster', icon: 'cubes', description: 'Managed K8s control plane', price: 'From $40/mo', typeName: 'Kubernetes (Managed)' },
+    { id: 'db', name: 'Managed Database', icon: 'database', description: 'Postgres, MySQL, Redis', price: 'From $15/mo', typeName: 'Database (PG/MySQL)' },
+    { id: 'gpu', name: 'GPU Instance', icon: 'chip', description: 'NVIDIA H100 / A100', price: 'From $2/hr', typeName: 'GPU (H100)' },
 ]
 
 const regions = [
@@ -19,17 +20,28 @@ const regions = [
 
 export default function NewService() {
     const navigate = useNavigate()
+    const { addResource } = useDashboard()
     const [selectedType, setSelectedType] = useState(serviceTypes[0].id)
     const [selectedRegion, setSelectedRegion] = useState(regions[0].id)
     const [isDeploying, setIsDeploying] = useState(false)
 
     const handleDeploy = () => {
         setIsDeploying(true)
+
+        const typeInfo = serviceTypes.find(t => t.id === selectedType)
+        const regionInfo = regions.find(r => r.id === selectedRegion)
+
         // Simulate API call
         setTimeout(() => {
+            addResource({
+                name: `${typeInfo.id}-${Math.random().toString(36).substr(2, 5)}`,
+                type: typeInfo.typeName,
+                region: regionInfo.id,
+                price: typeInfo.price
+            })
             setIsDeploying(false)
             navigate('/dashboard')
-        }, 2000)
+        }, 1500)
     }
 
     return (
@@ -47,8 +59,8 @@ export default function NewService() {
                                     key={type.id}
                                     onClick={() => setSelectedType(type.id)}
                                     className={`text-left p-4 rounded-xl border transition-all ${selectedType === type.id
-                                            ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.1)]'
-                                            : 'bg-white/5 border-transparent hover:bg-white/10 text-slate-400 hover:text-white'
+                                        ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.1)]'
+                                        : 'bg-white/5 border-transparent hover:bg-white/10 text-slate-400 hover:text-white'
                                         }`}
                                 >
                                     <div className="font-bold mb-1">{type.name}</div>
@@ -68,8 +80,8 @@ export default function NewService() {
                                     key={region.id}
                                     onClick={() => setSelectedRegion(region.id)}
                                     className={`flex items-center gap-3 p-4 rounded-xl border transition-all ${selectedRegion === region.id
-                                            ? 'bg-cyan-500/10 border-cyan-500 text-white shadow-[0_0_15px_rgba(6,182,212,0.1)]'
-                                            : 'bg-white/5 border-transparent hover:bg-white/10 text-slate-400 hover:text-white'
+                                        ? 'bg-cyan-500/10 border-cyan-500 text-white shadow-[0_0_15px_rgba(6,182,212,0.1)]'
+                                        : 'bg-white/5 border-transparent hover:bg-white/10 text-slate-400 hover:text-white'
                                         }`}
                                 >
                                     <span className="text-2xl">{region.flag}</span>

@@ -10,8 +10,17 @@ export default function ScrollToTop() {
             window.history.scrollRestoration = 'manual'
         }
 
-        // Only scroll to top if there is no hash in the URL
-        if (!hash) {
+        if (hash) {
+            // If there's a hash, scroll to that element
+            setTimeout(() => {
+                const id = hash.replace('#', '')
+                const element = document.getElementById(id)
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }
+            }, 0)
+        } else {
+            // Scroll to top if no hash
             window.scrollTo(0, 0)
         }
     }, [pathname, hash])

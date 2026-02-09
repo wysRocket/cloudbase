@@ -21,37 +21,48 @@ import SignUpPage from './pages/SignUpPage'
 import DashboardLayout from './layouts/DashboardLayout'
 import Dashboard from './pages/dashboard/Dashboard'
 import NewService from './pages/dashboard/NewService'
+import ResourceList from './pages/dashboard/ResourceList'
+import Billing from './pages/dashboard/Billing'
+import Settings from './pages/dashboard/Settings'
 
 function App() {
     return (
-        <Routes>
-            <Route path="/" element={<Layout><Home /></Layout>} />
-            <Route path="/services/vps" element={<Layout><VPS /></Layout>} />
-            <Route path="/services/kubernetes" element={<Layout><Kubernetes /></Layout>} />
-            <Route path="/services/gpu" element={<Layout><GPU /></Layout>} />
-            <Route path="/services/database" element={<Layout><Database /></Layout>} />
-            <Route path="/services/game-servers" element={<Layout><GameServers /></Layout>} />
-            <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
-            <Route path="/docs" element={<Layout><Docs /></Layout>} />
-            <Route path="/about" element={<Layout><About /></Layout>} />
-            <Route path="/privacy" element={<Layout><Privacy /></Layout>} />
-            <Route path="/terms" element={<Layout><Terms /></Layout>} />
-            <Route path="/cookies" element={<Layout><Cookies /></Layout>} />
-            <Route path="/support" element={<Layout><Support /></Layout>} />
-            <Route path="/contact" element={<Layout><Contact /></Layout>} />
-            <Route path="/sign-in/*" element={<Layout><SignInPage /></Layout>} />
-            <Route path="/sign-up/*" element={<Layout><SignUpPage /></Layout>} />
+        <>
+            <ScrollToTop />
+            <Routes>
+                <Route path="/" element={<Layout><Home /></Layout>} />
+                <Route path="/services/vps" element={<Layout><VPS /></Layout>} />
+                <Route path="/services/kubernetes" element={<Layout><Kubernetes /></Layout>} />
+                <Route path="/services/gpu" element={<Layout><GPU /></Layout>} />
+                <Route path="/services/database" element={<Layout><Database /></Layout>} />
+                <Route path="/services/game-servers" element={<Layout><GameServers /></Layout>} />
+                <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
+                <Route path="/docs" element={<Layout><Docs /></Layout>} />
+                <Route path="/about" element={<Layout><About /></Layout>} />
+                <Route path="/privacy" element={<Layout><Privacy /></Layout>} />
+                <Route path="/terms" element={<Layout><Terms /></Layout>} />
+                <Route path="/cookies" element={<Layout><Cookies /></Layout>} />
+                <Route path="/support" element={<Layout><Support /></Layout>} />
+                <Route path="/contact" element={<Layout><Contact /></Layout>} />
+                <Route path="/sign-in/*" element={<Layout><SignInPage /></Layout>} />
+                <Route path="/sign-up/*" element={<Layout><SignUpPage /></Layout>} />
 
-            {/* Protected Dashboard Routes */}
-            <Route path="/dashboard/*" element={
-                <DashboardLayout>
-                    <Routes>
-                        <Route index element={<Dashboard />} />
-                        <Route path="new" element={<NewService />} />
-                    </Routes>
-                </DashboardLayout>
-            } />
-        </Routes>
+                {/* Protected Dashboard Routes */}
+                <Route path="/dashboard/*" element={
+                    <DashboardLayout>
+                        <Routes>
+                            <Route index element={<Dashboard />} />
+                            <Route path="new" element={<NewService />} />
+                            <Route path="vps" element={<ResourceList title="VPS Instances" typeFilter="VPS" />} />
+                            <Route path="kubernetes" element={<ResourceList title="Kubernetes Clusters" typeFilter="Kubernetes" />} />
+                            <Route path="databases" element={<ResourceList title="Managed Databases" typeFilter="Database" />} />
+                            <Route path="billing" element={<Billing />} />
+                            <Route path="settings" element={<Settings />} />
+                        </Routes>
+                    </DashboardLayout>
+                } />
+            </Routes>
+        </>
     )
 }
 

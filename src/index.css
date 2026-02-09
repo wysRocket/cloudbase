@@ -46,7 +46,7 @@
     }
 
     100% {
-        transform: translateX(calc(-100% / 3));
+        transform: translateX(-25%);
     }
 }
 
@@ -63,7 +63,7 @@
 }
 
 .animate-marquee {
-    animation: marquee 40s linear infinite;
+    animation: marquee 30s linear infinite;
 }
 
 @keyframes shimmer {

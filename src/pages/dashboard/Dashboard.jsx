@@ -1,21 +1,20 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-
-const stats = [
-    { title: 'Active Services', value: '4', change: '+2 this month', trend: 'up' },
-    { title: 'Current Bill', value: '$45.20', change: 'Next invoice: Feb 28', trend: 'neutral' },
-    { title: 'Total Bandwidth', value: '1.2 TB', change: '60% of quota', trend: 'up' },
-    { title: 'System Status', value: 'Healthy', change: 'All systems operational', trend: 'good' },
-]
-
-const activeResources = [
-    { name: 'app-production-v1', type: 'VPS (Pro)', region: 'us-east-1', status: 'Running', ip: '192.168.1.45', uptime: '14d 2h' },
-    { name: 'db-primary-postgres', type: 'Database (Managed)', region: 'us-east-1', status: 'Running', ip: '10.0.4.2', uptime: '45d 12h' },
-    { name: 'k8s-cluster-dev', type: 'Kubernetes (Dev)', region: 'eu-west-2', status: 'Updating', ip: '172.16.0.5', uptime: '2h 15m' },
-    { name: 'cache-redis-01', type: 'VPS (Micro)', region: 'us-west-1', status: 'Stopped', ip: '192.168.2.10', uptime: '-' },
-]
+import { useDashboard } from '../../context/DashboardContext'
 
 export default function Dashboard() {
+    const { resources, balance } = useDashboard()
+
+    // Derived stats
+    const activeServices = resources.filter(r => r.status === 'Running').length
+
+    const stats = [
+        { title: 'Active Services', value: activeServices.toString(), change: resources.length > 0 ? 'Operational' : 'No services', trend: resources.length > 0 ? 'up' : 'neutral' },
+        { title: 'Current Balance', value: `$${balance.toFixed(2)}`, change: 'Available funds', trend: 'neutral' },
+        { title: 'Total Bandwidth', value: '0 GB', change: '0% of quota', trend: 'neutral' },
+        { title: 'System Status', value: 'Healthy', change: 'All systems operational', trend: 'good' },
+    ]
+
     return (
         <>
             {/* Welcome Section */}
@@ -65,54 +64,68 @@ export default function Dashboard() {
             >
                 <div className="p-6 border-b border-white/5 flex justify-between items-center">
                     <h2 className="text-xl font-bold">Active Resources</h2>
-                    <Link to="/dashboard/resources" className="text-sm text-cyan-400 hover:text-cyan-300">View All</Link>
+                    {resources.length > 0 && <Link to="/dashboard/services" className="text-sm text-cyan-400 hover:text-cyan-300">View All</Link>}
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-white/5 text-slate-400">
-                            <tr>
-                                <th className="p-4 font-medium pl-6">Name</th>
-                                <th className="p-4 font-medium">Type</th>
-                                <th className="p-4 font-medium">Region</th>
-                                <th className="p-4 font-medium">IP Address</th>
-                                <th className="p-4 font-medium">Status</th>
-                                <th className="p-4 font-medium">Uptime</th>
-                                <th className="p-4 font-medium"></th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5">
-                            {activeResources.map((res) => (
-                                <tr key={res.name} className="hover:bg-white/5 transition-colors">
-                                    <td className="p-4 pl-6 font-medium text-white">{res.name}</td>
-                                    <td className="p-4 text-slate-400">{res.type}</td>
-                                    <td className="p-4 text-slate-400">{res.region}</td>
-                                    <td className="p-4 text-slate-400 font-mono text-xs">{res.ip}</td>
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-2">
-                                            <span className={`w-2 h-2 rounded-full ${res.status === 'Running' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' :
-                                                res.status === 'Updating' ? 'bg-yellow-500 animate-pulse' :
-                                                    'bg-slate-500'
-                                                }`}></span>
-                                            <span className={
-                                                res.status === 'Running' ? 'text-green-400' :
-                                                    res.status === 'Updating' ? 'text-yellow-400' :
-                                                        'text-slate-500'
-                                            }>{res.status}</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-slate-400">{res.uptime}</td>
-                                    <td className="p-4 text-right pr-6">
-                                        <button className="text-slate-400 hover:text-white">
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                            </svg>
-                                        </button>
-                                    </td>
+
+                {resources.length === 0 ? (
+                    <div className="p-12 text-center text-slate-400">
+                        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                            </svg>
+                        </div>
+                        <h3 className="text-lg font-medium text-white mb-2">No active resources</h3>
+                        <p className="mb-6">Deploy your first service to get started.</p>
+                        <Link to="/dashboard/new" className="text-cyan-400 hover:text-cyan-300 font-medium">Deploy New Service &rarr;</Link>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-white/5 text-slate-400">
+                                <tr>
+                                    <th className="p-4 font-medium pl-6">Name</th>
+                                    <th className="p-4 font-medium">Type</th>
+                                    <th className="p-4 font-medium">Region</th>
+                                    <th className="p-4 font-medium">IP Address</th>
+                                    <th className="p-4 font-medium">Status</th>
+                                    <th className="p-4 font-medium">Uptime</th>
+                                    <th className="p-4 font-medium"></th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {resources.map((res) => (
+                                    <tr key={res.id || res.name} className="hover:bg-white/5 transition-colors">
+                                        <td className="p-4 pl-6 font-medium text-white">{res.name}</td>
+                                        <td className="p-4 text-slate-400">{res.type}</td>
+                                        <td className="p-4 text-slate-400">{res.region}</td>
+                                        <td className="p-4 text-slate-400 font-mono text-xs">{res.ip}</td>
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`w-2 h-2 rounded-full ${res.status === 'Running' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' :
+                                                    res.status === 'Updating' ? 'bg-yellow-500 animate-pulse' :
+                                                        'bg-slate-500'
+                                                    }`}></span>
+                                                <span className={
+                                                    res.status === 'Running' ? 'text-green-400' :
+                                                        res.status === 'Updating' ? 'text-yellow-400' :
+                                                            'text-slate-500'
+                                                }>{res.status}</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-4 text-slate-400">{res.uptime}</td>
+                                        <td className="p-4 text-right pr-6">
+                                            <button className="text-slate-400 hover:text-white">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </motion.div>
         </>
     )

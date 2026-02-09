@@ -58,12 +58,12 @@ export default function ServerBuilder() {
     }
 
     const ChipGroup = ({ label, values, current, onChange, unit }) => (
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
             <div className="flex justify-between items-center text-xs">
                 <span className="uppercase tracking-widest text-slate-500 font-bold">{label}</span>
                 <span className="text-cyan-400 font-mono font-bold">{values[current]} {unit}</span>
             </div>
-            <div className="grid grid-cols-6 gap-2">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                 {values.map((val, idx) => (
                     <button
                         key={idx}
@@ -81,36 +81,36 @@ export default function ServerBuilder() {
     )
 
     return (
-        <section className="py-24 md:py-48 px-6 max-w-7xl mx-auto overflow-hidden">
-            <div className="grid lg:grid-cols-2 gap-24 items-center">
+        <section className="py-16 md:py-24 lg:py-48 px-4 md:px-6 max-w-7xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 md:gap-24 items-center">
                 <div className="order-1 lg:order-1 relative">
                     <div className="absolute -left-24 top-1/2 -translate-y-1/2 w-1 h-64 bg-gradient-to-b from-transparent via-cyan-500/50 to-transparent hidden lg:block" />
 
-                    <h2 className="text-6xl font-black mb-6 leading-tight">
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-4 md:mb-6 leading-tight" style={{ hyphens: 'none' }}>
                         Orchestrate <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Elite Performance.</span>
                     </h2>
-                    <p className="text-slate-400 text-xl mb-12 max-w-xl">
+                    <p className="text-slate-400 text-base md:text-xl mb-8 md:mb-12 max-w-xl">
                         Select your power level. Our infrastructure scales with your ambition,
                         delivering sub-millisecond precision.
                     </p>
 
                     {/* Presets */}
-                    <div className="flex flex-wrap gap-4 mb-12">
+                    <div className="flex flex-wrap gap-3 md:gap-4 mb-8 md:mb-12">
                         {PRESETS.map((preset) => (
                             <button
                                 key={preset.name}
                                 onClick={() => applyPreset(preset)}
-                                className="px-6 py-3 rounded-2xl glass border-white/10 hover:border-cyan-400/50 transition-all text-left group flex-1 min-w-[140px]"
+                                className="px-4 md:px-6 py-2 md:py-3 rounded-2xl glass border-white/10 hover:border-cyan-400/50 transition-all text-left group flex-1 min-w-[120px] md:min-w-[140px]"
                             >
                                 <div className="text-[10px] uppercase tracking-tighter text-slate-500 group-hover:text-cyan-400 transition-colors">Preset</div>
-                                <div className="text-lg font-bold text-slate-200">{preset.name}</div>
+                                <div className="text-base md:text-lg font-bold text-slate-200">{preset.name}</div>
                                 <div className="text-xs text-slate-500">{preset.label}</div>
                             </button>
                         ))}
                     </div>
 
-                    <div className="space-y-10">
+                    <div className="space-y-6 md:space-y-10">
                         <ChipGroup label="Compute Clusters" values={CONFIGS.cpu} current={cpu} onChange={setCpu} unit="vCPUs" />
                         <ChipGroup label="Memory Capacity" values={CONFIGS.ram} current={ram} onChange={setRam} unit="GB RAM" />
                         <ChipGroup label="NVMe Storage" values={CONFIGS.disk} current={disk} onChange={setDisk} unit="GB" />
@@ -135,7 +135,7 @@ export default function ServerBuilder() {
 
                 <div className="order-2 lg:order-2">
                     <TiltCard>
-                        <div className="glass p-12 rounded-[4rem] text-center relative overflow-hidden group border-white/10">
+                        <div className="glass p-6 md:p-12 rounded-3xl md:rounded-[4rem] text-center relative overflow-hidden group border-white/10">
                             {/* Dynamic Background Glow */}
                             <motion.div
                                 animate={{
@@ -148,7 +148,7 @@ export default function ServerBuilder() {
                             />
 
                             {/* Animated Server Core */}
-                            <div className="relative mb-12 flex justify-center h-64">
+                            <div className="relative mb-8 md:mb-12 flex justify-center h-48 md:h-64">
                                 <motion.div
                                     animate={{
                                         y: [0, -15, 0],
@@ -196,14 +196,14 @@ export default function ServerBuilder() {
                             </div>
 
                             <div className="relative z-10">
-                                <p className="text-slate-500 uppercase tracking-[0.3em] text-[10px] font-black mb-4">Real-Time Infrastructure Cost</p>
-                                <div className="text-8xl font-black mb-8 tracking-tighter flex justify-center items-start">
-                                    <span className="text-3xl text-cyan-400 mt-2 mr-1">$</span>
+                                <p className="text-slate-500 uppercase tracking-[0.3em] text-[10px] font-black mb-3 md:mb-4" style={{ hyphens: 'none' }}>Real-Time Infrastructure Cost</p>
+                                <div className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-6 md:mb-8 tracking-tighter flex justify-center items-start">
+                                    <span className="text-xl sm:text-2xl md:text-3xl text-cyan-400 mt-1 md:mt-2 mr-1">$</span>
                                     <span>{displayPrice.toFixed(2)}</span>
                                 </div>
 
                                 {/* Cost Breakdown */}
-                                <div className="flex justify-center gap-4 text-[10px] font-mono text-slate-500 mb-10 pb-10 border-b border-white/5">
+                                <div className="flex flex-wrap justify-center gap-2 md:gap-4 text-[10px] font-mono text-slate-500 mb-6 md:mb-10 pb-6 md:pb-10 border-b border-white/5">
                                     <span>CPU: ${pricing.cpuCost.toFixed(0)}</span>
                                     <span className="opacity-30">|</span>
                                     <span>RAM: ${pricing.ramCost.toFixed(0)}</span>
@@ -211,10 +211,10 @@ export default function ServerBuilder() {
                                     <span>NVMe: ${pricing.diskCost.toFixed(0)}</span>
                                 </div>
 
-                                <Link to="/dashboard" className="block w-full py-6 bg-white text-black text-xl font-black rounded-[2rem] hover:bg-cyan-400 hover:text-white transition-all transform hover:scale-[1.02] active:scale-95 shadow-[0_20px_40px_rgba(0,0,0,0.3)]">
+                                <Link to="/dashboard" className="block w-full py-4 md:py-6 bg-white text-black text-base md:text-xl font-black rounded-2xl md:rounded-[2rem] hover:bg-cyan-400 hover:text-white transition-all transform hover:scale-[1.02] active:scale-95 shadow-[0_20px_40px_rgba(0,0,0,0.3)]">
                                     Initialize Dashboard
                                 </Link>
-                                <p className="mt-6 text-slate-500 text-xs font-medium opacity-50 uppercase tracking-widest">Prorated per-second billing</p>
+                                <p className="mt-4 md:mt-6 text-slate-500 text-xs font-medium opacity-50 uppercase tracking-widest">Prorated per-second billing</p>
                             </div>
                         </div>
                     </TiltCard>

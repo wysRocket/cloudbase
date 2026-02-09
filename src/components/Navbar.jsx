@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll } from 'framer-motion'
 import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
 import LiveStatus from './LiveStatus'
@@ -27,6 +27,7 @@ export default function Navbar() {
     const [scrolled, setScrolled] = useState(false)
     const { scrollYProgress } = useScroll()
     const location = useLocation()
+    const navigate = useNavigate()
     const isLightPage = ['/sign-up', '/sign-in'].some(path => location.pathname.startsWith(path))
 
     // Dynamic text colors
@@ -40,6 +41,29 @@ export default function Navbar() {
         return () => window.removeEventListener('scroll', handleScroll)
     }, [])
 
+    // Handle hash navigation
+    const handleHashClick = (e, href) => {
+        if (href.includes('#')) {
+            e.preventDefault()
+            const [path, hash] = href.split('#')
+
+            // If we're navigating to a different page with a hash
+            if (path && path !== location.pathname) {
+                navigate(href)
+            } else {
+                // Same page, just scroll to the hash
+                const element = document.getElementById(hash)
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                } else if (!path || path === '/') {
+                    // Navigate to home and scroll to hash
+                    navigate(href)
+                }
+            }
+            setMobileOpen(false)
+        }
+    }
+
     return (
         <>
             {/* Scroll Progress Bar */}
@@ -52,8 +76,12 @@ export default function Navbar() {
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-2">
-                        <div className={`transition-all duration-300 ${scrolled ? 'h-8' : 'h-10'} w-auto`}>
-                            <img src="/images/logo-1n.svg" className="h-full w-auto object-contain" alt="WysCloudBase Logo" />
+                        <div className={`transition-all duration-300 ${scrolled ? 'h-10' : 'h-12'} w-auto`}>
+                            <img
+                                src={(isLightPage && !scrolled) ? "/images/logo-color.svg" : "/images/logo-white.svg"}
+                                className="h-full w-auto object-contain"
+                                alt="WysCloudBase Logo"
+                            />
                         </div>
                         <span className={`text-xl font-bold tracking-tighter transition-colors ${textColor}`}>WysCloudBase</span>
                         <div className="hidden lg:block ml-4">
@@ -102,6 +130,7 @@ export default function Navbar() {
                                 <Link
                                     key={link.name}
                                     to={link.href}
+                                    onClick={(e) => handleHashClick(e, link.href)}
                                     className={`${hoverColor} transition-colors`}
                                 >
                                     {link.name}
@@ -111,13 +140,13 @@ export default function Navbar() {
                         <SignedOut>
                             <Link
                                 to="/contact"
-                                className="bg-cyan-600 hover:bg-cyan-500 px-5 py-2 rounded-full text-white transition-all transform hover:scale-105"
+                                className={`${hoverColor} transition-colors`}
                             >
                                 Contact Sales
                             </Link>
                             <Link
                                 to="/sign-in"
-                                className={`${hoverColor} transition-colors`}
+                                className="bg-cyan-600 hover:bg-cyan-500 px-5 py-2 rounded-full text-white transition-all transform hover:scale-105"
                             >
                                 Sign In
                             </Link>
@@ -157,35 +186,64 @@ export default function Navbar() {
                             exit={{ opacity: 0, height: 0 }}
                             className="md:hidden absolute top-full left-0 w-full bg-[#0a0f1d] border-b border-white/10 overflow-hidden"
                         >
-                            <div className="p-6 flex flex-col gap-4 text-center text-slate-100">
-                                <Link to="/#overview" onClick={() => setMobileOpen(false)} className="hover:text-white transition-colors">Overview</Link>
-                                <div className="border-t border-white/10 pt-4">
-                                    <p className="text-cyan-400 text-sm mb-2 font-semibold">Services</p>
-                                    {navLinks[1].submenu.map((sub) => (
-                                        <Link
-                                            key={sub.name}
-                                            to={sub.href}
-                                            onClick={() => setMobileOpen(false)}
-                                            className="block py-2 text-slate-300 hover:text-white"
-                                        >
-                                            {sub.name}
-                                        </Link>
-                                    ))}
+                            <div className="p-6 flex flex-col gap-4 text-slate-100">
+                                <Link
+                                    to="/#overview"
+                                    onClick={(e) => handleHashClick(e, '/#overview')}
+                                    className={`py-2 hover:text-cyan-400 transition-colors text-left ${location.pathname === '/' && location.hash === '#overview' ? 'text-cyan-400 font-semibold' : ''}`}
+                                >
+                                    Overview
+                                </Link>
+
+                                <div className="border-t border-white/10 pt-2">
+                                    <p className="text-cyan-400/60 text-xs uppercase tracking-wider mb-3 font-bold pl-2">Services</p>
+                                    <div className="flex flex-col gap-1">
+                                        {navLinks[1].submenu.map((sub) => (
+                                            <Link
+                                                key={sub.name}
+                                                to={sub.href}
+                                                onClick={() => setMobileOpen(false)}
+                                                className={`py-2 pl-4 border-l-2 transition-all text-left ${
+                                                    location.pathname === sub.href
+                                                        ? 'border-cyan-400 text-cyan-400 font-semibold bg-cyan-400/5'
+                                                        : 'border-transparent text-slate-300 hover:text-white hover:border-slate-600'
+                                                }`}
+                                            >
+                                                {sub.name}
+                                            </Link>
+                                        ))}
+                                    </div>
                                 </div>
-                                <Link to="/pricing" onClick={() => setMobileOpen(false)} className="hover:text-white transition-colors">Pricing</Link>
-                                <Link to="/docs" onClick={() => setMobileOpen(false)} className="hover:text-white transition-colors">Docs</Link>
+
+                                <Link
+                                    to="/pricing"
+                                    onClick={() => setMobileOpen(false)}
+                                    className={`py-2 hover:text-cyan-400 transition-colors text-left ${location.pathname === '/pricing' ? 'text-cyan-400 font-semibold' : ''}`}
+                                >
+                                    Pricing
+                                </Link>
+
+                                <Link
+                                    to="/docs"
+                                    onClick={() => setMobileOpen(false)}
+                                    className={`py-2 hover:text-cyan-400 transition-colors text-left ${location.pathname === '/docs' ? 'text-cyan-400 font-semibold' : ''}`}
+                                >
+                                    Docs
+                                </Link>
+
+                                <div className="border-t border-white/10 pt-4 mt-2 flex flex-col gap-3">
                                 <SignedOut>
                                     <Link
                                         to="/contact"
                                         onClick={() => setMobileOpen(false)}
-                                        className="bg-cyan-600 py-3 rounded-lg w-full block"
+                                        className="border border-cyan-600/50 hover:border-cyan-600 py-3 rounded-lg w-full block text-center transition-colors"
                                     >
                                         Contact Sales
                                     </Link>
                                     <Link
                                         to="/sign-in"
                                         onClick={() => setMobileOpen(false)}
-                                        className="border border-cyan-600 py-3 rounded-lg w-full block"
+                                        className="bg-cyan-600 hover:bg-cyan-500 py-3 rounded-lg w-full block text-center transition-colors"
                                     >
                                         Sign In
                                     </Link>
@@ -194,14 +252,21 @@ export default function Navbar() {
                                     <Link
                                         to="/dashboard"
                                         onClick={() => setMobileOpen(false)}
-                                        className="border border-cyan-600 py-3 rounded-lg w-full block"
+                                        className="bg-cyan-600 hover:bg-cyan-500 py-3 rounded-lg w-full block text-center transition-colors"
                                     >
-                                        Account
+                                        Dashboard
                                     </Link>
-                                    <div className="flex justify-center">
-                                        <UserButton afterSignOutUrl="/" />
-                                    </div>
+                                    <UserButton
+                                        afterSignOutUrl="/"
+                                        appearance={{
+                                            elements: {
+                                                rootBox: "mx-auto",
+                                                avatarBox: "w-10 h-10"
+                                            }
+                                        }}
+                                    />
                                 </SignedIn>
+                                </div>
                             </div>
                         </motion.div>
                     )}
