@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { useEffect, useState } from 'react'
 import DashboardSidebar from '../components/dashboard/DashboardSidebar'
-import SmoothScroll from '../components/SmoothScroll'
 import { DashboardProvider } from '../context/DashboardContext'
 
 export default function DashboardLayout({ children }) {
@@ -32,8 +31,6 @@ export default function DashboardLayout({ children }) {
     return (
         <DashboardProvider>
             <div className="bg-[#0a0f1d] min-h-screen text-slate-100 font-sans selection:bg-cyan-500 selection:text-white">
-                <SmoothScroll />
-
                 <div className="flex h-screen overflow-hidden">
                     <DashboardSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 

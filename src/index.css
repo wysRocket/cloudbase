@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Override tracking-tighter for better readability */
+@layer utilities {
+    .tracking-tighter {
+        letter-spacing: -0.03em !important;
+    }
+}
+
 @keyframes slow-spin {
     from {
         transform: rotate(0deg);
@@ -107,6 +114,13 @@
 
 html {
     scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* Ensure select doesn't trigger zoom on iOS */
+select {
+    font-size: max(16px, 1em);
 }
 
 html,

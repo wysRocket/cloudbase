@@ -16,12 +16,21 @@ export default function ScrollToTop() {
                 const id = hash.replace('#', '')
                 const element = document.getElementById(id)
                 if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    const offset = 80 // Navbar height
+                    const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
+                    const offsetPosition = elementPosition - offset
+
+                    window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
                 }
-            }, 0)
+            }, 100)
         } else {
-            // Scroll to top if no hash
-            window.scrollTo(0, 0)
+            // Scroll to top if no hash - force immediate scroll
+            window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+
+            // Double-tap to ensure it works
+            requestAnimationFrame(() => {
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+            })
         }
     }, [pathname, hash])
 

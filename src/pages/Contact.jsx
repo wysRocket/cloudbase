@@ -44,6 +44,15 @@ export default function Contact() {
         message: ''
     })
     const [submitted, setSubmitted] = useState(false)
+    const [dropdownOpen, setDropdownOpen] = useState(false)
+
+    const cloudSpendOptions = [
+        { value: '', label: 'Select an option' },
+        { value: '0-500', label: '$0 - $500' },
+        { value: '500-2000', label: '$500 - $2,000' },
+        { value: '2000-10000', label: '$2,000 - $10,000' },
+        { value: '10000+', label: '$10,000+' }
+    ]
 
     const handleSubmit = (e) => {
         e.preventDefault()
@@ -54,10 +63,15 @@ export default function Contact() {
         setFormData({ ...formData, [e.target.name]: e.target.value })
     }
 
+    const handleDropdownSelect = (value) => {
+        setFormData({ ...formData, cloudSpend: value })
+        setDropdownOpen(false)
+    }
+
     return (
         <>
             {/* Hero Section with Two Columns */}
-            <section className="relative pt-32 pb-20 px-6 overflow-hidden">
+            <section className="relative pt-32 pb-20 px-6">
                 <div className="aurora-blob w-[800px] h-[800px] bg-cyan-500/15 top-0 left-0 animate-aurora"></div>
                 <div className="aurora-blob w-[600px] h-[600px] bg-blue-500/10 bottom-0 right-0 animate-aurora" style={{ animationDelay: '-5s' }}></div>
 
@@ -120,6 +134,7 @@ export default function Contact() {
                             initial={{ opacity: 0, x: 30 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.6, delay: 0.2 }}
+                            style={{ isolation: 'isolate', willChange: 'auto' }}
                         >
                             {submitted ? (
                                 <div className="glass p-12 rounded-[2rem] text-center">
@@ -214,18 +229,48 @@ export default function Contact() {
                                     {/* Cloud Spend */}
                                     <div>
                                         <label className="block text-sm font-medium mb-2 text-slate-300">Estimated Monthly Cloud Spend</label>
-                                        <select
-                                            name="cloudSpend"
-                                            value={formData.cloudSpend}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:bg-white/10 transition-all"
-                                        >
-                                            <option value="" className="bg-[#0a0f1d]">Select an option</option>
-                                            <option value="0-500" className="bg-[#0a0f1d]">$0 - $500</option>
-                                            <option value="500-2000" className="bg-[#0a0f1d]">$500 - $2,000</option>
-                                            <option value="2000-10000" className="bg-[#0a0f1d]">$2,000 - $10,000</option>
-                                            <option value="10000+" className="bg-[#0a0f1d]">$10,000+</option>
-                                        </select>
+                                        <div className="relative">
+                                            <button
+                                                type="button"
+                                                onClick={() => setDropdownOpen(!dropdownOpen)}
+                                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500 focus:bg-white/10 transition-all text-left flex justify-between items-center"
+                                            >
+                                                <span className={formData.cloudSpend ? 'text-white' : 'text-slate-500'}>
+                                                    {cloudSpendOptions.find(opt => opt.value === formData.cloudSpend)?.label || 'Select an option'}
+                                                </span>
+                                                <svg
+                                                    className={`w-5 h-5 text-slate-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </button>
+
+                                            {dropdownOpen && (
+                                                <>
+                                                    <div
+                                                        className="fixed inset-0 z-10"
+                                                        onClick={() => setDropdownOpen(false)}
+                                                    />
+                                                    <div className="absolute z-20 w-full mt-2 bg-slate-800 border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+                                                        {cloudSpendOptions.map((option) => (
+                                                            <button
+                                                                key={option.value}
+                                                                type="button"
+                                                                onClick={() => handleDropdownSelect(option.value)}
+                                                                className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors ${
+                                                                    formData.cloudSpend === option.value ? 'bg-cyan-600/20 text-cyan-400' : 'text-white'
+                                                                }`}
+                                                            >
+                                                                {option.label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Message */}

@@ -124,7 +124,7 @@ export default function Home() {
                                     delay: 0.5,
                                     ease: [0.16, 1, 0.3, 1]
                                 }}
-                                className="block bg-gradient-to-r from-cyan-300 via-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-[0.15em]"
+                                className="block bg-gradient-to-r from-cyan-300 via-cyan-400 to-blue-500 bg-clip-text text-transparent"
                             >
                                 Simplified.
                             </motion.span>
@@ -406,8 +406,8 @@ export default function Home() {
                                     <div className="absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(600px_circle_at_var(--mouse-x)_var(--mouse-y),rgba(34,211,238,0.2),transparent_40%)]" />
 
                                     <div className="relative z-10 flex flex-col h-full">
-                                        <div className="absolute top-6 right-6 bg-cyan-500 text-black text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">Popular</div>
-                                        <h4 className="text-2xl font-bold mb-2">Startup</h4>
+                                        <div className="absolute -top-3 -right-3 bg-cyan-500 text-black text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">Popular</div>
+                                        <h4 className="text-2xl font-bold mb-2 mt-2">Startup</h4>
                                         <p className="text-slate-400 mb-8 text-sm">Scaling apps & growing traffic.</p>
                                         <div className="text-5xl font-black mb-8">$20<span className="text-lg font-normal text-slate-500">/mo</span></div>
                                         <ul className="space-y-4 mb-12 flex-1">

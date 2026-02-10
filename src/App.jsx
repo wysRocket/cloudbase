@@ -23,7 +23,6 @@ import Dashboard from './pages/dashboard/Dashboard'
 import NewService from './pages/dashboard/NewService'
 import ResourceList from './pages/dashboard/ResourceList'
 import Billing from './pages/dashboard/Billing'
-import Settings from './pages/dashboard/Settings'
 
 function App() {
     return (
@@ -57,7 +56,6 @@ function App() {
                             <Route path="kubernetes" element={<ResourceList title="Kubernetes Clusters" typeFilter="Kubernetes" />} />
                             <Route path="databases" element={<ResourceList title="Managed Databases" typeFilter="Database" />} />
                             <Route path="billing" element={<Billing />} />
-                            <Route path="settings" element={<Settings />} />
                         </Routes>
                     </DashboardLayout>
                 } />

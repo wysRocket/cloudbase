@@ -4,21 +4,29 @@ const DashboardContext = createContext()
 
 const initialResources = [] // Empty by default as per user request
 
+const initialTransactions = [
+    { id: 'tx_2', date: '2026-01-15', description: 'Credits Purchase', amount: 50.00, status: 'Completed', type: 'credit' },
+    { id: 'tx_1', date: '2026-02-01', description: 'Monthly Subscription - Pro Plan', amount: -29.00, status: 'Completed', type: 'debit' },
+]
+
 export function DashboardProvider({ children }) {
     const [resources, setResources] = useState(() => {
         const saved = localStorage.getItem('wys_resources')
         return saved ? JSON.parse(saved) : initialResources
     })
 
-    const [balance, setBalance] = useState(() => {
-        const saved = localStorage.getItem('wys_balance')
-        return saved ? parseFloat(saved) : 0.00
+    const [transactions, setTransactions] = useState(() => {
+        const saved = localStorage.getItem('wys_transactions')
+        return saved ? JSON.parse(saved) : initialTransactions
     })
+
+    // Calculate balance from transactions
+    const balance = transactions.reduce((sum, tx) => sum + tx.amount, 0)
 
     useEffect(() => {
         localStorage.setItem('wys_resources', JSON.stringify(resources))
-        localStorage.setItem('wys_balance', balance.toString())
-    }, [resources, balance])
+        localStorage.setItem('wys_transactions', JSON.stringify(transactions))
+    }, [resources, transactions])
 
     const addResource = (resource) => {
         const newResource = {
@@ -36,11 +44,31 @@ export function DashboardProvider({ children }) {
     }
 
     const addFunds = (amount) => {
-        setBalance(prev => prev + amount)
+        const newTransaction = {
+            id: `tx_${Date.now()}`,
+            date: new Date().toISOString().split('T')[0],
+            description: `Credits Purchase`,
+            amount: amount,
+            status: 'Completed',
+            type: 'credit'
+        }
+        setTransactions(prev => [newTransaction, ...prev])
+    }
+
+    const deductCredits = (amount, description) => {
+        const newTransaction = {
+            id: `tx_${Date.now()}`,
+            date: new Date().toISOString().split('T')[0],
+            description: description,
+            amount: -amount,
+            status: 'Completed',
+            type: 'debit'
+        }
+        setTransactions(prev => [newTransaction, ...prev])
     }
 
     return (
-        <DashboardContext.Provider value={{ resources, balance, addResource, removeResource, addFunds }}>
+        <DashboardContext.Provider value={{ resources, balance, transactions, addResource, removeResource, addFunds, deductCredits }}>
             {children}
         </DashboardContext.Provider>
     )
