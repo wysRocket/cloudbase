@@ -287,7 +287,7 @@ export default function Home() {
             {/* HOW IT WORKS */}
             <section
                 id="overview"
-                className="py-24 px-4 md:px-6 max-w-7xl mx-auto grid md:grid-cols-2 gap-12"
+                className="py-24 px-4 md:px-6 max-w-7xl mx-auto grid md:grid-cols-2 gap-12 overflow-hidden"
             >
                 <div className="md:col-span-1 md:sticky md:top-32 h-fit">
                     <h2 className="text-4xl md:text-5xl font-bold mb-6">How It <span className="text-cyan-400 drop-shadow-[0_0_20px_rgba(34,211,238,0.4)]">Works</span></h2>
@@ -323,12 +323,12 @@ export default function Home() {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: false, amount: 0.2 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="space-y-12 w-full"
+                    className="space-y-12 w-full max-w-full overflow-hidden"
                 >
-                    <div className="aspect-video glass rounded-3xl md:rounded-[2rem] overflow-hidden group w-full">
+                    <div className="aspect-video glass rounded-3xl md:rounded-[2rem] overflow-hidden group w-full max-w-full">
                         <img src="/images/image-5.png" className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700" loading="lazy" alt="Platform Overview" />
                     </div>
-                    <div className="p-4 md:p-8 h-[300px] md:h-[400px] w-full">
+                    <div className="p-4 md:p-8 h-[300px] md:h-[400px] w-full max-w-full overflow-hidden">
                         <TerminalPeek />
                     </div>
                 </motion.div>
