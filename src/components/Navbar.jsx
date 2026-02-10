@@ -162,7 +162,8 @@ export default function Navbar() {
                                 afterSignOutUrl="/"
                                 appearance={{
                                     elements: {
-                                        avatarBox: "w-10 h-10"
+                                        avatarBox: "w-10 h-10",
+                                        userButtonPopoverActionButton__manageAccount: "hidden"
                                     }
                                 }}
                             />
@@ -261,7 +262,8 @@ export default function Navbar() {
                                         appearance={{
                                             elements: {
                                                 rootBox: "mx-auto",
-                                                avatarBox: "w-10 h-10"
+                                                avatarBox: "w-10 h-10",
+                                                userButtonPopoverActionButton__manageAccount: "hidden"
                                             }
                                         }}
                                     />

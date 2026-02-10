@@ -147,7 +147,7 @@ export default function Home() {
             {/* LOGO MARQUEE */}
             <section className="py-12 bg-white/5 border-y border-white/5 overflow-hidden">
                 <div className="flex gap-12 md:gap-24 animate-marquee whitespace-nowrap items-center opacity-50 hover:opacity-100 transition-opacity">
-                    {[...Array(4)].map((_, groupIndex) => (
+                    {[...Array(8)].map((_, groupIndex) => (
                         <div key={groupIndex} className="flex gap-12 md:gap-24 shrink-0">
                             <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase">DigitalOcean</span>
                             <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase">NVIDIA GPU</span>
