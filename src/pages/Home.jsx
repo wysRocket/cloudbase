@@ -146,14 +146,14 @@ export default function Home() {
 
             {/* LOGO MARQUEE */}
             <section className="py-12 bg-white/5 border-y border-white/5 overflow-hidden">
-                <div className="flex gap-12 md:gap-24 animate-marquee whitespace-nowrap items-center opacity-50 hover:opacity-100 transition-opacity">
-                    {[...Array(8)].map((_, groupIndex) => (
-                        <div key={groupIndex} className="flex gap-12 md:gap-24 shrink-0">
-                            <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase">DigitalOcean</span>
-                            <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase">NVIDIA GPU</span>
-                            <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase">Kubernetes</span>
-                            <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase">Redis</span>
-                            <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase">PostgreSQL</span>
+                <div className="inline-flex animate-marquee whitespace-nowrap items-center opacity-50 hover:opacity-100 transition-opacity">
+                    {[...Array(2)].map((_, setIndex) => (
+                        <div key={setIndex} className="flex items-center shrink-0">
+                            <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase px-6 md:px-12">DigitalOcean</span>
+                            <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase px-6 md:px-12">NVIDIA GPU</span>
+                            <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase px-6 md:px-12">Kubernetes</span>
+                            <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase px-6 md:px-12">Redis</span>
+                            <span className="text-base md:text-2xl font-bold italic tracking-widest uppercase px-6 md:px-12">PostgreSQL</span>
                         </div>
                     ))}
                 </div>
