@@ -5,8 +5,8 @@ const DashboardContext = createContext()
 const initialResources = [] // Empty by default as per user request
 
 const initialTransactions = [
-    { id: 'tx_2', date: '2026-01-15', description: 'Credits Purchase', amount: 50.00, status: 'Completed', type: 'credit' },
-    { id: 'tx_1', date: '2026-02-01', description: 'Monthly Subscription - Pro Plan', amount: -29.00, status: 'Completed', type: 'debit' },
+    { id: 'tx_2', date: '2026-01-15', description: 'Credits Purchase', amount: 5000.00, status: 'Completed', type: 'credit' },
+    { id: 'tx_1', date: '2026-02-01', description: 'Monthly Subscription - Pro Plan', amount: -2900.00, status: 'Completed', type: 'debit' },
 ]
 
 export function DashboardProvider({ children }) {

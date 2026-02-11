@@ -83,21 +83,21 @@ export default function Footer() {
                             <div className="flex items-center gap-4">
                                 <span className="text-xs text-slate-500 uppercase tracking-wider">We Accept:</span>
                                 <div className="flex gap-3 items-center">
-                                    <svg className="h-6 w-auto opacity-50 hover:opacity-100 transition-opacity" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <svg className="h-8 w-auto opacity-80" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <rect width="48" height="32" rx="4" fill="#1A1F71"/>
                                         <text x="24" y="20" fontSize="10" fill="white" textAnchor="middle" fontWeight="bold">VISA</text>
                                     </svg>
-                                    <svg className="h-6 w-auto opacity-50 hover:opacity-100 transition-opacity" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <svg className="h-8 w-auto opacity-80" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <rect width="48" height="32" rx="4" fill="#EB001B"/>
                                         <circle cx="18" cy="16" r="8" fill="#FF5F00"/>
                                         <circle cx="30" cy="16" r="8" fill="#F79E1B"/>
                                     </svg>
-                                    <svg className="h-6 w-auto opacity-50 hover:opacity-100 transition-opacity" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <svg className="h-8 w-auto opacity-80" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <rect width="48" height="32" rx="4" fill="white" stroke="#E5E7EB"/>
                                         <text x="24" y="14" fontSize="7" fill="#5F6368" textAnchor="middle" fontWeight="600">Google</text>
                                         <text x="24" y="22" fontSize="7" fill="#5F6368" textAnchor="middle" fontWeight="600">Pay</text>
                                     </svg>
-                                    <svg className="h-6 w-auto opacity-50 hover:opacity-100 transition-opacity" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <svg className="h-8 w-auto opacity-80" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <rect width="48" height="32" rx="4" fill="black"/>
                                         <text x="10" y="20" fontSize="10" fill="white" fontWeight="bold"></text>
                                         <text x="24" y="20" fontSize="8" fill="white" textAnchor="middle" fontWeight="600">Pay</text>
@@ -106,8 +106,8 @@ export default function Footer() {
                             </div>
                             <img
                                 src="/images/image-7.png"
-                                className="h-6 w-auto grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all"
-                                alt="Infrastructure Partner"
+                                className="h-10 w-auto opacity-90"
+                                alt="DigitalOcean Partner"
                             />
                         </div>
                     </div>
