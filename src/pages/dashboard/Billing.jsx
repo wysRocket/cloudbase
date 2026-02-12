@@ -112,15 +112,38 @@ export default function Billing() {
                             <label className="text-sm text-slate-400 mb-2 block">Custom Amount</label>
                             <input
                                 type="range"
-                                min="5"
+                                min="1"
                                 max="200"
+                                step="0.01"
                                 value={topUpAmount}
-                                onChange={(e) => setTopUpAmount(parseInt(e.target.value))}
+                                onChange={(e) => setTopUpAmount(parseFloat(e.target.value))}
                                 className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider-thumb"
                             />
                             <div className="flex justify-between text-xs text-slate-500 mt-2">
-                                <span>{currencySymbols[selectedCurrency]}5</span>
-                                <span>{currencySymbols[selectedCurrency]}200</span>
+                                <span>{currencySymbols[selectedCurrency]}1.00</span>
+                                <span>{currencySymbols[selectedCurrency]}200.00</span>
+                            </div>
+                        </div>
+
+                        {/* Manual Input */}
+                        <div className="mb-6">
+                            <label className="text-sm text-slate-400 mb-2 block">Or Enter Exact Amount</label>
+                            <div className="relative">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
+                                    {currencySymbols[selectedCurrency]}
+                                </span>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="200"
+                                    step="0.01"
+                                    value={topUpAmount}
+                                    onChange={(e) => {
+                                        const val = parseFloat(e.target.value) || 1;
+                                        setTopUpAmount(Math.min(Math.max(val, 1), 200));
+                                    }}
+                                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white font-bold focus:outline-none focus:border-cyan-500 transition-colors"
+                                />
                             </div>
                         </div>
 

@@ -198,17 +198,17 @@ export default function ServerBuilder() {
                             <div className="relative z-10">
                                 <p className="text-slate-500 uppercase tracking-[0.3em] text-[10px] font-black mb-3 md:mb-4" style={{ hyphens: 'none' }}>Real-Time Infrastructure Cost</p>
                                 <div className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-6 md:mb-8 tracking-tighter flex justify-center items-start">
-                                    <span className="text-xl sm:text-2xl md:text-3xl text-cyan-400 mt-1 md:mt-2 mr-1">$</span>
+                                    <span className="text-xl sm:text-2xl md:text-3xl text-cyan-400 mt-1 md:mt-2 mr-1">€</span>
                                     <span>{displayPrice.toFixed(2)}</span>
                                 </div>
 
                                 {/* Cost Breakdown */}
                                 <div className="flex flex-wrap justify-center gap-2 md:gap-4 text-[10px] font-mono text-slate-500 mb-6 md:mb-10 pb-6 md:pb-10 border-b border-white/5">
-                                    <span>CPU: ${pricing.cpuCost.toFixed(0)}</span>
+                                    <span>CPU: €{pricing.cpuCost.toFixed(0)}</span>
                                     <span className="opacity-30">|</span>
-                                    <span>RAM: ${pricing.ramCost.toFixed(0)}</span>
+                                    <span>RAM: €{pricing.ramCost.toFixed(0)}</span>
                                     <span className="opacity-30">|</span>
-                                    <span>NVMe: ${pricing.diskCost.toFixed(0)}</span>
+                                    <span>NVMe: €{pricing.diskCost.toFixed(0)}</span>
                                 </div>
 
                                 <Link to="/dashboard" className="block w-full py-4 md:py-6 bg-white text-black text-base md:text-xl font-black rounded-2xl md:rounded-[2rem] hover:bg-cyan-400 hover:text-white transition-all transform hover:scale-[1.02] active:scale-95 shadow-[0_20px_40px_rgba(0,0,0,0.3)]">

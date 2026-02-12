@@ -376,7 +376,7 @@ export default function Home() {
                                     <div className="relative z-10 flex flex-col h-full">
                                         <h4 className="text-2xl font-bold mb-2">Hobbyist</h4>
                                         <p className="text-slate-400 mb-8 text-sm">Perfect for side projects & blogs.</p>
-                                        <div className="text-5xl font-black mb-8">500.00<span className="text-lg font-normal text-slate-500"> credits/mo</span></div>
+                                        <div className="text-5xl font-black mb-8">€5.00<span className="text-lg font-normal text-slate-500">/mo</span></div>
                                         <ul className="space-y-4 mb-12 flex-1">
                                             <li className="flex items-center gap-2">
                                                 <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
@@ -409,7 +409,7 @@ export default function Home() {
                                         <div className="absolute -top-3 -right-3 bg-cyan-500 text-black text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">Popular</div>
                                         <h4 className="text-2xl font-bold mb-2 mt-2">Startup</h4>
                                         <p className="text-slate-400 mb-8 text-sm">Scaling apps & growing traffic.</p>
-                                        <div className="text-5xl font-black mb-8">2000.00<span className="text-lg font-normal text-slate-500"> credits/mo</span></div>
+                                        <div className="text-5xl font-black mb-8">€20.00<span className="text-lg font-normal text-slate-500">/mo</span></div>
                                         <ul className="space-y-4 mb-12 flex-1">
                                             <li className="flex items-center gap-2">
                                                 <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>

@@ -97,16 +97,16 @@ export default function Footer() {
                                         <text x="24" y="14" fontSize="7" fill="#5F6368" textAnchor="middle" fontWeight="600">Google</text>
                                         <text x="24" y="22" fontSize="7" fill="#5F6368" textAnchor="middle" fontWeight="600">Pay</text>
                                     </svg>
-                                    <svg className="h-8 w-auto opacity-80" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <svg className="h-8 w-auto" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <rect width="48" height="32" rx="4" fill="black"/>
-                                        <text x="10" y="20" fontSize="10" fill="white" fontWeight="bold"></text>
-                                        <text x="24" y="20" fontSize="8" fill="white" textAnchor="middle" fontWeight="600">Pay</text>
+                                        <path d="M16.5 13.5c-.2-.8-.3-1.5-.3-2 0-.5.1-.9.2-1.3.3-.8.8-1.5 1.5-2 .7-.5 1.5-.8 2.4-.8.4 0 .8.1 1.2.2.4.2.7.4.9.6.2.2.3.4.3.7 0 .2-.1.5-.3.7-.2.2-.4.3-.7.3-.1 0-.3 0-.5-.1-.2-.1-.4-.2-.6-.3-.2-.1-.5-.2-.8-.2-.5 0-.9.2-1.2.5-.3.3-.5.8-.5 1.3 0 .4.1.9.2 1.4l2.8 8.8c.1.2.1.4.1.5 0 .3-.1.5-.3.7-.2.2-.4.3-.7.3-.2 0-.4-.1-.6-.2-.2-.1-.3-.3-.4-.6l-1.5-4.8h-3l-1.5 4.8c-.1.3-.2.5-.4.6-.2.1-.4.2-.6.2-.3 0-.5-.1-.7-.3-.2-.2-.3-.4-.3-.7 0-.1 0-.3.1-.5l2.8-8.8zm9.2 8.3c-.2-.2-.3-.4-.3-.7 0-.1 0-.3.1-.5l2.8-8.8c.1-.5.1-1 .2-1.4 0-.5-.2-1-.5-1.3-.3-.3-.7-.5-1.2-.5-.3 0-.6.1-.8.2-.2.1-.4.2-.6.3-.2.1-.3.1-.5.1-.3 0-.5-.1-.7-.3-.2-.2-.3-.4-.3-.7 0-.3.1-.5.3-.7.2-.2.5-.4.9-.6.4-.2.8-.2 1.2-.2.9 0 1.7.3 2.4.8.7.5 1.2 1.2 1.5 2 .1.4.2.8.2 1.3 0 .5-.1 1.2-.3 2l-2.8 8.8c-.1.3-.2.5-.4.6-.2.1-.4.2-.6.2-.3 0-.5-.1-.7-.3z" fill="white"/>
+                                        <text x="32" y="21" fontSize="9" fill="white" fontWeight="700">Pay</text>
                                     </svg>
                                 </div>
                             </div>
                             <img
                                 src="/images/image-7.png"
-                                className="h-10 w-auto opacity-90"
+                                className="h-10 w-auto"
                                 alt="DigitalOcean Partner"
                             />
                         </div>

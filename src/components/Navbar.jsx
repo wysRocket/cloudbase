@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll } from 'framer-motion'
-import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
+import { SignedIn, SignedOut } from '@clerk/clerk-react'
 import LiveStatus from './LiveStatus'
 
 const navLinks = [
@@ -154,19 +154,10 @@ export default function Navbar() {
                         <SignedIn>
                             <Link
                                 to="/dashboard"
-                                className={`${hoverColor} transition-colors`}
+                                className="bg-cyan-600 hover:bg-cyan-500 px-5 py-2 rounded-full text-white transition-all transform hover:scale-105"
                             >
                                 Account
                             </Link>
-                            <UserButton
-                                afterSignOutUrl="/"
-                                appearance={{
-                                    elements: {
-                                        avatarBox: "w-10 h-10",
-                                        userButtonPopoverActionButton__manageAccount: "hidden"
-                                    }
-                                }}
-                            />
                         </SignedIn>
                     </div>
 
@@ -255,18 +246,8 @@ export default function Navbar() {
                                         onClick={() => setMobileOpen(false)}
                                         className="bg-cyan-600 hover:bg-cyan-500 py-3 rounded-lg w-full block text-center transition-colors"
                                     >
-                                        Dashboard
+                                        Account
                                     </Link>
-                                    <UserButton
-                                        afterSignOutUrl="/"
-                                        appearance={{
-                                            elements: {
-                                                rootBox: "mx-auto",
-                                                avatarBox: "w-10 h-10",
-                                                userButtonPopoverActionButton__manageAccount: "hidden"
-                                            }
-                                        }}
-                                    />
                                 </SignedIn>
                                 </div>
                             </div>
