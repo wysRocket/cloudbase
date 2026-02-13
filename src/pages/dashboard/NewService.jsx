@@ -4,10 +4,10 @@ import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
 
 const serviceTypes = [
-    { id: 'vps', name: 'Virtual Private Server', icon: 'server', description: 'High-performance NVMe VPS', price: 'From $5/mo', typeName: 'VPS (Standard)' },
-    { id: 'k8s', name: 'Kubernetes Cluster', icon: 'cubes', description: 'Managed K8s control plane', price: 'From $40/mo', typeName: 'Kubernetes (Managed)' },
-    { id: 'db', name: 'Managed Database', icon: 'database', description: 'Postgres, MySQL, Redis', price: 'From $15/mo', typeName: 'Database (PG/MySQL)' },
-    { id: 'gpu', name: 'GPU Instance', icon: 'chip', description: 'NVIDIA H100 / A100', price: 'From $2/hr', typeName: 'GPU (H100)' },
+    { id: 'vps', name: 'Virtual Private Server', icon: 'server', description: 'High-performance NVMe VPS', price: '100 credits/mo', typeName: 'VPS (Standard)' },
+    { id: 'k8s', name: 'Kubernetes Cluster', icon: 'cubes', description: 'Managed K8s control plane', price: '1000 credits/mo', typeName: 'Kubernetes (Managed)' },
+    { id: 'db', name: 'Managed Database', icon: 'database', description: 'Postgres, MySQL, Redis', price: '300 credits/mo', typeName: 'Database (PG/MySQL)' },
+    { id: 'gpu', name: 'GPU Instance', icon: 'chip', description: 'NVIDIA H100 / A100', price: '50 credits/hr', typeName: 'GPU (H100)' },
 ]
 
 const regions = [

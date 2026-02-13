@@ -79,36 +79,15 @@ export default function Footer() {
                             <p>© 2026 WysCloudBase. All rights reserved.</p>
                             <p className="text-xs">WysCloudBase LLC | Registration: DE-12345678 | VAT: US-987654321</p>
                         </div>
-                        <div className="flex gap-8 items-center">
-                            <div className="flex items-center gap-4">
-                                <span className="text-xs text-slate-500 uppercase tracking-wider">We Accept:</span>
-                                <div className="flex gap-3 items-center">
-                                    <svg className="h-8 w-auto opacity-80" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <rect width="48" height="32" rx="4" fill="#1A1F71"/>
-                                        <text x="24" y="20" fontSize="10" fill="white" textAnchor="middle" fontWeight="bold">VISA</text>
-                                    </svg>
-                                    <svg className="h-8 w-auto opacity-80" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <rect width="48" height="32" rx="4" fill="#EB001B"/>
-                                        <circle cx="18" cy="16" r="8" fill="#FF5F00"/>
-                                        <circle cx="30" cy="16" r="8" fill="#F79E1B"/>
-                                    </svg>
-                                    <svg className="h-8 w-auto opacity-80" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <rect width="48" height="32" rx="4" fill="white" stroke="#E5E7EB"/>
-                                        <text x="24" y="14" fontSize="7" fill="#5F6368" textAnchor="middle" fontWeight="600">Google</text>
-                                        <text x="24" y="22" fontSize="7" fill="#5F6368" textAnchor="middle" fontWeight="600">Pay</text>
-                                    </svg>
-                                    <svg className="h-8 w-auto" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <rect width="48" height="32" rx="4" fill="black"/>
-                                        <path d="M16.5 13.5c-.2-.8-.3-1.5-.3-2 0-.5.1-.9.2-1.3.3-.8.8-1.5 1.5-2 .7-.5 1.5-.8 2.4-.8.4 0 .8.1 1.2.2.4.2.7.4.9.6.2.2.3.4.3.7 0 .2-.1.5-.3.7-.2.2-.4.3-.7.3-.1 0-.3 0-.5-.1-.2-.1-.4-.2-.6-.3-.2-.1-.5-.2-.8-.2-.5 0-.9.2-1.2.5-.3.3-.5.8-.5 1.3 0 .4.1.9.2 1.4l2.8 8.8c.1.2.1.4.1.5 0 .3-.1.5-.3.7-.2.2-.4.3-.7.3-.2 0-.4-.1-.6-.2-.2-.1-.3-.3-.4-.6l-1.5-4.8h-3l-1.5 4.8c-.1.3-.2.5-.4.6-.2.1-.4.2-.6.2-.3 0-.5-.1-.7-.3-.2-.2-.3-.4-.3-.7 0-.1 0-.3.1-.5l2.8-8.8zm9.2 8.3c-.2-.2-.3-.4-.3-.7 0-.1 0-.3.1-.5l2.8-8.8c.1-.5.1-1 .2-1.4 0-.5-.2-1-.5-1.3-.3-.3-.7-.5-1.2-.5-.3 0-.6.1-.8.2-.2.1-.4.2-.6.3-.2.1-.3.1-.5.1-.3 0-.5-.1-.7-.3-.2-.2-.3-.4-.3-.7 0-.3.1-.5.3-.7.2-.2.5-.4.9-.6.4-.2.8-.2 1.2-.2.9 0 1.7.3 2.4.8.7.5 1.2 1.2 1.5 2 .1.4.2.8.2 1.3 0 .5-.1 1.2-.3 2l-2.8 8.8c-.1.3-.2.5-.4.6-.2.1-.4.2-.6.2-.3 0-.5-.1-.7-.3z" fill="white"/>
-                                        <text x="32" y="21" fontSize="9" fill="white" fontWeight="700">Pay</text>
-                                    </svg>
-                                </div>
+                        <div className="flex flex-col gap-3 w-full md:w-auto">
+                            <span className="text-xs text-slate-500 uppercase tracking-wider">We Accept:</span>
+                            <div className="flex flex-wrap gap-3 items-center">
+                                <img src="/images/visa.svg" className="h-8 w-auto opacity-80" alt="Visa" />
+                                <img src="/images/mastercard.svg" className="h-8 w-auto opacity-80" alt="Mastercard" />
+                                <img src="/images/google-pay.svg" className="h-8 w-auto opacity-80" alt="Google Pay" />
+                                <img src="/images/apple-pay.svg" className="h-8 w-auto opacity-80" alt="Apple Pay" />
+                                <img src="/images/digital-ocean.svg" className="h-10 w-auto" alt="DigitalOcean Partner" />
                             </div>
-                            <img
-                                src="/images/image-7.png"
-                                className="h-10 w-auto"
-                                alt="DigitalOcean Partner"
-                            />
                         </div>
                     </div>
                 </div>

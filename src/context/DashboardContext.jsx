@@ -5,8 +5,8 @@ const DashboardContext = createContext()
 const initialResources = [] // Empty by default as per user request
 
 const initialTransactions = [
-    { id: 'tx_2', date: '2026-01-15', description: 'Credits Purchase', amount: 5000.00, status: 'Completed', type: 'credit' },
-    { id: 'tx_1', date: '2026-02-01', description: 'Monthly Subscription - Pro Plan', amount: -2900.00, status: 'Completed', type: 'debit' },
+    { id: 'tx_2', date: '2026-01-15', description: 'Credits Purchase', amount: 5000, status: 'Completed', type: 'credit', currencyPaid: '£42.74', currency: 'GBP' },
+    { id: 'tx_1', date: '2026-02-01', description: 'Monthly Subscription - Pro Plan', amount: -2900, status: 'Completed', type: 'debit', currencyPaid: '-', currency: null },
 ]
 
 export function DashboardProvider({ children }) {
@@ -43,14 +43,16 @@ export function DashboardProvider({ children }) {
         setResources(prev => prev.filter(r => r.id !== id))
     }
 
-    const addFunds = (amount) => {
+    const addFunds = (amount, currencyAmount, currency) => {
         const newTransaction = {
             id: `tx_${Date.now()}`,
             date: new Date().toISOString().split('T')[0],
             description: `Credits Purchase`,
             amount: amount,
             status: 'Completed',
-            type: 'credit'
+            type: 'credit',
+            currencyPaid: currencyAmount,
+            currency: currency
         }
         setTransactions(prev => [newTransaction, ...prev])
     }

@@ -8,14 +8,16 @@ export default function Billing() {
     const [selectedCurrency, setSelectedCurrency] = useState('EUR')
     const [topUpAmount, setTopUpAmount] = useState(10)
 
-    // Exchange rate: 1 EUR = 100 credits, 1 GBP = 100 credits (simplified)
-    const exchangeRate = 100
+    // Exchange rate: 1 GBP = 117 credits, 1 EUR = 100 credits
+    const exchangeRate = selectedCurrency === 'GBP' ? 117 : 100
     const presetAmounts = [5, 10, 25, 50, 100]
     const currencySymbols = { EUR: '€', GBP: '£' }
 
     const handleTopUp = () => {
-        const creditsToAdd = topUpAmount * exchangeRate
-        addFunds(creditsToAdd)
+        const creditsToAdd = Math.floor(topUpAmount * exchangeRate)
+        const currencySymbol = currencySymbols[selectedCurrency]
+        const currencyPaid = `${currencySymbol}${topUpAmount}`
+        addFunds(creditsToAdd, currencyPaid, selectedCurrency)
         setShowTopUp(false)
         setTopUpAmount(10)
     }
@@ -27,7 +29,7 @@ export default function Billing() {
             <div className="grid md:grid-cols-2 gap-8 mb-12">
                 <div className="bg-[#0f1629] border border-white/5 rounded-2xl p-8">
                     <h3 className="text-slate-400 text-sm font-medium mb-2">Account Balance</h3>
-                    <div className="text-4xl font-bold text-white mb-2">{balance.toFixed(2)} <span className="text-2xl text-cyan-400">credits</span></div>
+                    <div className="text-4xl font-bold text-white mb-2">{Math.floor(balance)} <span className="text-2xl text-cyan-400">credits</span></div>
                     <p className="text-slate-500 text-xs mb-6">Purchase credits to spend on services</p>
                     <button
                         onClick={() => setShowTopUp(true)}
@@ -40,8 +42,14 @@ export default function Billing() {
                 <div className="bg-[#0f1629] border border-white/5 rounded-2xl p-8">
                     <h3 className="text-slate-400 text-sm font-medium mb-2">Active Plan</h3>
                     <div className="text-2xl font-bold text-white mb-1">Pro Plan</div>
-                    <p className="text-slate-400 text-sm mb-6">2,900.00 credits / month</p>
-                    <button className="text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors">
+                    <p className="text-slate-400 text-sm mb-6">2900 credits / month</p>
+                    <button
+                        onClick={() => {
+                            // TODO: Implement plan change functionality
+                            console.log('Change plan clicked')
+                        }}
+                        className="text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors"
+                    >
                         Change Plan &rarr;
                     </button>
                 </div>
@@ -107,21 +115,51 @@ export default function Billing() {
                             </div>
                         </div>
 
-                        {/* Slider */}
+                        {/* Slider with Increment/Decrement Buttons */}
                         <div className="mb-6">
                             <label className="text-sm text-slate-400 mb-2 block">Custom Amount</label>
-                            <input
-                                type="range"
-                                min="1"
-                                max="200"
-                                step="0.01"
-                                value={topUpAmount}
-                                onChange={(e) => setTopUpAmount(parseFloat(e.target.value))}
-                                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider-thumb"
-                            />
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="flex flex-col gap-1">
+                                    <button
+                                        onClick={() => setTopUpAmount(prev => Math.min(Math.max(prev + 1, 1), 200))}
+                                        className="px-3 py-1 bg-white/5 hover:bg-white/10 text-white rounded text-xs font-bold transition-all"
+                                    >
+                                        +1
+                                    </button>
+                                    <button
+                                        onClick={() => setTopUpAmount(prev => Math.min(Math.max(prev - 1, 1), 200))}
+                                        className="px-3 py-1 bg-white/5 hover:bg-white/10 text-white rounded text-xs font-bold transition-all"
+                                    >
+                                        -1
+                                    </button>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <button
+                                        onClick={() => setTopUpAmount(prev => Math.min(Math.max(prev + 10, 1), 200))}
+                                        className="px-3 py-1 bg-white/5 hover:bg-white/10 text-white rounded text-xs font-bold transition-all"
+                                    >
+                                        +10
+                                    </button>
+                                    <button
+                                        onClick={() => setTopUpAmount(prev => Math.min(Math.max(prev - 10, 1), 200))}
+                                        className="px-3 py-1 bg-white/5 hover:bg-white/10 text-white rounded text-xs font-bold transition-all"
+                                    >
+                                        -10
+                                    </button>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="200"
+                                    step="1"
+                                    value={topUpAmount}
+                                    onChange={(e) => setTopUpAmount(parseInt(e.target.value))}
+                                    className="flex-1 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider-thumb"
+                                />
+                            </div>
                             <div className="flex justify-between text-xs text-slate-500 mt-2">
-                                <span>{currencySymbols[selectedCurrency]}1.00</span>
-                                <span>{currencySymbols[selectedCurrency]}200.00</span>
+                                <span>{currencySymbols[selectedCurrency]}1</span>
+                                <span>{currencySymbols[selectedCurrency]}200</span>
                             </div>
                         </div>
 
@@ -136,10 +174,10 @@ export default function Billing() {
                                     type="number"
                                     min="1"
                                     max="200"
-                                    step="0.01"
+                                    step="1"
                                     value={topUpAmount}
                                     onChange={(e) => {
-                                        const val = parseFloat(e.target.value) || 1;
+                                        const val = parseInt(e.target.value) || 1;
                                         setTopUpAmount(Math.min(Math.max(val, 1), 200));
                                     }}
                                     className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white font-bold focus:outline-none focus:border-cyan-500 transition-colors"
@@ -151,11 +189,11 @@ export default function Billing() {
                         <div className="bg-white/5 rounded-xl p-6 mb-6">
                             <div className="flex justify-between items-center mb-3">
                                 <span className="text-slate-400">Amount</span>
-                                <span className="text-2xl font-bold">{currencySymbols[selectedCurrency]}{topUpAmount.toFixed(2)}</span>
+                                <span className="text-2xl font-bold">{currencySymbols[selectedCurrency]}{topUpAmount}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-slate-400">Credits</span>
-                                <span className="text-2xl font-bold text-cyan-400">{(topUpAmount * exchangeRate).toFixed(2)}</span>
+                                <span className="text-2xl font-bold text-cyan-400">{Math.floor(topUpAmount * exchangeRate)}</span>
                             </div>
                             <div className="text-xs text-slate-500 mt-3 text-center">
                                 Exchange rate: 1 {selectedCurrency} = {exchangeRate} credits
@@ -184,6 +222,7 @@ export default function Billing() {
                                 <th className="p-4 font-medium pl-6">Date</th>
                                 <th className="p-4 font-medium">Description</th>
                                 <th className="p-4 font-medium">Amount</th>
+                                <th className="p-4 font-medium">Currency Paid</th>
                                 <th className="p-4 font-medium text-right pr-6">Status</th>
                             </tr>
                         </thead>
@@ -193,7 +232,10 @@ export default function Billing() {
                                     <td className="p-4 pl-6 text-slate-400">{tx.date}</td>
                                     <td className="p-4 font-medium text-white">{tx.description}</td>
                                     <td className={`p-4 font-medium ${tx.amount > 0 ? 'text-green-400' : 'text-white'}`}>
-                                        {tx.amount > 0 ? `+${tx.amount.toFixed(2)}` : `${tx.amount.toFixed(2)}`} credits
+                                        {tx.amount > 0 ? `+${Math.floor(tx.amount)}` : `${Math.floor(tx.amount)}`} credits
+                                    </td>
+                                    <td className="p-4 text-slate-400">
+                                        {tx.currencyPaid || '-'}
                                     </td>
                                     <td className="p-4 text-right pr-6">
                                         <span className="px-2 py-1 bg-green-500/10 text-green-400 rounded-full text-xs">

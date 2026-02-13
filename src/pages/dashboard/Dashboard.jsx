@@ -10,7 +10,7 @@ export default function Dashboard() {
 
     const stats = [
         { title: 'Active Services', value: activeServices.toString(), change: resources.length > 0 ? 'Operational' : 'No services', trend: resources.length > 0 ? 'up' : 'neutral' },
-        { title: 'Current Balance', value: `${balance.toFixed(2)} credits`, change: 'Available funds', trend: 'neutral' },
+        { title: 'Current Balance', value: `${Math.floor(balance)} credits`, change: 'Available funds', trend: 'neutral' },
         { title: 'Total Bandwidth', value: '0 GB', change: '0% of quota', trend: 'neutral' },
         { title: 'System Status', value: 'Healthy', change: 'All systems operational', trend: 'good' },
     ]
