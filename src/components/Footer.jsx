@@ -86,7 +86,7 @@ export default function Footer() {
                                 <img src="/images/mastercard.svg" className="h-8 w-auto opacity-80" alt="Mastercard" />
                                 <img src="/images/google-pay.svg" className="h-8 w-auto opacity-80" alt="Google Pay" />
                                 <img src="/images/apple-pay.svg" className="h-8 w-auto opacity-80" alt="Apple Pay" />
-                                <img src="/images/digital-ocean.svg" className="h-10 w-auto" alt="DigitalOcean Partner" />
+                                <img src="/images/digital-ocean.svg" className="h-8 w-auto opacity-80" alt="DigitalOcean Partner" />
                             </div>
                         </div>
                     </div>
