@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SignedIn, UserButton } from '@clerk/clerk-react'
+import { useDashboard } from '../../context/DashboardContext'
 
 const navItems = [
     { name: 'Overview', href: '/dashboard', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
@@ -12,6 +13,7 @@ const navItems = [
 
 export default function DashboardSidebar({ isOpen, setIsOpen }) {
     const location = useLocation()
+    const { currentPlan } = useDashboard()
 
     return (
         <>
@@ -90,7 +92,7 @@ export default function DashboardSidebar({ isOpen, setIsOpen }) {
                             />
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-white truncate">My Account</p>
-                                <p className="text-xs text-slate-500 truncate">Pro Plan</p>
+                                <p className="text-xs text-slate-500 truncate">{currentPlan.name}</p>
                             </div>
                         </SignedIn>
                     </div>

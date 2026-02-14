@@ -2,9 +2,16 @@ import { motion } from 'framer-motion'
 import { useDashboard } from '../../context/DashboardContext'
 import { useState } from 'react'
 
+const planTiers = [
+    { name: 'Starter', credits: 1000, price: 10, description: 'For personal projects and testing' },
+    { name: 'Pro Plan', credits: 2900, price: 29, description: 'For growing teams and production workloads' },
+    { name: 'Business', credits: 6000, price: 55, description: 'For high-demand infrastructure and priority support' },
+]
+
 export default function Billing() {
-    const { balance, addFunds, transactions } = useDashboard()
+    const { balance, addFunds, transactions, currentPlan, changePlan } = useDashboard()
     const [showTopUp, setShowTopUp] = useState(false)
+    const [showChangePlan, setShowChangePlan] = useState(false)
     const [selectedCurrency, setSelectedCurrency] = useState('EUR')
     const [topUpAmount, setTopUpAmount] = useState(10)
 
@@ -41,13 +48,10 @@ export default function Billing() {
 
                 <div className="bg-[#0f1629] border border-white/5 rounded-2xl p-8">
                     <h3 className="text-slate-400 text-sm font-medium mb-2">Active Plan</h3>
-                    <div className="text-2xl font-bold text-white mb-1">Pro Plan</div>
-                    <p className="text-slate-400 text-sm mb-6">2900 credits / month</p>
+                    <div className="text-2xl font-bold text-white mb-1">{currentPlan.name}</div>
+                    <p className="text-slate-400 text-sm mb-6">{currentPlan.credits.toLocaleString()} credits / month</p>
                     <button
-                        onClick={() => {
-                            // TODO: Implement plan change functionality
-                            console.log('Change plan clicked')
-                        }}
+                        onClick={() => setShowChangePlan(true)}
                         className="text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors"
                     >
                         Change Plan &rarr;
@@ -83,11 +87,10 @@ export default function Billing() {
                                     <button
                                         key={currency}
                                         onClick={() => setSelectedCurrency(currency)}
-                                        className={`py-3 rounded-xl font-bold transition-all ${
-                                            selectedCurrency === currency
-                                                ? 'bg-cyan-600 text-white'
-                                                : 'bg-white/5 text-slate-400 hover:bg-white/10'
-                                        }`}
+                                        className={`py-3 rounded-xl font-bold transition-all ${selectedCurrency === currency
+                                            ? 'bg-cyan-600 text-white'
+                                            : 'bg-white/5 text-slate-400 hover:bg-white/10'
+                                            }`}
                                     >
                                         {currencySymbols[currency]} {currency}
                                     </button>
@@ -103,11 +106,10 @@ export default function Billing() {
                                     <button
                                         key={amount}
                                         onClick={() => setTopUpAmount(amount)}
-                                        className={`py-2 rounded-lg text-sm font-bold transition-all ${
-                                            topUpAmount === amount
-                                                ? 'bg-cyan-600 text-white'
-                                                : 'bg-white/5 text-slate-400 hover:bg-white/10'
-                                        }`}
+                                        className={`py-2 rounded-lg text-sm font-bold transition-all ${topUpAmount === amount
+                                            ? 'bg-cyan-600 text-white'
+                                            : 'bg-white/5 text-slate-400 hover:bg-white/10'
+                                            }`}
                                     >
                                         {amount}
                                     </button>
@@ -118,61 +120,67 @@ export default function Billing() {
                         {/* Slider with Increment/Decrement Buttons */}
                         <div className="mb-6">
                             <label className="text-sm text-slate-400 mb-2 block">Custom Amount</label>
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="flex flex-col gap-1">
-                                    <button
-                                        onClick={() => setTopUpAmount(prev => {
-                                            const newAmount = prev - (10 / exchangeRate);
-                                            return Math.max(newAmount, 1/exchangeRate);
-                                        })}
-                                        className="px-3 py-1 bg-white/5 hover:bg-white/10 text-white rounded text-xs font-bold transition-all"
-                                    >
-                                        -10
-                                    </button>
-                                    <button
-                                        onClick={() => setTopUpAmount(prev => {
-                                            const newAmount = prev - (1 / exchangeRate);
-                                            return Math.max(newAmount, 1/exchangeRate);
-                                        })}
-                                        className="px-3 py-1 bg-white/5 hover:bg-white/10 text-white rounded text-xs font-bold transition-all"
-                                    >
-                                        -1
-                                    </button>
-                                </div>
+                            <div className="flex items-center gap-2 mb-2">
+                                {/* Minus buttons — left of slider */}
+                                <button
+                                    onClick={() => setTopUpAmount(prev => {
+                                        const newAmount = prev - (10 / exchangeRate);
+                                        return Math.round(Math.max(newAmount, 1 / exchangeRate) * 100) / 100;
+                                    })}
+                                    className="px-2.5 py-1.5 bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-white rounded-lg text-xs font-bold transition-all shrink-0"
+                                    title="Remove 10 credits"
+                                >
+                                    −10
+                                </button>
+                                <button
+                                    onClick={() => setTopUpAmount(prev => {
+                                        const newAmount = prev - (1 / exchangeRate);
+                                        return Math.round(Math.max(newAmount, 1 / exchangeRate) * 100) / 100;
+                                    })}
+                                    className="px-2.5 py-1.5 bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-white rounded-lg text-xs font-bold transition-all shrink-0"
+                                    title="Remove 1 credit"
+                                >
+                                    −1
+                                </button>
+
+                                {/* Slider */}
                                 <input
                                     type="range"
                                     min="1"
                                     max="200"
                                     step="0.01"
                                     value={topUpAmount}
-                                    onChange={(e) => setTopUpAmount(parseFloat(e.target.value))}
-                                    className="flex-1 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider-thumb"
+                                    onChange={(e) => setTopUpAmount(Math.round(parseFloat(e.target.value) * 100) / 100)}
+                                    className="flex-1 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider-thumb min-w-0"
                                 />
-                                <div className="flex flex-col gap-1">
-                                    <button
-                                        onClick={() => setTopUpAmount(prev => {
-                                            const newAmount = prev + (1 / exchangeRate);
-                                            return Math.min(newAmount, 200);
-                                        })}
-                                        className="px-3 py-1 bg-white/5 hover:bg-white/10 text-white rounded text-xs font-bold transition-all"
-                                    >
-                                        +1
-                                    </button>
-                                    <button
-                                        onClick={() => setTopUpAmount(prev => {
-                                            const newAmount = prev + (10 / exchangeRate);
-                                            return Math.min(newAmount, 200);
-                                        })}
-                                        className="px-3 py-1 bg-white/5 hover:bg-white/10 text-white rounded text-xs font-bold transition-all"
-                                    >
-                                        +10
-                                    </button>
-                                </div>
+
+                                {/* Plus buttons — right of slider */}
+                                <button
+                                    onClick={() => setTopUpAmount(prev => {
+                                        const newAmount = prev + (1 / exchangeRate);
+                                        return Math.round(Math.min(newAmount, 200) * 100) / 100;
+                                    })}
+                                    className="px-2.5 py-1.5 bg-white/5 hover:bg-green-500/20 hover:text-green-400 text-white rounded-lg text-xs font-bold transition-all shrink-0"
+                                    title="Add 1 credit"
+                                >
+                                    +1
+                                </button>
+                                <button
+                                    onClick={() => setTopUpAmount(prev => {
+                                        const newAmount = prev + (10 / exchangeRate);
+                                        return Math.round(Math.min(newAmount, 200) * 100) / 100;
+                                    })}
+                                    className="px-2.5 py-1.5 bg-white/5 hover:bg-green-500/20 hover:text-green-400 text-white rounded-lg text-xs font-bold transition-all shrink-0"
+                                    title="Add 10 credits"
+                                >
+                                    +10
+                                </button>
                             </div>
                             <div className="flex justify-between text-xs text-slate-500 mt-2">
                                 <span>{currencySymbols[selectedCurrency]}1.00</span>
                                 <span>{currencySymbols[selectedCurrency]}200.00</span>
                             </div>
+                            <p className="text-xs text-slate-600 mt-1 text-center">Buttons adjust by credits (1 {selectedCurrency} = {exchangeRate} credits)</p>
                         </div>
 
                         {/* Manual Input */}
@@ -187,7 +195,7 @@ export default function Billing() {
                                     min="0.01"
                                     max="200"
                                     step="0.01"
-                                    value={topUpAmount}
+                                    value={Math.round(topUpAmount * 100) / 100}
                                     onChange={(e) => {
                                         const val = parseFloat(e.target.value) || 0.01;
                                         setTopUpAmount(Math.min(Math.max(val, 0.01), 200));
@@ -219,6 +227,71 @@ export default function Billing() {
                         >
                             Proceed to Checkout
                         </button>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Change Plan Modal */}
+            {showChangePlan && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-[#0f1629] border border-white/10 rounded-2xl p-8 max-w-2xl w-full"
+                    >
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold">Change Plan</h2>
+                            <button
+                                onClick={() => setShowChangePlan(false)}
+                                className="text-slate-400 hover:text-white transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className="grid sm:grid-cols-3 gap-4">
+                            {planTiers.map((plan) => {
+                                const isCurrent = currentPlan.name === plan.name
+                                return (
+                                    <div
+                                        key={plan.name}
+                                        className={`relative rounded-xl p-6 border transition-all ${isCurrent
+                                            ? 'border-cyan-500/50 bg-cyan-500/10'
+                                            : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        {isCurrent && (
+                                            <span className="absolute -top-2.5 left-4 px-2 py-0.5 bg-cyan-500 text-black text-xs font-bold rounded-full">
+                                                Current
+                                            </span>
+                                        )}
+                                        <h3 className="text-lg font-bold mb-1">{plan.name}</h3>
+                                        <p className="text-xs text-slate-500 mb-4">{plan.description}</p>
+                                        <div className="text-3xl font-black mb-1">
+                                            €{plan.price}<span className="text-sm font-normal text-slate-500">/mo</span>
+                                        </div>
+                                        <p className="text-sm text-cyan-400 mb-5">{plan.credits.toLocaleString()} credits</p>
+                                        <button
+                                            onClick={() => {
+                                                if (!isCurrent) {
+                                                    changePlan(plan)
+                                                    setShowChangePlan(false)
+                                                }
+                                            }}
+                                            disabled={isCurrent}
+                                            className={`w-full py-2.5 rounded-xl font-bold text-sm transition-all ${isCurrent
+                                                ? 'bg-white/5 text-slate-500 cursor-default'
+                                                : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg hover:shadow-cyan-500/25'
+                                                }`}
+                                        >
+                                            {isCurrent ? 'Active' : 'Select Plan'}
+                                        </button>
+                                    </div>
+                                )
+                            })}
+                        </div>
                     </motion.div>
                 </div>
             )}

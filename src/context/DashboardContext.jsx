@@ -9,6 +9,8 @@ const initialTransactions = [
     { id: 'tx_1', date: '2026-02-01', description: 'Monthly Subscription - Pro Plan', amount: -2900, status: 'Completed', type: 'debit', currencyPaid: '-', currency: null },
 ]
 
+const defaultPlan = { name: 'Pro Plan', credits: 2900, price: 29 }
+
 export function DashboardProvider({ children }) {
     const [resources, setResources] = useState(() => {
         const saved = localStorage.getItem('wys_resources')
@@ -20,13 +22,23 @@ export function DashboardProvider({ children }) {
         return saved ? JSON.parse(saved) : initialTransactions
     })
 
+    const [currentPlan, setCurrentPlan] = useState(() => {
+        const saved = localStorage.getItem('wys_plan')
+        return saved ? JSON.parse(saved) : defaultPlan
+    })
+
     // Calculate balance from transactions
     const balance = transactions.reduce((sum, tx) => sum + tx.amount, 0)
 
     useEffect(() => {
         localStorage.setItem('wys_resources', JSON.stringify(resources))
         localStorage.setItem('wys_transactions', JSON.stringify(transactions))
-    }, [resources, transactions])
+        localStorage.setItem('wys_plan', JSON.stringify(currentPlan))
+    }, [resources, transactions, currentPlan])
+
+    const changePlan = (plan) => {
+        setCurrentPlan(plan)
+    }
 
     const addResource = (resource) => {
         const newResource = {
@@ -70,7 +82,7 @@ export function DashboardProvider({ children }) {
     }
 
     return (
-        <DashboardContext.Provider value={{ resources, balance, transactions, addResource, removeResource, addFunds, deductCredits }}>
+        <DashboardContext.Provider value={{ resources, balance, transactions, currentPlan, addResource, removeResource, addFunds, deductCredits, changePlan }}>
             {children}
         </DashboardContext.Provider>
     )
