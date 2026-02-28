@@ -2,7 +2,7 @@ export const docsData = {
     'getting-started': {
         title: 'Getting Started',
         icon: '🚀',
-        description: 'Learn the basics of WysCloudTop and deploy your first resource.',
+        description: 'Learn the basics of Cloudbase and deploy your first resource.',
         articles: [
             {
                 id: 'quick-start',
@@ -11,10 +11,10 @@ export const docsData = {
                 content: `
 # Quick Start Guide
 
-Welcome to WysCloudTop! This guide will help you get your first cloud resource up and running in minutes.
+Welcome to Cloudbase! This guide will help you get your first cloud resource up and running in minutes.
 
 ## Prerequisites
-1. A WysCloudTop account
+1. A Cloudbase account
 2. A valid payment method or trial credits
 3. Basic understanding of cloud concepts
 
@@ -22,7 +22,7 @@ Welcome to WysCloudTop! This guide will help you get your first cloud resource u
 If you haven't already, head over to the Sign Up page and create your account. You'll need to verify your email address before proceeding.
 
 ## Step 2: Access the Dashboard
-Log in to your account to access the main dashboard. This is your command center for all WysCloudTop resources.
+Log in to your account to access the main dashboard. This is your command center for all Cloudbase resources.
 
 ## Step 3: Launch a VPS
 1. Click "New Resource" in the sidebar.
@@ -64,7 +64,7 @@ Add a payment method in the Billing section to prevent service interruption. We 
                 content: `
 # Dashboard Overview
 
-The WysCloudTop dashboard is designed for simplicity and power.
+The Cloudbase dashboard is designed for simplicity and power.
 
 ## Main Sections
 - **Overview**: See active resources and current usage stats.
@@ -209,7 +209,7 @@ ssh root@your_server_ip
 ## Using SSH Keys
 We strongly recommend using SSH keys instead of passwords.
 1. Generate key: \`ssh-keygen -t rsa -b 4096\`
-2. Add the public key \`~/.ssh/id_rsa.pub\` to your WysCloudTop panel during creation.
+2. Add the public key \`~/.ssh/id_rsa.pub\` to your Cloudbase panel during creation.
                 `
             },
             {
@@ -279,7 +279,7 @@ We provide a secure connection string for your apps.
 
 ## Internal vs External
 - **Public Network**: Use for connecting from local machine or external providers.
-- **Private Network**: Use for connecting from WysCloudTop VPS (faster, more secure, free bandwidth).
+- **Private Network**: Use for connecting from Cloudbase VPS (faster, more secure, free bandwidth).
 
 Example:
 \`postgresql://doadmin:password@host:25060/defaultdb?sslmode=require\`
@@ -411,7 +411,7 @@ Go to Settings > API and create a new Personal Access Token.
 
 ## Usage
 \`\`\`bash
-curl -H "Authorization: Bearer YOUR_TOKEN" https://api.wyscloudtop.com/v2/account
+curl -H "Authorization: Bearer YOUR_TOKEN" https://api.cloudbase.com/v2/account
 \`\`\`
                 `
             },
