@@ -96,7 +96,17 @@ export default function Footer() {
 						<div className="flex flex-col gap-2">
 							<p>© 2026 Cloudbase. All rights reserved.</p>
 							<p className="text-xs">
-								Cloudbase LLC | Registration: DE-12345678 | VAT: US-987654321
+								SAMENTHWELL LTD | Registration: HE487844 | Boumpoulinas, 23
+								Flat/Office 6, 2019, Nicosia, Cyprus
+							</p>
+							<p className="text-xs">
+								Phone:{" "}
+								<a
+									href="tel:+441174101523"
+									className="hover:text-slate-400 transition-colors"
+								>
+									+44 117 410 1523
+								</a>
 							</p>
 						</div>
 						<div className="flex flex-col gap-3 w-full md:w-auto">

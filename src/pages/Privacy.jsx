@@ -18,6 +18,41 @@ export default function Privacy() {
 
 					<div className="prose prose-invert prose-lg max-w-none space-y-8">
 						<section>
+							{" "}
+							<h2 className="text-2xl font-bold mb-4">Data Controller</h2>
+							<div className="bg-white/5 border border-white/10 rounded-lg p-6 text-slate-300 space-y-1">
+								<p>
+									<span className="text-white font-semibold">
+										Company Name:
+									</span>{" "}
+									SAMENTHWELL LTD
+								</p>
+								<p>
+									<span className="text-white font-semibold">
+										Registration Number:
+									</span>{" "}
+									HE487844
+								</p>
+								<p>
+									<span className="text-white font-semibold">
+										Registered Address:
+									</span>{" "}
+									Boumpoulinas, 23 Flat/Office 6, 2019, Nicosia, Cyprus
+								</p>
+								<p>
+									<span className="text-white font-semibold">Phone:</span>{" "}
+									<a
+										href="tel:+441174101523"
+										className="text-cyan-400 hover:text-cyan-300 transition-colors"
+									>
+										+44 117 410 1523
+									</a>
+								</p>
+							</div>
+						</section>
+
+						<section>
+							{" "}
 							<h2 className="text-2xl font-bold mb-4">
 								1. Information We Collect
 							</h2>
