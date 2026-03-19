@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "computedHash": "9c87c315aed143ee3b34bec8117100f5035e0df09e6b23e1ecc772cff434c9ad"
+    },
+    "v0-dev": {
+      "source": "vercel-labs/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "bc8534a09bc2e1002efab1ed10de2eca651d70f35e7b10bf03bf9f8ead933cc6"
+    }
+  }
+}

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useScroll } from "framer-motion";
-import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import LiveStatus from "./LiveStatus";
+import { useAuth } from "../context/AuthContext";
 
 const navLinks = [
 	{ name: "Overview", href: "/#overview" },
@@ -28,6 +28,7 @@ export default function Navbar() {
 	const { scrollYProgress } = useScroll();
 	const location = useLocation();
 	const navigate = useNavigate();
+	const { user } = useAuth();
 	const isLightPage = ["/sign-up", "/sign-in"].some((path) =>
 		location.pathname.startsWith(path),
 	);
@@ -168,25 +169,29 @@ export default function Navbar() {
 								</Link>
 							),
 						)}
-						<SignedOut>
-							<Link to="/contact" className={`${hoverColor} transition-colors`}>
-								Contact Sales
-							</Link>
-							<Link
-								to="/sign-in"
-								className="bg-cyan-600 hover:bg-cyan-500 px-5 py-2 rounded-full text-white transition-all transform hover:scale-105"
-							>
-								Sign In
-							</Link>
-						</SignedOut>
-						<SignedIn>
+						{!user ? (
+							<>
+								<Link
+									to="/contact"
+									className={`${hoverColor} transition-colors`}
+								>
+									Contact Sales
+								</Link>
+								<Link
+									to="/sign-in"
+									className="bg-cyan-600 hover:bg-cyan-500 px-5 py-2 rounded-full text-white transition-all transform hover:scale-105"
+								>
+									Sign In
+								</Link>
+							</>
+						) : (
 							<Link
 								to="/dashboard"
 								className="bg-cyan-600 hover:bg-cyan-500 px-5 py-2 rounded-full text-white transition-all transform hover:scale-105"
 							>
 								Account
 							</Link>
-						</SignedIn>
+						)}
 					</div>
 
 					{/* Mobile Toggle */}
@@ -267,23 +272,24 @@ export default function Navbar() {
 								</Link>
 
 								<div className="border-t border-white/10 pt-4 mt-2 flex flex-col gap-3">
-									<SignedOut>
-										<Link
-											to="/contact"
-											onClick={() => setMobileOpen(false)}
-											className="border border-cyan-600/50 hover:border-cyan-600 py-3 rounded-lg w-full block text-center transition-colors"
-										>
-											Contact Sales
-										</Link>
-										<Link
-											to="/sign-in"
-											onClick={() => setMobileOpen(false)}
-											className="bg-cyan-600 hover:bg-cyan-500 py-3 rounded-lg w-full block text-center transition-colors"
-										>
-											Sign In
-										</Link>
-									</SignedOut>
-									<SignedIn>
+									{!user ? (
+										<>
+											<Link
+												to="/contact"
+												onClick={() => setMobileOpen(false)}
+												className="border border-cyan-600/50 hover:border-cyan-600 py-3 rounded-lg w-full block text-center transition-colors"
+											>
+												Contact Sales
+											</Link>
+											<Link
+												to="/sign-in"
+												onClick={() => setMobileOpen(false)}
+												className="bg-cyan-600 hover:bg-cyan-500 py-3 rounded-lg w-full block text-center transition-colors"
+											>
+												Sign In
+											</Link>
+										</>
+									) : (
 										<Link
 											to="/dashboard"
 											onClick={() => setMobileOpen(false)}
@@ -291,7 +297,7 @@ export default function Navbar() {
 										>
 											Account
 										</Link>
-									</SignedIn>
+									)}
 								</div>
 							</div>
 						</motion.div>

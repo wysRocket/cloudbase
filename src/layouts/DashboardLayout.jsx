@@ -1,8 +1,9 @@
-import { useNavigate } from "react-router-dom";
-import { useUser } from "@clerk/clerk-react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import DashboardSidebar from "../components/dashboard/DashboardSidebar";
 import { DashboardProvider } from "../context/DashboardContext";
+import { useAuth } from "../context/AuthContext";
 
 const initialNotifications = [
 	{
@@ -31,8 +32,9 @@ const initialNotifications = [
 ];
 
 export default function DashboardLayout({ children }) {
-	const { isLoaded, isSignedIn } = useUser();
+	const { loading, user } = useAuth();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 	const [showNotifications, setShowNotifications] = useState(false);
 	const [notifications, setNotifications] = useState(initialNotifications);
@@ -41,15 +43,15 @@ export default function DashboardLayout({ children }) {
 	const unreadCount = notifications.filter((n) => !n.read).length;
 
 	useEffect(() => {
-		if (isLoaded && !isSignedIn) {
+		if (!loading && !user) {
 			navigate("/sign-in", { replace: true });
 		}
-	}, [isLoaded, isSignedIn, navigate]);
+	}, [loading, user, navigate]);
 
 	// Close sidebar on route change (for mobile)
 	useEffect(() => {
 		setIsSidebarOpen(false);
-	}, [window.location.pathname]);
+	}, [location.pathname]);
 
 	// Click outside to close notifications
 	useEffect(() => {
@@ -74,12 +76,16 @@ export default function DashboardLayout({ children }) {
 		);
 	};
 
-	if (!isLoaded || !isSignedIn) {
+	if (loading) {
 		return (
 			<div className="min-h-screen bg-[#0a0f1d] flex items-center justify-center">
 				<div className="w-8 h-8 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin"></div>
 			</div>
 		);
+	}
+
+	if (!user) {
+		return <Navigate to="/sign-in" replace />;
 	}
 
 	return (
