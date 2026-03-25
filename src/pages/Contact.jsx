@@ -398,8 +398,8 @@ export default function Contact() {
 							{
 								icon: "📧",
 								title: "General Inquiries",
-								value: "hello@cloudbase.com",
-								href: "mailto:hello@cloudbase.com",
+								value: "support@cloudbase.com",
+								href: "mailto:support@cloudbase.com",
 							},
 							{
 								icon: "🛟",
@@ -410,8 +410,8 @@ export default function Contact() {
 							{
 								icon: "🏢",
 								title: "Enterprise",
-								value: "enterprise@cloudbase.com",
-								href: "mailto:enterprise@cloudbase.com",
+								value: "support@cloudbase.com",
+								href: "mailto:support@cloudbase.com",
 							},
 						].map((item, i) => (
 							<a
