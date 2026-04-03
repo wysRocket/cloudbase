@@ -42,10 +42,10 @@ export default function Privacy() {
 								<p>
 									<span className="text-white font-semibold">Phone:</span>{" "}
 									<a
-										href="tel:+447537183538"
+										href="tel:+447457426572"
 										className="text-cyan-400 hover:text-cyan-300 transition-colors"
 									>
-										+447537183538
+										+44 7457 426572
 									</a>
 								</p>
 							</div>
