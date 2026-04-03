@@ -102,10 +102,10 @@ export default function Footer() {
 							<p className="text-xs">
 								Phone:{" "}
 								<a
-									href="tel:+447537183538"
+									href="tel:+447457426572"
 									className="hover:text-slate-400 transition-colors"
 								>
-									+447537183538
+									+44 7457 426572
 								</a>
 							</p>
 						</div>
