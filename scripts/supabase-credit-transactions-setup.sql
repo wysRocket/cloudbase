@@ -78,29 +78,8 @@ using (
 );
 
 drop policy if exists credit_transactions_insert_own_or_admin on public.credit_transactions;
-create policy credit_transactions_insert_own_or_admin
-on public.credit_transactions
-for insert
-to authenticated
-with check (
-  user_id = (select auth.uid())
-  or (select public.is_admin((select auth.uid())))
-);
-
 drop policy if exists credit_transactions_update_admin_only on public.credit_transactions;
-create policy credit_transactions_update_admin_only
-on public.credit_transactions
-for update
-to authenticated
-using ((select public.is_admin((select auth.uid()))))
-with check ((select public.is_admin((select auth.uid()))));
-
 drop policy if exists credit_transactions_delete_admin_only on public.credit_transactions;
-create policy credit_transactions_delete_admin_only
-on public.credit_transactions
-for delete
-to authenticated
-using ((select public.is_admin((select auth.uid()))));
 
 drop policy if exists payment_orders_select_own_or_admin on public.payment_orders;
 create policy payment_orders_select_own_or_admin
@@ -113,32 +92,14 @@ using (
 );
 
 drop policy if exists payment_orders_insert_admin_only on public.payment_orders;
-create policy payment_orders_insert_admin_only
-on public.payment_orders
-for insert
-to authenticated
-with check ((select public.is_admin((select auth.uid()))));
-
 drop policy if exists payment_orders_update_admin_only on public.payment_orders;
-create policy payment_orders_update_admin_only
-on public.payment_orders
-for update
-to authenticated
-using ((select public.is_admin((select auth.uid()))))
-with check ((select public.is_admin((select auth.uid()))));
-
 drop policy if exists payment_orders_delete_admin_only on public.payment_orders;
-create policy payment_orders_delete_admin_only
-on public.payment_orders
-for delete
-to authenticated
-using ((select public.is_admin((select auth.uid()))));
 
 revoke all on table public.credit_transactions from anon;
 revoke all on table public.credit_transactions from authenticated;
 revoke all on table public.payment_orders from anon;
 revoke all on table public.payment_orders from authenticated;
-grant select, insert on table public.credit_transactions to authenticated;
+grant select on table public.credit_transactions to authenticated;
 grant select on table public.payment_orders to authenticated;
 grant usage, select on sequence public.credit_transactions_id_seq to authenticated;
 

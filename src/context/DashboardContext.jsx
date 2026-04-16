@@ -98,36 +98,6 @@ export function DashboardProvider({ children }) {
 		setResources((prev) => prev.filter((r) => r.id !== id));
 	};
 
-	const deductCredits = async (amount, description) => {
-		const newTransaction = {
-			id: `tx_${Date.now()}`,
-			date: new Date().toISOString().split("T")[0],
-			description: description,
-			amount: -amount,
-			status: "Completed",
-			type: "debit",
-		};
-		setTransactions((prev) => [newTransaction, ...prev]);
-
-		if (!user) {
-			return;
-		}
-
-		const { error } = await supabase.from("credit_transactions").insert({
-			user_id: user.id,
-			description: newTransaction.description,
-			amount: newTransaction.amount,
-			type: newTransaction.type,
-			status: newTransaction.status,
-		});
-
-		if (error) {
-			console.warn("Unable to persist debit transaction to Supabase.", error);
-		} else {
-			loadTransactions();
-		}
-	};
-
 	return (
 		<DashboardContext.Provider
 			value={{
@@ -138,7 +108,6 @@ export function DashboardProvider({ children }) {
 				addResource,
 				removeResource,
 				refreshTransactions: loadTransactions,
-				deductCredits,
 				changePlan,
 			}}
 		>

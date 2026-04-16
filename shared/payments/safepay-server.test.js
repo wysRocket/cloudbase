@@ -30,6 +30,7 @@ describe("SafePay server helpers", () => {
 	it("parses the hosted checkout URL and provider transaction id from get_trans=1 responses", () => {
 		const parsed = parseCreatePaymentResponse(
 			"OK\nhttps://pay.example/form?trans_id=abc123,txn789",
+			{ allowedHosts: ["pay.example"] },
 		);
 
 		expect(parsed).toEqual({
@@ -49,7 +50,25 @@ describe("SafePay server helpers", () => {
 			/valid checkout url/i,
 		);
 		expect(() =>
-			parseCreatePaymentResponse("OK\nhttps://pay.example/form?foo=bar"),
+			parseCreatePaymentResponse(
+				"OK\nhttp://pay.example/form?trans_id=abc,txn1",
+				{
+					allowedHosts: ["pay.example"],
+				},
+			),
+		).toThrow(/https/i);
+		expect(() =>
+			parseCreatePaymentResponse(
+				"OK\nhttps://evil.example/form?trans_id=abc,txn1",
+				{
+					allowedHosts: ["pay.example"],
+				},
+			),
+		).toThrow(/unexpected checkout host/i);
+		expect(() =>
+			parseCreatePaymentResponse("OK\nhttps://pay.example/form?foo=bar", {
+				allowedHosts: ["pay.example"],
+			}),
 		).toThrow(/transaction id/i);
 	});
 });

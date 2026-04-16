@@ -12,7 +12,7 @@ import {
 	buildPaymentHash,
 	parseCreatePaymentResponse,
 } from "../../../shared/payments/safepay-server.js";
-import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
+import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { createAdminClient, createUserClient } from "../_shared/supabase.ts";
 
 const gatewayUrl =
@@ -31,11 +31,11 @@ function requiredEnv(name: string) {
 
 Deno.serve(async (request) => {
 	if (request.method === "OPTIONS") {
-		return new Response("ok", { headers: corsHeaders });
+		return new Response("ok", { headers: getCorsHeaders(request) });
 	}
 
 	if (request.method !== "POST") {
-		return jsonResponse({ error: "Method not allowed." }, 405);
+		return jsonResponse({ error: "Method not allowed." }, 405, request);
 	}
 
 	try {
@@ -49,7 +49,11 @@ Deno.serve(async (request) => {
 		} = await userClient.auth.getUser();
 
 		if (userError || !user) {
-			return jsonResponse({ error: "You must be signed in to pay." }, 401);
+			return jsonResponse(
+				{ error: "You must be signed in to pay." },
+				401,
+				request,
+			);
 		}
 
 		const body = await request.json();
@@ -57,14 +61,42 @@ Deno.serve(async (request) => {
 		const merchantId = requiredEnv("SAFEPAY_MERCHANT_ID");
 		const merchantSecret = requiredEnv("SAFEPAY_MERCHANT_SECRET");
 
-		const amountMinor = amountMajorToMinor(body?.amount, currency);
-		const creditsToAdd = creditsFromMinorAmount(amountMinor, currency);
+		let amountMinor: number;
+		let creditsToAdd: number;
 
-		const { data: existingProfile } = await adminClient
-			.from("profiles")
-			.select("id, email, first_name, last_name, phone, country_code, city")
-			.eq("id", user.id)
-			.maybeSingle();
+		try {
+			amountMinor = amountMajorToMinor(body?.amount, currency);
+			creditsToAdd = creditsFromMinorAmount(amountMinor, currency);
+		} catch (error) {
+			return jsonResponse(
+				{
+					error:
+						error instanceof Error
+							? error.message
+							: "Invalid amount or currency.",
+				},
+				422,
+				request,
+			);
+		}
+
+		const { data: existingProfile, error: existingProfileError } =
+			await adminClient
+				.from("profiles")
+				.select("id, email, first_name, last_name, phone, country_code, city")
+				.eq("id", user.id)
+				.maybeSingle();
+
+		if (existingProfileError) {
+			return jsonResponse(
+				{
+					error: "Unable to load the billing profile.",
+					details: existingProfileError.message,
+				},
+				500,
+				request,
+			);
+		}
 
 		const normalizedCustomer = normalizeCustomerProfile({
 			firstName: body?.customer?.firstName || existingProfile?.first_name,
@@ -83,16 +115,28 @@ Deno.serve(async (request) => {
 					missingFields,
 				},
 				422,
+				request,
 			);
 		}
 
-		await adminClient.from("profiles").upsert(
+		const { error: profileError } = await adminClient.from("profiles").upsert(
 			{
 				id: user.id,
 				...profileRowFromCustomerProfile(normalizedCustomer),
 			},
 			{ onConflict: "id" },
 		);
+
+		if (profileError) {
+			return jsonResponse(
+				{
+					error: "Unable to update billing profile.",
+					details: profileError.message,
+				},
+				500,
+				request,
+			);
+		}
 
 		const invoice = buildInvoice({ prefix: "WCT", userId: user.id });
 		const description = `CloudbaseTop credit top-up (${creditsToAdd} credits)`;
@@ -137,11 +181,37 @@ Deno.serve(async (request) => {
 					details: providerText,
 				},
 				502,
+				request,
 			);
 		}
 
-		const { checkoutUrl, providerTransactionId } =
-			parseCreatePaymentResponse(providerText);
+		let checkoutUrl: string;
+		let providerTransactionId: string;
+
+		try {
+			({ checkoutUrl, providerTransactionId } = parseCreatePaymentResponse(
+				providerText,
+				{
+					allowedHosts: [
+						new URL(gatewayUrl).hostname,
+						"www.safepayto.me",
+						"safepayto.me",
+					],
+				},
+			));
+		} catch (error) {
+			return jsonResponse(
+				{
+					error: "SafePay returned an invalid payment session.",
+					details:
+						error instanceof Error
+							? error.message
+							: "Invalid checkout response.",
+				},
+				502,
+				request,
+			);
+		}
 
 		const { data: order, error: orderError } = await adminClient
 			.from("payment_orders")
@@ -172,18 +242,24 @@ Deno.serve(async (request) => {
 					details: orderError?.message,
 				},
 				500,
+				request,
 			);
 		}
 
-		return jsonResponse({
-			paymentId: order.id,
-			invoice,
-			checkoutUrl,
-		});
+		return jsonResponse(
+			{
+				paymentId: order.id,
+				invoice,
+				checkoutUrl,
+			},
+			200,
+			request,
+		);
 	} catch (error) {
 		return jsonResponse(
 			{ error: error instanceof Error ? error.message : "Unknown error." },
 			500,
+			request,
 		);
 	}
 });

@@ -1,8 +1,17 @@
 import { createHash, randomUUID } from "node:crypto";
 
+// SafePay's protocol requires MD5 request signing. We keep the merchant secret
+// server-side only and require a separate signed status lookup before credits
+// are applied, so the create-session response is never treated as proof of payment.
 function md5(value) {
 	return createHash("md5").update(String(value)).digest("hex");
 }
+
+const DEFAULT_ALLOWED_CHECKOUT_HOSTS = new Set([
+	"www.safepayto.me",
+	"safepayto.me",
+	"loyalty.safepayto.me",
+]);
 
 export function buildPaymentHash({
 	amountMinor,
@@ -33,7 +42,10 @@ export function extractProviderTransactionId(checkoutUrl) {
 	}
 }
 
-export function parseCreatePaymentResponse(responseText) {
+export function parseCreatePaymentResponse(
+	responseText,
+	{ allowedHosts = DEFAULT_ALLOWED_CHECKOUT_HOSTS } = {},
+) {
 	const normalizedResponse = String(responseText || "").trim();
 	const [statusLine, checkoutUrl] = normalizedResponse
 		.split(/\r?\n/)
@@ -44,10 +56,28 @@ export function parseCreatePaymentResponse(responseText) {
 		throw new Error("Unexpected SafePay create-payment response.");
 	}
 
+	let parsedUrl;
+
 	try {
-		new URL(checkoutUrl);
+		parsedUrl = new URL(checkoutUrl);
 	} catch {
 		throw new Error("SafePay returned an invalid checkout URL.");
+	}
+
+	if (parsedUrl.protocol !== "https:") {
+		throw new Error("SafePay checkout URL must use HTTPS.");
+	}
+
+	const normalizedAllowedHosts = new Set(
+		[...allowedHosts].map((host) =>
+			String(host || "")
+				.trim()
+				.toLowerCase(),
+		),
+	);
+
+	if (!normalizedAllowedHosts.has(parsedUrl.hostname.toLowerCase())) {
+		throw new Error("SafePay returned an unexpected checkout host.");
 	}
 
 	const providerTransactionId = extractProviderTransactionId(checkoutUrl);

@@ -16,6 +16,9 @@ describe("payment catalog", () => {
 	it("rejects malformed or out-of-range amount strings", () => {
 		expect(() => amountMajorToMinor("", "EUR")).toThrow(/valid amount/i);
 		expect(() => amountMajorToMinor("12.345", "EUR")).toThrow(/valid amount/i);
+		expect(() => amountMajorToMinor("0.00", "EUR")).toThrow(
+			/greater than zero/i,
+		);
 		expect(() => amountMajorToMinor("0.50", "EUR")).toThrow(/between/i);
 		expect(() => amountMajorToMinor("201.00", "GBP")).toThrow(/between/i);
 	});

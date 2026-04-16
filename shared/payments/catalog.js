@@ -40,6 +40,10 @@ export function amountMajorToMinor(amount, currency) {
 		throw new Error("Enter a valid amount with up to 2 decimal places.");
 	}
 
+	if (Number(normalizedAmount) === 0) {
+		throw new Error("Amount must be greater than zero.");
+	}
+
 	const config = getCurrencyConfig(currency);
 	const [wholePart, fractionPart = ""] = normalizedAmount.split(".");
 	const amountMinor =

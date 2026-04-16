@@ -1,7 +1,7 @@
 import { formatMinorAmount } from "../../../shared/payments/catalog.js";
 import { summarizeRefreshResult } from "../../../shared/payments/reconciliation.js";
 import { buildRequestHash } from "../../../shared/payments/safepay-server.js";
-import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
+import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { createAdminClient, createUserClient } from "../_shared/supabase.ts";
 
 const gatewayUrl =
@@ -18,13 +18,18 @@ function requiredEnv(name: string) {
 	return value;
 }
 
+function toProviderStatusId(value: unknown) {
+	const parsed = Number(value);
+	return Number.isInteger(parsed) ? parsed : null;
+}
+
 Deno.serve(async (request) => {
 	if (request.method === "OPTIONS") {
-		return new Response("ok", { headers: corsHeaders });
+		return new Response("ok", { headers: getCorsHeaders(request) });
 	}
 
 	if (request.method !== "POST") {
-		return jsonResponse({ error: "Method not allowed." }, 405);
+		return jsonResponse({ error: "Method not allowed." }, 405, request);
 	}
 
 	try {
@@ -41,6 +46,7 @@ Deno.serve(async (request) => {
 			return jsonResponse(
 				{ error: "You must be signed in to check payment status." },
 				401,
+				request,
 			);
 		}
 
@@ -48,7 +54,7 @@ Deno.serve(async (request) => {
 		const invoice = String(body?.invoice || "").trim();
 
 		if (!invoice) {
-			return jsonResponse({ error: "Invoice is required." }, 400);
+			return jsonResponse({ error: "Invoice is required." }, 400, request);
 		}
 
 		const { data: order, error: orderError } = await adminClient
@@ -60,7 +66,7 @@ Deno.serve(async (request) => {
 			.maybeSingle();
 
 		if (orderError || !order || order.user_id !== user.id) {
-			return jsonResponse({ error: "Payment not found." }, 404);
+			return jsonResponse({ error: "Payment not found." }, 404, request);
 		}
 
 		const merchantId = requiredEnv("SAFEPAY_MERCHANT_ID");
@@ -98,11 +104,12 @@ Deno.serve(async (request) => {
 					details: providerText,
 				},
 				502,
+				request,
 			);
 		}
 
 		if (!providerResponse.ok || providerJson.error_code) {
-			await adminClient
+			const { error: errorUpdateError } = await adminClient
 				.from("payment_orders")
 				.update({
 					last_checked_at: new Date().toISOString(),
@@ -113,6 +120,18 @@ Deno.serve(async (request) => {
 				})
 				.eq("id", order.id);
 
+			if (errorUpdateError) {
+				return jsonResponse(
+					{
+						error:
+							"SafePay status lookup failed and the local payment state could not be recorded.",
+						details: errorUpdateError.message,
+					},
+					500,
+					request,
+				);
+			}
+
 			return jsonResponse(
 				{
 					error: "SafePay status lookup failed.",
@@ -120,15 +139,28 @@ Deno.serve(async (request) => {
 						providerJson.error || providerJson.error_code || providerText,
 				},
 				502,
+				request,
 			);
 		}
 
-		const { data: existingCredit } = await adminClient
-			.from("credit_transactions")
-			.select("id")
-			.eq("payment_order_id", order.id)
-			.limit(1)
-			.maybeSingle();
+		const { data: existingCredit, error: existingCreditError } =
+			await adminClient
+				.from("credit_transactions")
+				.select("id")
+				.eq("payment_order_id", order.id)
+				.limit(1)
+				.maybeSingle();
+
+		if (existingCreditError) {
+			return jsonResponse(
+				{
+					error: "Unable to load the payment credit state.",
+					details: existingCreditError.message,
+				},
+				500,
+				request,
+			);
+		}
 
 		const refreshSummary = summarizeRefreshResult({
 			currentOrder: order,
@@ -137,12 +169,14 @@ Deno.serve(async (request) => {
 		});
 
 		const nowIso = new Date().toISOString();
-		await adminClient
+		const providerStatusId = toProviderStatusId(providerJson.status_id);
+		const providerStatusText = String(providerJson.payment_system_status || "");
+		const { error: updateError } = await adminClient
 			.from("payment_orders")
 			.update({
 				status: refreshSummary.status,
-				provider_status_id: providerJson.status_id ?? null,
-				provider_status_text: String(providerJson.payment_system_status || ""),
+				provider_status_id: providerStatusId,
+				provider_status_text: providerStatusText,
 				provider_transaction_id:
 					refreshSummary.providerTransactionId || order.provider_transaction_id,
 				raw_status_response: providerJson,
@@ -153,6 +187,17 @@ Deno.serve(async (request) => {
 						: order.completed_at,
 			})
 			.eq("id", order.id);
+
+		if (updateError) {
+			return jsonResponse(
+				{
+					error: "Unable to update payment order status.",
+					details: updateError.message,
+				},
+				500,
+				request,
+			);
+		}
 
 		let creditsApplied = Boolean(existingCredit);
 		let balanceDelta = 0;
@@ -178,6 +223,7 @@ Deno.serve(async (request) => {
 						details: insertError.message,
 					},
 					500,
+					request,
 				);
 			}
 
@@ -186,18 +232,23 @@ Deno.serve(async (request) => {
 				insertError?.code === "23505" ? 0 : refreshSummary.balanceDelta;
 		}
 
-		return jsonResponse({
-			invoice,
-			status: refreshSummary.status,
-			providerStatusId: providerJson.status_id ?? null,
-			providerStatusText: String(providerJson.payment_system_status || ""),
-			creditsApplied,
-			balanceDelta,
-		});
+		return jsonResponse(
+			{
+				invoice,
+				status: refreshSummary.status,
+				providerStatusId: providerStatusId,
+				providerStatusText: providerStatusText,
+				creditsApplied,
+				balanceDelta,
+			},
+			200,
+			request,
+		);
 	} catch (error) {
 		return jsonResponse(
 			{ error: error instanceof Error ? error.message : "Unknown error." },
 			500,
+			request,
 		);
 	}
 });
