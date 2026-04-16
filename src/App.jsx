@@ -1,29 +1,29 @@
-import { Routes, Route } from "react-router-dom";
-import ScrollToTop from "./components/ScrollToTop";
+import { Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
-import Home from "./pages/Home";
-import VPS from "./pages/services/VPS";
-import Kubernetes from "./pages/services/Kubernetes";
-import GPU from "./pages/services/GPU";
-import Database from "./pages/services/Database";
-import GameServers from "./pages/services/GameServers";
-import Pricing from "./pages/Pricing";
-import Docs from "./pages/Docs";
-import About from "./pages/About";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import Cookies from "./pages/Cookies";
-import Support from "./pages/Support";
-import Contact from "./pages/Contact";
-import SignInPage from "./pages/SignInPage";
-import SignUpPage from "./pages/SignUpPage";
-
+import ScrollToTop from "./components/ScrollToTop";
 import DashboardLayout from "./layouts/DashboardLayout";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Cookies from "./pages/Cookies";
+import Docs from "./pages/Docs";
+import AdminObservability from "./pages/dashboard/AdminObservability";
+import Billing from "./pages/dashboard/Billing";
 import Dashboard from "./pages/dashboard/Dashboard";
 import NewService from "./pages/dashboard/NewService";
 import ResourceList from "./pages/dashboard/ResourceList";
-import Billing from "./pages/dashboard/Billing";
-import AdminObservability from "./pages/dashboard/AdminObservability";
+import Settings from "./pages/dashboard/Settings";
+import Home from "./pages/Home";
+import Pricing from "./pages/Pricing";
+import Privacy from "./pages/Privacy";
+import SignInPage from "./pages/SignInPage";
+import SignUpPage from "./pages/SignUpPage";
+import Support from "./pages/Support";
+import Database from "./pages/services/Database";
+import GameServers from "./pages/services/GameServers";
+import GPU from "./pages/services/GPU";
+import Kubernetes from "./pages/services/Kubernetes";
+import VPS from "./pages/services/VPS";
+import Terms from "./pages/Terms";
 
 function App() {
 	return (
@@ -192,6 +192,7 @@ function App() {
 									}
 								/>
 								<Route path="billing" element={<Billing />} />
+								<Route path="settings" element={<Settings />} />
 								<Route path="admin" element={<AdminObservability />} />
 							</Routes>
 						</DashboardLayout>

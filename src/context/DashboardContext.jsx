@@ -1,39 +1,18 @@
 import {
 	createContext,
-	useContext,
-	useState,
-	useEffect,
 	useCallback,
+	useContext,
+	useEffect,
+	useState,
 } from "react";
-import { useAuth } from "./AuthContext";
 import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "./AuthContext";
 
 const DashboardContext = createContext();
 
 const initialResources = []; // Empty by default as per user request
 
-const initialTransactions = [
-	{
-		id: "tx_2",
-		date: "2026-01-15",
-		description: "Credits Purchase",
-		amount: 5000,
-		status: "Completed",
-		type: "credit",
-		currencyPaid: "£42.74",
-		currency: "GBP",
-	},
-	{
-		id: "tx_1",
-		date: "2026-02-01",
-		description: "Monthly Subscription - Pro Plan",
-		amount: -2900,
-		status: "Completed",
-		type: "debit",
-		currencyPaid: "-",
-		currency: null,
-	},
-];
+const initialTransactions = [];
 
 const defaultPlan = { name: "Pro Plan", credits: 2900, price: 29 };
 
@@ -119,40 +98,6 @@ export function DashboardProvider({ children }) {
 		setResources((prev) => prev.filter((r) => r.id !== id));
 	};
 
-	const addFunds = async (amount, currencyAmount, currency) => {
-		const newTransaction = {
-			id: `tx_${Date.now()}`,
-			date: new Date().toISOString().split("T")[0],
-			description: `Credits Purchase`,
-			amount: amount,
-			status: "Completed",
-			type: "credit",
-			currencyPaid: currencyAmount,
-			currency: currency,
-		};
-		setTransactions((prev) => [newTransaction, ...prev]);
-
-		if (!user) {
-			return;
-		}
-
-		const { error } = await supabase.from("credit_transactions").insert({
-			user_id: user.id,
-			description: newTransaction.description,
-			amount: newTransaction.amount,
-			type: newTransaction.type,
-			status: newTransaction.status,
-			currency_paid: newTransaction.currencyPaid,
-			currency: newTransaction.currency,
-		});
-
-		if (error) {
-			console.warn("Unable to persist top-up transaction to Supabase.", error);
-		} else {
-			loadTransactions();
-		}
-	};
-
 	const deductCredits = async (amount, description) => {
 		const newTransaction = {
 			id: `tx_${Date.now()}`,
@@ -192,7 +137,7 @@ export function DashboardProvider({ children }) {
 				currentPlan,
 				addResource,
 				removeResource,
-				addFunds,
+				refreshTransactions: loadTransactions,
 				deductCredits,
 				changePlan,
 			}}
