@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.12",
-    "@vitejs/plugin-react": "^4.2.1",
+    "@vitejs/plugin-react": "^6.0.0",
     "autoprefixer": "^10.4.19",
     "hostinger-api-mcp": "^0.1.28",
     "postcss": "^8.4.38",
