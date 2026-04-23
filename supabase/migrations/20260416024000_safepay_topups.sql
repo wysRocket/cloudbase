@@ -204,7 +204,7 @@ revoke all on table public.user_roles from anon;
 revoke all on table public.user_roles from authenticated;
 grant select on table public.payment_orders to authenticated;
 grant select on table public.credit_transactions to authenticated;
-grant select, update on table public.profiles to authenticated;
+grant select, insert, update on table public.profiles to authenticated;
 grant select on table public.user_roles to authenticated;
 grant usage, select on sequence public.credit_transactions_id_seq to authenticated;
 
