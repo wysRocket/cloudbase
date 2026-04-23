@@ -83,6 +83,15 @@ using (
   or (select public.is_admin((select auth.uid())))
 );
 
+drop policy if exists profiles_insert_own on public.profiles;
+create policy profiles_insert_own
+on public.profiles
+for insert
+to authenticated
+with check (
+  id = (select auth.uid())
+);
+
 drop policy if exists profiles_update_own_or_admin on public.profiles;
 create policy profiles_update_own_or_admin
 on public.profiles
