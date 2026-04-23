@@ -38,4 +38,4 @@ Animations are controlled by the `variants` object in Framer Motion components.
 To deploy this project to production:
 1.  Run `npm run build`.
 2.  The output will be in the `dist/` folder.
-3.  Upload the contents of `dist/` to any static host (Vercel, Netlify, GitHub Pages, AWS S3).
+3.  Upload the contents of `dist/` to your configured static host (for example Hostinger, Netlify, GitHub Pages, or AWS S3).
