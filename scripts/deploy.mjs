@@ -32,12 +32,16 @@ function sendMessage(msg) {
 
 async function waitForResponse(id) {
     return new Promise((resolve) => {
-        rl.on('line', (line) => {
+        function handler(line) {
             try {
                 const data = JSON.parse(line);
-                if (data.id === id) resolve(data);
+                if (data.id === id) {
+                    rl.removeListener('line', handler);
+                    resolve(data);
+                }
             } catch { }
-        });
+        }
+        rl.on('line', handler);
     });
 }
 
