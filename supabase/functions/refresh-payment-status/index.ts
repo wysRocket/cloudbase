@@ -109,36 +109,32 @@ Deno.serve(async (request) => {
 		}
 
 		if (!providerResponse.ok || providerJson.error_code) {
-			const { error: errorUpdateError } = await adminClient
+			// SafePay returns error_code while a payment is still pending/processing
+			// (not yet completed on their side). Treat this as "still processing"
+			// rather than a hard failure so the frontend can keep polling gracefully.
+			await adminClient
 				.from("payment_orders")
 				.update({
 					last_checked_at: new Date().toISOString(),
 					raw_status_response: providerJson,
 					provider_status_text: String(
-						providerJson.error || providerJson.error_code || "error",
+						providerJson.error || providerJson.error_code || "pending",
 					),
 				})
 				.eq("id", order.id);
 
-			if (errorUpdateError) {
-				return jsonResponse(
-					{
-						error:
-							"SafePay status lookup failed and the local payment state could not be recorded.",
-						details: errorUpdateError.message,
-					},
-					500,
-					request,
-				);
-			}
-
 			return jsonResponse(
 				{
-					error: "SafePay status lookup failed.",
-					details:
-						providerJson.error || providerJson.error_code || providerText,
+					invoice,
+					status: order.status ?? "processing",
+					providerStatusId: null,
+					providerStatusText: String(
+						providerJson.error || providerJson.error_code || "pending",
+					),
+					creditsApplied: false,
+					balanceDelta: 0,
 				},
-				502,
+				200,
 				request,
 			);
 		}
