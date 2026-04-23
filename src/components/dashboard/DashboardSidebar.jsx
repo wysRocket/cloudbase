@@ -1,7 +1,7 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { useDashboard } from "../../context/DashboardContext";
 import { useAuth } from "../../context/AuthContext";
+import { useDashboard } from "../../context/DashboardContext";
 
 const navItems = [
 	{
@@ -28,6 +28,11 @@ const navItems = [
 		name: "Billing",
 		href: "/dashboard/billing",
 		icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
+	},
+	{
+		name: "Settings",
+		href: "/dashboard/settings",
+		icon: "M11.983 5.5c.722-1.78 3.312-1.78 4.034 0a1.997 1.997 0 002.42 1.19c1.873-.61 3.705 1.223 3.095 3.095a1.997 1.997 0 001.19 2.42c1.78.722 1.78 3.312 0 4.034a1.997 1.997 0 00-1.19 2.42c.61 1.873-1.223 3.705-3.095 3.095a1.997 1.997 0 00-2.42 1.19c-.722 1.78-3.312 1.78-4.034 0a1.997 1.997 0 00-2.42-1.19c-1.873.61-3.705-1.223-3.095-3.095a1.997 1.997 0 00-1.19-2.42c-1.78-.722-1.78-3.312 0-4.034a1.997 1.997 0 001.19-2.42C6.148 7.913 7.98 6.08 9.853 6.69a1.997 1.997 0 002.13-1.19zM15 14a3 3 0 11-6 0 3 3 0 016 0z",
 	},
 ];
 
@@ -85,10 +90,12 @@ export default function DashboardSidebar({ isOpen, setIsOpen }) {
 					</Link>
 					{/* Close button for mobile */}
 					<button
+						type="button"
 						onClick={() => setIsOpen(false)}
 						className="md:hidden text-slate-400 hover:text-white"
 					>
 						<svg
+							aria-hidden="true"
 							className="w-6 h-6"
 							fill="none"
 							stroke="currentColor"
@@ -120,6 +127,7 @@ export default function DashboardSidebar({ isOpen, setIsOpen }) {
 								}`}
 							>
 								<svg
+									aria-hidden="true"
 									className={`w-5 h-5 ${isActive ? "text-cyan-400" : "text-slate-500"}`}
 									fill="none"
 									stroke="currentColor"
