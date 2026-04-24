@@ -258,24 +258,15 @@ export default function Billing() {
 				status: "processing",
 				providerStatusId: null,
 				providerStatusText:
-					"Checkout created. Complete the payment in the secure tab.",
+					"Checkout created. Complete the payment to add credits.",
 				creditsApplied: false,
 				balanceDelta: 0,
 			});
 			updateSearchInvoice(session.invoice);
 			setShowTopUp(false);
 
-			const checkoutWindow = window.open(
-				session.checkoutUrl,
-				"_blank",
-				"noopener,noreferrer",
-			);
+			window.location.href = session.checkoutUrl;
 
-			if (!checkoutWindow) {
-				setPaymentError(
-					"Checkout was created, but your browser blocked the new tab. Use the secure checkout link below.",
-				);
-			}
 		} catch (error) {
 			setPaymentError(
 				error instanceof Error
@@ -331,8 +322,6 @@ export default function Billing() {
 							{checkoutUrl && currentPaymentStatus === "processing" && (
 								<a
 									href={checkoutUrl}
-									target="_blank"
-									rel="noreferrer"
 									className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-sm font-medium transition-colors"
 								>
 									Open Secure Checkout
