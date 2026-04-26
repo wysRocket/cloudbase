@@ -13,7 +13,7 @@ import {
 	normalizeCustomerProfile,
 } from "../../../shared/payments/customer.js";
 import { useAuth } from "../../context/AuthContext";
-import { COUNTRIES } from "../../lib/countries";
+import CountrySelect from "../../components/CountrySelect";
 import { useDashboard } from "../../context/DashboardContext";
 import {
 	createPaymentSession,
@@ -747,21 +747,12 @@ export default function Billing() {
 										>
 											Country
 										</label>
-										<select
+										<CountrySelect
 											id="billing-country"
 											value={customerProfile.countryCode}
-											onChange={(event) =>
-												handleCustomerFieldChange("countryCode", event.target.value)
-											}
+											onChange={(code) => handleCustomerFieldChange("countryCode", code)}
 											className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500"
-										>
-											<option value="">Select country…</option>
-											{COUNTRIES.map((c) => (
-												<option key={c.code} value={c.code}>
-													{c.name} ({c.code})
-												</option>
-											))}
-										</select>
+										/>
 									</div>
 								</div>
 

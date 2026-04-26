@@ -4,7 +4,7 @@ import {
 	normalizeCustomerProfile,
 } from "../../../shared/payments/customer.js";
 import { useAuth } from "../../context/AuthContext";
-import { COUNTRIES } from "../../lib/countries";
+import CountrySelect from "../../components/CountrySelect";
 import {
 	emptyCustomerProfile,
 	loadProfile,
@@ -186,21 +186,12 @@ export default function Settings() {
 							>
 								Country
 							</label>
-							<select
+							<CountrySelect
 								id="settings-country"
 								value={profile.countryCode}
-								onChange={(event) =>
-									handleFieldChange("countryCode", event.target.value)
-								}
+								onChange={(code) => handleFieldChange("countryCode", code)}
 								className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
-							>
-								<option value="">Select country…</option>
-								{COUNTRIES.map((c) => (
-									<option key={c.code} value={c.code}>
-										{c.name} ({c.code})
-									</option>
-								))}
-							</select>
+							/>
 						</div>
 						<div>
 							<label
