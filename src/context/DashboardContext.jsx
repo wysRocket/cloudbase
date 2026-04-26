@@ -98,6 +98,22 @@ export function DashboardProvider({ children }) {
 		setResources((prev) => prev.filter((r) => r.id !== id));
 	};
 
+	const deductCredits = useCallback(
+		async (description, amount) => {
+			if (!user) throw new Error("Not authenticated");
+			const { error } = await supabase.from("credit_transactions").insert({
+				user_id: user.id,
+				description,
+				amount: -Math.abs(amount),
+				type: "debit",
+				status: "completed",
+			});
+			if (error) throw error;
+			await loadTransactions();
+		},
+		[user, loadTransactions],
+	);
+
 	return (
 		<DashboardContext.Provider
 			value={{
@@ -107,6 +123,7 @@ export function DashboardProvider({ children }) {
 				currentPlan,
 				addResource,
 				removeResource,
+				deductCredits,
 				refreshTransactions: loadTransactions,
 				changePlan,
 			}}

@@ -13,6 +13,7 @@ import {
 	normalizeCustomerProfile,
 } from "../../../shared/payments/customer.js";
 import { useAuth } from "../../context/AuthContext";
+import { COUNTRIES } from "../../lib/countries";
 import { useDashboard } from "../../context/DashboardContext";
 import {
 	createPaymentSession,
@@ -576,7 +577,7 @@ export default function Billing() {
 									<input
 										id="topup-range"
 										type="range"
-										min="1"
+										min="0.01"
 										max="200"
 										step="0.01"
 										value={topUpAmount}
@@ -592,7 +593,7 @@ export default function Billing() {
 									<div className="flex justify-between text-xs text-slate-500 mt-2">
 										<span>
 											{selectedCurrencyConfig.symbol}
-											1.00
+											0.01
 										</span>
 										<span>
 											{selectedCurrencyConfig.symbol}
@@ -615,7 +616,7 @@ export default function Billing() {
 										<input
 											id="topup-amount"
 											type="number"
-											min="1"
+											min="0.01"
 											max="200"
 											step="0.01"
 											value={topUpAmount}
@@ -623,8 +624,8 @@ export default function Billing() {
 												setTopUpAmount(
 													Math.min(
 														Math.max(
-															Number.parseFloat(event.target.value) || 1,
-															1,
+															Number.parseFloat(event.target.value) || 0.01,
+															0.01,
 														),
 														200,
 													),
@@ -744,21 +745,23 @@ export default function Billing() {
 											htmlFor="billing-country"
 											className="block text-sm text-slate-400 mb-2"
 										>
-											Country Code
+											Country
 										</label>
-										<input
+										<select
 											id="billing-country"
-											type="text"
-											maxLength={2}
 											value={customerProfile.countryCode}
 											onChange={(event) =>
-												handleCustomerFieldChange(
-													"countryCode",
-													event.target.value.toUpperCase(),
-												)
+												handleCustomerFieldChange("countryCode", event.target.value)
 											}
 											className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500"
-										/>
+										>
+											<option value="">Select country…</option>
+											{COUNTRIES.map((c) => (
+												<option key={c.code} value={c.code}>
+													{c.name} ({c.code})
+												</option>
+											))}
+										</select>
 									</div>
 								</div>
 

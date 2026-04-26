@@ -4,10 +4,10 @@ import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
 
 const serviceTypes = [
-    { id: 'vps', name: 'Virtual Private Server', icon: 'server', description: 'High-performance NVMe VPS', price: '100 credits/mo', typeName: 'VPS (Standard)' },
-    { id: 'k8s', name: 'Kubernetes Cluster', icon: 'cubes', description: 'Managed K8s control plane', price: '1000 credits/mo', typeName: 'Kubernetes (Managed)' },
-    { id: 'db', name: 'Managed Database', icon: 'database', description: 'Postgres, MySQL, Redis', price: '300 credits/mo', typeName: 'Database (PG/MySQL)' },
-    { id: 'gpu', name: 'GPU Instance', icon: 'chip', description: 'NVIDIA H100 / A100', price: '50 credits/hr', typeName: 'GPU (H100)' },
+    { id: 'vps', name: 'Virtual Private Server', icon: 'server', description: 'High-performance NVMe VPS', price: '100 credits/mo', cost: 100, typeName: 'VPS (Standard)' },
+    { id: 'k8s', name: 'Kubernetes Cluster', icon: 'cubes', description: 'Managed K8s control plane', price: '1000 credits/mo', cost: 1000, typeName: 'Kubernetes (Managed)' },
+    { id: 'db', name: 'Managed Database', icon: 'database', description: 'Postgres, MySQL, Redis', price: '300 credits/mo', cost: 300, typeName: 'Database (PG/MySQL)' },
+    { id: 'gpu', name: 'GPU Instance', icon: 'chip', description: 'NVIDIA H100 / A100', price: '50 credits/hr', cost: 50, typeName: 'GPU (H100)' },
 ]
 
 const regions = [
@@ -20,28 +20,36 @@ const regions = [
 
 export default function NewService() {
     const navigate = useNavigate()
-    const { addResource } = useDashboard()
+    const { addResource, balance, deductCredits } = useDashboard()
     const [selectedType, setSelectedType] = useState(serviceTypes[0].id)
     const [selectedRegion, setSelectedRegion] = useState(regions[0].id)
     const [isDeploying, setIsDeploying] = useState(false)
+    const [deployError, setDeployError] = useState('')
 
-    const handleDeploy = () => {
-        setIsDeploying(true)
+    const selectedTypeInfo = serviceTypes.find(t => t.id === selectedType)
+    const canDeploy = balance >= selectedTypeInfo.cost
 
-        const typeInfo = serviceTypes.find(t => t.id === selectedType)
+    const handleDeploy = async () => {
+        if (!canDeploy) return
+
         const regionInfo = regions.find(r => r.id === selectedRegion)
+        setIsDeploying(true)
+        setDeployError('')
 
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            await deductCredits(`${selectedTypeInfo.typeName} deployment`, selectedTypeInfo.cost)
             addResource({
-                name: `${typeInfo.id}-${Math.random().toString(36).substr(2, 5)}`,
-                type: typeInfo.typeName,
+                name: `${selectedTypeInfo.id}-${Math.random().toString(36).substr(2, 5)}`,
+                type: selectedTypeInfo.typeName,
                 region: regionInfo.id,
-                price: typeInfo.price
+                price: selectedTypeInfo.price
             })
-            setIsDeploying(false)
             navigate('/dashboard')
-        }, 1500)
+        } catch {
+            setDeployError('Failed to deduct credits. Please try again.')
+        } finally {
+            setIsDeploying(false)
+        }
     }
 
     return (
@@ -100,7 +108,7 @@ export default function NewService() {
                         <div className="space-y-4 mb-8">
                             <div className="flex justify-between text-sm">
                                 <span className="text-slate-400">Service</span>
-                                <span className="font-medium text-white">{serviceTypes.find(t => t.id === selectedType)?.name}</span>
+                                <span className="font-medium text-white">{selectedTypeInfo.name}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-slate-400">Region</span>
@@ -109,14 +117,24 @@ export default function NewService() {
                             <div className="h-px bg-white/10 my-4"></div>
                             <div className="flex justify-between items-center text-lg font-bold text-white">
                                 <span>Total</span>
-                                <span className="text-cyan-400">{serviceTypes.find(t => t.id === selectedType)?.price}</span>
+                                <span className="text-cyan-400">{selectedTypeInfo.price}</span>
                             </div>
                         </div>
 
+                        {!canDeploy && (
+                            <p className="text-amber-400 text-sm mb-4">
+                                Insufficient credits. Top up your balance to deploy this service.
+                            </p>
+                        )}
+
+                        {deployError && (
+                            <p className="text-red-400 text-sm mb-4">{deployError}</p>
+                        )}
+
                         <button
                             onClick={handleDeploy}
-                            disabled={isDeploying}
-                            className="w-full py-4 bg-cyan-600 hover:bg-cyan-500 disabled:bg-cyan-600/50 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-cyan-500/25 flex justify-center items-center gap-2"
+                            disabled={isDeploying || !canDeploy}
+                            className="w-full py-4 bg-cyan-600 hover:bg-cyan-500 disabled:bg-cyan-600/50 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-cyan-500/25 flex justify-center items-center gap-2"
                         >
                             {isDeploying ? (
                                 <>
