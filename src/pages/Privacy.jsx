@@ -107,7 +107,7 @@ export default function Privacy() {
 							<p className="text-slate-300 leading-relaxed">
 								You have the right to access, correct, or delete your personal
 								information. You may also opt out of marketing communications at
-								any time. Contact us at privacy@cloudbase.com for any requests.
+								any time. Contact us at contact@cloudbaseservice.com for any requests.
 							</p>
 						</section>
 
@@ -115,7 +115,7 @@ export default function Privacy() {
 							<h2 className="text-2xl font-bold mb-4">6. Contact Us</h2>
 							<p className="text-slate-300 leading-relaxed">
 								If you have any questions about this Privacy Policy, please
-								contact us at privacy@cloudbase.com.
+								contact us at contact@cloudbaseservice.com.
 							</p>
 						</section>
 					</div>

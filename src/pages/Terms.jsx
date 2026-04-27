@@ -47,6 +47,15 @@ export default function Terms() {
 										+44 7457 426572
 									</a>
 								</p>
+								<p>
+									<span className="text-white font-semibold">Email:</span>{" "}
+									<a
+										href="mailto:contact@cloudbaseservice.com"
+										className="text-cyan-400 hover:text-cyan-300 transition-colors"
+									>
+										contact@cloudbaseservice.com
+									</a>
+								</p>
 							</div>
 						</section>
 

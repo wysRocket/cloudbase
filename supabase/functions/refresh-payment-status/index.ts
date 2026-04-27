@@ -2,6 +2,7 @@ import { formatMinorAmount } from "../../../shared/payments/catalog.js";
 import { summarizeRefreshResult } from "../../../shared/payments/reconciliation.js";
 import { buildRequestHash } from "../../../shared/payments/safepay-server.js";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
+import { MAIL_FROM, MAIL_TO, sendEmail } from "../_shared/mailer.ts";
 import { createAdminClient, createUserClient } from "../_shared/supabase.ts";
 
 const gatewayUrl =
@@ -226,6 +227,24 @@ Deno.serve(async (request) => {
 			creditsApplied = true;
 			balanceDelta =
 				insertError?.code === "23505" ? 0 : refreshSummary.balanceDelta;
+
+			// Send admin notification only on a fresh (non-duplicate) credit grant.
+			if (!insertError) {
+				await sendEmail({
+					from: MAIL_FROM,
+					to: MAIL_TO,
+					subject: `Payment Received — ${formatMinorAmount(order.amount_minor, order.currency)} (${order.credits_to_add} credits)`,
+					html: `
+						<h2>New Credit Purchase</h2>
+						<table cellpadding="6" style="border-collapse:collapse;font-family:sans-serif;font-size:14px;">
+							<tr><td><strong>User</strong></td><td>${user.email}</td></tr>
+							<tr><td><strong>Invoice</strong></td><td>${order.invoice}</td></tr>
+							<tr><td><strong>Amount Paid</strong></td><td>${formatMinorAmount(order.amount_minor, order.currency)}</td></tr>
+							<tr><td><strong>Credits Added</strong></td><td>${order.credits_to_add}</td></tr>
+						</table>
+					`,
+				});
+			}
 		}
 
 		return jsonResponse(

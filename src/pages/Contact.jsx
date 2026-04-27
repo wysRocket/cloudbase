@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 
 const fadeInUp = {
 	initial: { opacity: 0, y: 30 },
@@ -44,6 +45,8 @@ export default function Contact() {
 		message: "",
 	});
 	const [submitted, setSubmitted] = useState(false);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [submitError, setSubmitError] = useState("");
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 
 	const cloudSpendOptions = [
@@ -54,9 +57,23 @@ export default function Contact() {
 		{ value: "10000+", label: "€10,000+" },
 	];
 
-	const handleSubmit = (e) => {
+	const handleSubmit = async (e) => {
 		e.preventDefault();
-		setSubmitted(true);
+		setIsSubmitting(true);
+		setSubmitError("");
+		try {
+			const { error } = await supabase.functions.invoke("contact-form", {
+				body: formData,
+			});
+			if (error) throw error;
+			setSubmitted(true);
+		} catch (err) {
+			setSubmitError(
+				err?.message || "Failed to send your message. Please try again.",
+			);
+		} finally {
+			setIsSubmitting(false);
+		}
 	};
 
 	const handleChange = (e) => {
@@ -334,11 +351,17 @@ export default function Contact() {
 									</div>
 
 									{/* Submit */}
+									{submitError && (
+										<p className="text-red-400 text-sm text-center">
+											{submitError}
+										</p>
+									)}
 									<button
 										type="submit"
-										className="w-full py-4 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+										disabled={isSubmitting}
+										className="w-full py-4 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl font-bold transition-all transform hover:scale-[1.02] active:scale-[0.98]"
 									>
-										Talk to an Expert
+										{isSubmitting ? "Sending…" : "Talk to an Expert"}
 									</button>
 
 									<p className="text-xs text-slate-500 text-center">
@@ -398,20 +421,20 @@ export default function Contact() {
 							{
 								icon: "📧",
 								title: "General Inquiries",
-								value: "support@cloudbase.com",
-								href: "mailto:support@cloudbase.com",
+								value: "contact@cloudbaseservice.com",
+								href: "mailto:contact@cloudbaseservice.com",
 							},
 							{
 								icon: "🛟",
 								title: "Technical Support",
-								value: "support@cloudbase.com",
-								href: "mailto:support@cloudbase.com",
+								value: "contact@cloudbaseservice.com",
+								href: "mailto:contact@cloudbaseservice.com",
 							},
 							{
 								icon: "🏢",
 								title: "Enterprise",
-								value: "support@cloudbase.com",
-								href: "mailto:support@cloudbase.com",
+								value: "contact@cloudbaseservice.com",
+								href: "mailto:contact@cloudbaseservice.com",
 							},
 						].map((item, i) => (
 							<a

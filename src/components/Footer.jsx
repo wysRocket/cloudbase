@@ -108,6 +108,15 @@ export default function Footer() {
 									+44 7457 426572
 								</a>
 							</p>
+							<p className="text-xs">
+								Email:{" "}
+								<a
+									href="mailto:contact@cloudbaseservice.com"
+									className="hover:text-slate-400 transition-colors"
+								>
+									contact@cloudbaseservice.com
+								</a>
+							</p>
 						</div>
 						<div className="flex flex-col gap-3 w-full md:w-auto">
 							<span className="text-xs text-slate-500 uppercase tracking-wider">
