@@ -1,9 +1,8 @@
-import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
 
 export default function ResourceList({ typeFilter, title }) {
-    const { resources } = useDashboard()
+    const { resources, resourceActionState, suspendResource, resumeResource, deleteResource, syncResource } = useDashboard()
 
     const filteredResources = typeFilter
         ? resources.filter(r => r.type.toLowerCase().includes(typeFilter.toLowerCase()))
@@ -45,11 +44,17 @@ export default function ResourceList({ typeFilter, title }) {
                                     <th className="p-4 font-medium">Region</th>
                                     <th className="p-4 font-medium">IP Address</th>
                                     <th className="p-4 font-medium">Status</th>
+                                    <th className="p-4 font-medium">Timeline</th>
                                     <th className="p-4 font-medium text-right pr-6">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
                                 {filteredResources.map((res) => (
+                                    (() => {
+                                        const actionMeta = resourceActionState?.[res.id] || {}
+                                        const isBusy = Boolean(actionMeta.action)
+                                        const events = res.events || []
+                                        return (
                                     <tr key={res.id} className="hover:bg-white/5 transition-colors">
                                         <td className="p-4 pl-6 font-medium text-white">{res.name}</td>
                                         <td className="p-4 text-slate-400">{res.region}</td>
@@ -60,10 +65,35 @@ export default function ResourceList({ typeFilter, title }) {
                                                 <span className="text-green-400">{res.status}</span>
                                             </div>
                                         </td>
+                                        <td className="p-4 text-slate-400 text-xs">
+                                            {events.length === 0 ? (
+                                                <span>No events yet</span>
+                                            ) : (
+                                                <div className="space-y-1">
+                                                    {events.slice(0, 3).map((event) => (
+                                                        <div key={event.id} className="flex items-center justify-between gap-2">
+                                                            <span className="text-slate-300">{event.event_type || event.status || 'event'}</span>
+                                                            <span className="text-slate-500">{new Date(event.created_at).toLocaleString()}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </td>
                                         <td className="p-4 text-right pr-6">
-                                            <button className="text-cyan-400 hover:text-cyan-300">Manage</button>
+                                            <div className="flex items-center justify-end gap-3">
+                                                <button onClick={() => syncResource()} disabled={isBusy} className="text-slate-300 hover:text-white disabled:opacity-50">Sync</button>
+                                                {res.status === 'Suspended' ? (
+                                                    <button onClick={() => resumeResource(res.id)} disabled={isBusy} className="text-emerald-400 hover:text-emerald-300 disabled:opacity-50">{actionMeta.action === 'resume' ? 'Resuming...' : 'Resume'}</button>
+                                                ) : (
+                                                    <button onClick={() => suspendResource(res.id)} disabled={isBusy} className="text-amber-400 hover:text-amber-300 disabled:opacity-50">{actionMeta.action === 'suspend' ? 'Suspending...' : 'Suspend'}</button>
+                                                )}
+                                                <button onClick={() => deleteResource(res.id)} disabled={isBusy} className="text-rose-400 hover:text-rose-300 disabled:opacity-50">{actionMeta.action === 'delete' ? 'Deleting...' : 'Delete'}</button>
+                                            </div>
+                                            {actionMeta.error && <div className="text-rose-400 text-xs mt-2">{actionMeta.error}</div>}
                                         </td>
                                     </tr>
+                                        )
+                                    })()
                                 ))}
                             </tbody>
                         </table>

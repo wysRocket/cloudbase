@@ -36,6 +36,32 @@ export function DashboardProvider({ children }) {
 
 	// Calculate balance from transactions
 	const balance = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+	const [resourceActionState, setResourceActionState] = useState({});
+
+	const mapResource = useCallback((res) => ({
+		...res,
+		status: res.status || "Unknown",
+		events: (res.provision_events || []).slice().sort((a, b) =>
+			new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+		),
+	}), []);
+
+	const loadResources = useCallback(async () => {
+		if (!user) return;
+
+		const { data, error } = await supabase
+			.from("resources")
+			.select("id, name, type, region, ip, status, created_at, provision_events(*)")
+			.eq("user_id", user.id)
+			.order("created_at", { ascending: false });
+
+		if (error) {
+			console.warn("Unable to load resources from Supabase.", error);
+			return;
+		}
+
+		setResources((data || []).map(mapResource));
+	}, [mapResource, user]);
 
 	const loadTransactions = useCallback(async () => {
 		if (!user) {
@@ -79,6 +105,20 @@ export function DashboardProvider({ children }) {
 		loadTransactions();
 	}, [loadTransactions]);
 
+	useEffect(() => {
+		loadResources();
+	}, [loadResources]);
+
+	useEffect(() => {
+		if (!user) return undefined;
+
+		const interval = setInterval(() => {
+			loadResources();
+		}, 15000);
+
+		return () => clearInterval(interval);
+	}, [loadResources, user]);
+
 	const changePlan = (plan) => {
 		setCurrentPlan(plan);
 	};
@@ -97,6 +137,41 @@ export function DashboardProvider({ children }) {
 	const removeResource = (id) => {
 		setResources((prev) => prev.filter((r) => r.id !== id));
 	};
+
+	const setActionLoading = (id, action, loading, error = "") => {
+		setResourceActionState((prev) => ({
+			...prev,
+			[id]: {
+				action: loading ? action : "",
+				error,
+			},
+		}));
+	};
+
+	const runLifecycleAction = useCallback(
+		async (id, action) => {
+			setActionLoading(id, action, true);
+			try {
+				if (action === "delete") {
+					const { error } = await supabase.from("resources").delete().eq("id", id).eq("user_id", user.id);
+					if (error) throw error;
+				} else {
+					const { error } = await supabase
+						.from("resources")
+						.update({ status: action === "suspend" ? "Suspended" : "Running" })
+						.eq("id", id)
+						.eq("user_id", user.id);
+					if (error) throw error;
+				}
+
+				await loadResources();
+				setActionLoading(id, action, false);
+			} catch (error) {
+				setActionLoading(id, action, false, error.message || "Action failed");
+			}
+		},
+		[loadResources, user],
+	);
 
 	const deductCredits = useCallback(
 		async (description, amount) => {
@@ -118,12 +193,18 @@ export function DashboardProvider({ children }) {
 		<DashboardContext.Provider
 			value={{
 				resources,
+				resourceActionState,
 				balance,
 				transactions,
 				currentPlan,
 				addResource,
 				removeResource,
+				suspendResource: (id) => runLifecycleAction(id, "suspend"),
+				resumeResource: (id) => runLifecycleAction(id, "resume"),
+				deleteResource: (id) => runLifecycleAction(id, "delete"),
+				syncResource: loadResources,
 				deductCredits,
+				refreshResources: loadResources,
 				refreshTransactions: loadTransactions,
 				changePlan,
 			}}
