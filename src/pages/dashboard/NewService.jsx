@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
+import { supabase } from '../../lib/supabaseClient'
 
 const serviceTypes = [
     { id: 'vps', name: 'Virtual Private Server', icon: 'server', description: 'High-performance NVMe VPS', price: '100 credits/mo', cost: 100, typeName: 'VPS (Standard)' },
@@ -20,7 +21,7 @@ const regions = [
 
 export default function NewService() {
     const navigate = useNavigate()
-    const { addResource, balance, deductCredits } = useDashboard()
+    const { balance } = useDashboard()
     const [selectedType, setSelectedType] = useState(serviceTypes[0].id)
     const [selectedRegion, setSelectedRegion] = useState(regions[0].id)
     const [isDeploying, setIsDeploying] = useState(false)
@@ -37,16 +38,21 @@ export default function NewService() {
         setDeployError('')
 
         try {
-            await deductCredits(`${selectedTypeInfo.typeName} deployment`, selectedTypeInfo.cost)
-            addResource({
-                name: `${selectedTypeInfo.id}-${Math.random().toString(36).substr(2, 5)}`,
-                type: selectedTypeInfo.typeName,
-                region: regionInfo.id,
-                price: selectedTypeInfo.price
+            const response = await supabase.functions.invoke('start-reseller-order', {
+                body: { sku: selectedTypeInfo.id, region: regionInfo.id }
             })
-            navigate('/dashboard')
-        } catch {
-            setDeployError('Failed to deduct credits. Please try again.')
+
+            if (response.error) {
+                throw new Error(response.error.message || 'Unable to start order')
+            }
+
+            if (!response.data?.paymentSession?.checkout_url) {
+                throw new Error('Payment session was not returned')
+            }
+
+            window.location.href = response.data.paymentSession.checkout_url
+        } catch (error) {
+            setDeployError(error instanceof Error ? error.message : 'Failed to start order. Please try again.')
         } finally {
             setIsDeploying(false)
         }
@@ -139,7 +145,7 @@ export default function NewService() {
                             {isDeploying ? (
                                 <>
                                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    Deploying...
+                                    Starting order...
                                 </>
                             ) : (
                                 <>Deploy Resource</>
