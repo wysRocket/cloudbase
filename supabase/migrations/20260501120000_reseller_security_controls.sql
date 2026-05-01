@@ -36,6 +36,7 @@ create or replace function public.enforce_reseller_quota(p_user_id uuid, p_actio
 returns jsonb
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   v_now timestamptz := now();

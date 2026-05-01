@@ -85,7 +85,7 @@ export async function writeAudit(adminClient: any, params: {
 
 export function correlationFromRequest(request: Request) {
   const requestId = request.headers.get("x-request-id") || crypto.randomUUID();
-  const correlationId = request.headers.get("x-correlation-id") || createHash("sha256").update(requestId).toString();
+  const correlationId = request.headers.get("x-correlation-id") || createHash("sha256").update(requestId).digest("hex");
   return { requestId, correlationId };
 }
 

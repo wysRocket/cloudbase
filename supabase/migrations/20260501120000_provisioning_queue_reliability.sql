@@ -67,6 +67,7 @@ create or replace function public.claim_provision_job(lock_timeout_seconds integ
 returns public.provision_jobs
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   claimed public.provision_jobs;
@@ -105,10 +106,8 @@ create or replace function public.finish_provision_job(
 returns public.provision_jobs
 language plpgsql
 security definer
+set search_path = public
 as $$
-declare
-  updated_job public.provision_jobs;
-  next_error_class text;
   next_status text;
   next_attempts integer;
 begin
@@ -175,3 +174,7 @@ begin
   return updated_job;
 end;
 $$;
+
+grant execute on function public.claim_provision_job(integer, text) to service_role;
+grant execute on function public.finish_provision_job(uuid, boolean, text, text, text) to service_role;
+

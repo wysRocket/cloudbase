@@ -153,15 +153,15 @@ export default function AdminObservability() {
 				.order("created_at", { ascending: false })
 				.limit(300),
 			supabase
-				.from("service_rollout_flags")
-				.select("id, service_type, region, enabled, rollout_percent, updated_at")
-				.order("service_type", { ascending: true })
-				.limit(200),
-			supabase
-				.from("provisioning_reconciliation")
-				.select("id, day, paid_count, provisioned_count, mismatch_count, status, created_at")
-				.order("day", { ascending: false })
-				.limit(30),
+			.from("service_feature_flags")
+			.select("id, service_type, region, enabled, rollout_percent, updated_at")
+			.order("service_type", { ascending: true })
+			.limit(200),
+		supabase
+			.from("provisioning_reconciliation_runs")
+			.select("id, run_at, paid_but_not_provisioned_count, provisioned_without_payment_count, retry_hotspot_count, notes")
+			.order("run_at", { ascending: false })
+			.limit(30),
 		]);
 		if (profilesRes.error || rolesRes.error || txRes.error) {
 			setError(
@@ -337,7 +337,7 @@ export default function AdminObservability() {
 		(tx.status || "").toLowerCase().includes("provider_fail"),
 	).length;
 	const paymentProvisionMismatch = reconciliationRows
-		.reduce((sum, row) => sum + (row.mismatch_count || 0), 0);
+		.reduce((sum, row) => sum + (row.paid_but_not_provisioned_count || 0) + (row.provisioned_without_payment_count || 0), 0);
 
 	const alertCards = [
 		{
