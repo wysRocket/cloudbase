@@ -20,36 +20,23 @@ const regions = [
 
 export default function NewService() {
     const navigate = useNavigate()
-    const { addResource, balance, deductCredits } = useDashboard()
+    const { balance } = useDashboard()
     const [selectedType, setSelectedType] = useState(serviceTypes[0].id)
     const [selectedRegion, setSelectedRegion] = useState(regions[0].id)
-    const [isDeploying, setIsDeploying] = useState(false)
-    const [deployError, setDeployError] = useState('')
 
     const selectedTypeInfo = serviceTypes.find(t => t.id === selectedType)
     const canDeploy = balance >= selectedTypeInfo.cost
 
-    const handleDeploy = async () => {
+    const handleDeploy = () => {
         if (!canDeploy) return
 
-        const regionInfo = regions.find(r => r.id === selectedRegion)
-        setIsDeploying(true)
-        setDeployError('')
+        const checkoutParams = new URLSearchParams({
+            intent: 'resource-order',
+            serviceType: selectedTypeInfo.id,
+            region: selectedRegion,
+        })
 
-        try {
-            await deductCredits(`${selectedTypeInfo.typeName} deployment`, selectedTypeInfo.cost)
-            addResource({
-                name: `${selectedTypeInfo.id}-${Math.random().toString(36).substr(2, 5)}`,
-                type: selectedTypeInfo.typeName,
-                region: regionInfo.id,
-                price: selectedTypeInfo.price
-            })
-            navigate('/dashboard')
-        } catch {
-            setDeployError('Failed to deduct credits. Please try again.')
-        } finally {
-            setIsDeploying(false)
-        }
+        navigate(`/dashboard/billing?${checkoutParams.toString()}`)
     }
 
     return (
@@ -127,23 +114,16 @@ export default function NewService() {
                             </p>
                         )}
 
-                        {deployError && (
-                            <p className="text-red-400 text-sm mb-4">{deployError}</p>
-                        )}
+                        <p className="text-slate-400 text-xs mb-4">
+                            Resources are now created only after successful payment confirmation.
+                        </p>
 
                         <button
                             onClick={handleDeploy}
-                            disabled={isDeploying || !canDeploy}
+                            disabled={!canDeploy}
                             className="w-full py-4 bg-cyan-600 hover:bg-cyan-500 disabled:bg-cyan-600/50 disabled:cursor-not-allowed text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-cyan-500/25 flex justify-center items-center gap-2"
                         >
-                            {isDeploying ? (
-                                <>
-                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    Deploying...
-                                </>
-                            ) : (
-                                <>Deploy Resource</>
-                            )}
+                            <>Continue to Billing</>
                         </button>
                     </div>
                 </div>
