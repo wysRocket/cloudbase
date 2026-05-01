@@ -3,6 +3,13 @@ import { summarizeRefreshResult } from "../../../shared/payments/reconciliation.
 import { buildRequestHash } from "../../../shared/payments/safepay-server.js";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { MAIL_FROM, MAIL_TO, sendEmail } from "../_shared/mailer.ts";
+import {
+	enforceCatalogAllowlist,
+	enforceRateLimit,
+	readJson,
+	requestMeta,
+	writeAuditTrail,
+} from "../_shared/security.ts";
 import { createAdminClient, createUserClient } from "../_shared/supabase.ts";
 
 const gatewayUrl =
@@ -51,7 +58,16 @@ Deno.serve(async (request) => {
 			);
 		}
 
-		const body = await request.json();
+		const body = readJson<Record<string, unknown>>(await request.json(), {});
+		enforceCatalogAllowlist(body);
+		const meta = requestMeta(request);
+		await enforceRateLimit(
+			user.id,
+			"refresh-payment-status",
+			meta.requestId,
+			60,
+			500,
+		);
 		const invoice = String(body?.invoice || "").trim();
 
 		if (!invoice) {
@@ -247,6 +263,15 @@ Deno.serve(async (request) => {
 			}
 		}
 
+		await writeAuditTrail({
+			userId: user.id,
+			action: "refresh-payment-status",
+			actor: user.email || user.id,
+			requestId: meta.requestId,
+			ipHash: meta.ipHash,
+			userAgentHash: meta.userAgentHash,
+			payload: { invoice, status: refreshSummary.status },
+		});
 		return jsonResponse(
 			{
 				invoice,

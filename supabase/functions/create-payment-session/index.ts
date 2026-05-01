@@ -13,6 +13,13 @@ import {
 	parseCreatePaymentResponse,
 } from "../../../shared/payments/safepay-server.js";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
+import {
+	enforceCatalogAllowlist,
+	enforceRateLimit,
+	readJson,
+	requestMeta,
+	writeAuditTrail,
+} from "../_shared/security.ts";
 import { createAdminClient, createUserClient } from "../_shared/supabase.ts";
 
 const gatewayUrl =
@@ -56,7 +63,16 @@ Deno.serve(async (request) => {
 			);
 		}
 
-		const body = await request.json();
+		const body = readJson<Record<string, unknown>>(await request.json(), {});
+		enforceCatalogAllowlist(body);
+		const meta = requestMeta(request);
+		await enforceRateLimit(
+			user.id,
+			"create-payment-session",
+			meta.requestId,
+			20,
+			200,
+		);
 		const currency = String(body?.currency || "").toUpperCase();
 		const merchantId = requiredEnv("SAFEPAY_MERCHANT_ID");
 		const merchantSecret = requiredEnv("SAFEPAY_MERCHANT_SECRET");
@@ -98,13 +114,14 @@ Deno.serve(async (request) => {
 			);
 		}
 
+		const customer = readJson<Record<string, unknown>>(body?.customer, {});
 		const normalizedCustomer = normalizeCustomerProfile({
-			firstName: body?.customer?.firstName || existingProfile?.first_name,
-			lastName: body?.customer?.lastName || existingProfile?.last_name,
+			firstName: customer?.firstName || existingProfile?.first_name,
+			lastName: customer?.lastName || existingProfile?.last_name,
 			email: user.email || existingProfile?.email,
-			phone: body?.customer?.phone || existingProfile?.phone,
-			countryCode: body?.customer?.countryCode || existingProfile?.country_code,
-			city: body?.customer?.city || existingProfile?.city,
+			phone: customer?.phone || existingProfile?.phone,
+			countryCode: customer?.countryCode || existingProfile?.country_code,
+			city: customer?.city || existingProfile?.city,
 		});
 		const missingFields = getMissingCustomerFields(normalizedCustomer);
 
@@ -245,6 +262,16 @@ Deno.serve(async (request) => {
 				request,
 			);
 		}
+
+		await writeAuditTrail({
+			userId: user.id,
+			action: "create-payment-session",
+			actor: user.email || user.id,
+			requestId: meta.requestId,
+			ipHash: meta.ipHash,
+			userAgentHash: meta.userAgentHash,
+			payload: { invoice, amountMinor, currency },
+		});
 
 		return jsonResponse(
 			{
