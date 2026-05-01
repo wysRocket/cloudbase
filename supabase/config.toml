@@ -379,6 +379,12 @@ verify_jwt = false
 [functions.refresh-payment-status]
 verify_jwt = false
 
+[functions.start-reseller-order]
+verify_jwt = false
+
+[functions.provider-provision]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

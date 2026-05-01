@@ -30,7 +30,8 @@ Deno.serve(async (request) => {
 
 	for (const job of jobs || []) {
 		processed += 1;
-		await adminClient.from("provision_jobs").update({ status: "processing", locked_at: nowIso, locked_by: "provision-job-worker" }).eq("id", job.id);
+		const { data: lockResult } = await adminClient.from("provision_jobs").update({ status: "processing", locked_at: nowIso, locked_by: "provision-job-worker" }).eq("id", job.id).eq("status", "queued").select("id");
+		if (!lockResult || lockResult.length === 0) continue;
 
 		try {
 			const { data: resource, error: resourceError } = await adminClient

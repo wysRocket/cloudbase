@@ -49,6 +49,15 @@ export function DashboardProvider({ children }) {
 	});
 
 	const balance = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+	const [resourceActionState, setResourceActionState] = useState({});
+
+	const mapResource = useCallback((res) => ({
+		...res,
+		status: res.status || "Unknown",
+		events: (res.provision_events || []).slice().sort((a, b) =>
+			new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+		),
+	}), []);
 
 	const loadResources = useCallback(async () => {
 		if (!user) return;
@@ -166,6 +175,41 @@ export function DashboardProvider({ children }) {
 		setResources((prev) => prev.filter((r) => r.id !== id));
 	};
 
+	const setActionLoading = (id, action, loading, error = "") => {
+		setResourceActionState((prev) => ({
+			...prev,
+			[id]: {
+				action: loading ? action : "",
+				error,
+			},
+		}));
+	};
+
+	const runLifecycleAction = useCallback(
+		async (id, action) => {
+			setActionLoading(id, action, true);
+			try {
+				if (action === "delete") {
+					const { error } = await supabase.from("service_resources").delete().eq("id", id).eq("user_id", user.id);
+					if (error) throw error;
+				} else {
+					const { error } = await supabase
+						.from("service_resources")
+						.update({ status: action === "suspend" ? "suspended" : "active" })
+						.eq("id", id)
+						.eq("user_id", user.id);
+					if (error) throw error;
+				}
+
+				await loadResources();
+				setActionLoading(id, action, false);
+			} catch (error) {
+				setActionLoading(id, action, false, error.message || "Action failed");
+			}
+		},
+		[loadResources, user],
+	);
+
 	const deductCredits = useCallback(
 		async (description, amount) => {
 			if (!user) throw new Error("Not authenticated");
@@ -186,14 +230,19 @@ export function DashboardProvider({ children }) {
 		<DashboardContext.Provider
 			value={{
 				resources,
+				resourceActionState,
 				balance,
 				transactions,
 				currentPlan,
 				addResource,
 				removeResource,
+				suspendResource: (id) => runLifecycleAction(id, "suspend"),
+				resumeResource: (id) => runLifecycleAction(id, "resume"),
+				deleteResource: (id) => runLifecycleAction(id, "delete"),
+				syncResource: loadResources,
 				deductCredits,
-				refreshTransactions: loadTransactions,
 				refreshResources: loadResources,
+				refreshTransactions: loadTransactions,
 				resourceEvents,
 				refreshResourceEvents: loadResourceEvents,
 				changePlan,

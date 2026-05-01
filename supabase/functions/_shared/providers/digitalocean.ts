@@ -89,7 +89,11 @@ export async function quoteFromCatalog(
 		planCode: row.plan_code,
 		currency: "USD",
 		unitPriceCents,
-		lineTotalCents: unitPriceCents * input.quantity,
+		lineTotalCents: (() => {
+			const total = unitPriceCents * input.quantity;
+			if (!Number.isSafeInteger(total)) throw new Error("Total price calculation exceeds safe integer range.");
+			return total;
+		})(),
 		availability: "available",
 		serviceType: row.service_type,
 		billingCycle: row.billing_cycle,

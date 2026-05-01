@@ -2,12 +2,25 @@
 
 create extension if not exists pgcrypto;
 
-create type public.service_type as enum ('vps', 'kubernetes', 'gpu', 'database', 'game_server');
-create type public.billing_cycle as enum ('hourly', 'monthly', 'yearly');
-create type public.order_status as enum ('draft', 'pending_payment', 'paid', 'failed', 'cancelled', 'refunded');
-create type public.resource_status as enum ('pending', 'provisioning', 'active', 'suspended', 'failed', 'deleting', 'deleted');
-create type public.job_status as enum ('queued', 'processing', 'succeeded', 'failed', 'dead_letter');
-create type public.event_level as enum ('info', 'warning', 'error');
+do $$ begin
+  create type public.service_type as enum ('vps', 'kubernetes', 'gpu', 'database', 'game_server');
+exception when duplicate_object then null; end $$;
+do $$ begin
+  create type public.billing_cycle as enum ('hourly', 'monthly', 'yearly');
+exception when duplicate_object then null; end $$;
+do $$ begin
+  create type public.order_status as enum ('draft', 'pending_payment', 'paid', 'failed', 'cancelled', 'refunded');
+exception when duplicate_object then null; end $$;
+do $$ begin
+  create type public.resource_status as enum ('pending', 'provisioning', 'active', 'suspended', 'failed', 'deleting', 'deleted');
+exception when duplicate_object then null; end $$;
+do $$ begin
+  create type public.job_status as enum ('queued', 'processing', 'succeeded', 'failed', 'dead_letter');
+exception when duplicate_object then null; end $$;
+do $$ begin
+  create type public.event_level as enum ('info', 'warning', 'error');
+exception when duplicate_object then null; end $$;
+
 
 create table if not exists public.service_catalog (
   id uuid primary key default gen_random_uuid(),
