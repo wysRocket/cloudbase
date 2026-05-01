@@ -78,7 +78,7 @@ export async function executeLifecycleAction(args: { action: string; providerRes
 			await apiRequest(`/droplets/${dropletId}`, { method: "DELETE" });
 			return "deleted";
 		case "resize":
-			throw new Error("Resize action is not yet implemented.");
+			throw new Error("Resize action is not yet implemented. Please contact support for manual resizing.");
 		default:
 			throw new Error(`Unsupported lifecycle action '${args.action}'.`);
 	}

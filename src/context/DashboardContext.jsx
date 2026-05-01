@@ -63,23 +63,6 @@ export function DashboardProvider({ children }) {
 		if (!user) return;
 
 		const { data, error } = await supabase
-			.from("resources")
-			.select("id, name, type, region, ip, status, created_at, provision_events(*)")
-			.eq("user_id", user.id)
-			.order("created_at", { ascending: false });
-
-		if (error) {
-			console.warn("Unable to load resources from Supabase.", error);
-			return;
-		}
-
-		setResources((data || []).map(mapResource));
-	}, [mapResource, user]);
-
-	const loadResources = useCallback(async () => {
-		if (!user) return;
-
-		const { data, error } = await supabase
 			.from("service_resources")
 			.select("id, display_name, service_type, region, status, updated_at, connection_details")
 			.eq("user_id", user.id)
@@ -173,20 +156,6 @@ export function DashboardProvider({ children }) {
 		return () => clearInterval(intervalId);
 	}, [user, loadResources, loadResourceEvents]);
 
-	useEffect(() => {
-		loadResources();
-	}, [loadResources]);
-
-	useEffect(() => {
-		if (!user) return undefined;
-
-		const interval = setInterval(() => {
-			loadResources();
-		}, 15000);
-
-		return () => clearInterval(interval);
-	}, [loadResources, user]);
-
 	const changePlan = (plan) => {
 		setCurrentPlan(plan);
 	};
@@ -274,7 +243,6 @@ export function DashboardProvider({ children }) {
 				deductCredits,
 				refreshResources: loadResources,
 				refreshTransactions: loadTransactions,
-				refreshResources: loadResources,
 				resourceEvents,
 				refreshResourceEvents: loadResourceEvents,
 				changePlan,
