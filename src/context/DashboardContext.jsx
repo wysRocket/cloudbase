@@ -10,11 +10,22 @@ import { useAuth } from "./AuthContext";
 
 const DashboardContext = createContext();
 
-const initialResources = []; // Empty by default as per user request
-
+const initialResources = [];
 const initialTransactions = [];
-
 const defaultPlan = { name: "Pro Plan", credits: 2900, price: 29 };
+
+function mapResourceRow(resource) {
+	return {
+		id: resource.id,
+		name: resource.display_name,
+		type: resource.service_type,
+		region: resource.region,
+		price: "-",
+		status: resource.status,
+		uptime: resource.updated_at ? new Date(resource.updated_at).toLocaleString() : "-",
+		ip: resource.connection_details?.ipv4 || "Pending",
+	};
+}
 
 export function DashboardProvider({ children }) {
 	const { user } = useAuth();
@@ -29,13 +40,56 @@ export function DashboardProvider({ children }) {
 		return saved ? JSON.parse(saved) : initialTransactions;
 	});
 
+
+	const [resourceEvents, setResourceEvents] = useState({});
+
 	const [currentPlan, setCurrentPlan] = useState(() => {
 		const saved = localStorage.getItem("wys_plan");
 		return saved ? JSON.parse(saved) : defaultPlan;
 	});
 
-	// Calculate balance from transactions
 	const balance = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+
+	const loadResources = useCallback(async () => {
+		if (!user) return;
+
+		const { data, error } = await supabase
+			.from("service_resources")
+			.select("id, display_name, service_type, region, status, updated_at, connection_details")
+			.eq("user_id", user.id)
+			.order("created_at", { ascending: false });
+
+		if (error) {
+			console.warn("Unable to load resources from Supabase.", error);
+			return;
+		}
+
+		setResources((data || []).map(mapResourceRow));
+	}, [user]);
+
+	const loadResourceEvents = useCallback(async () => {
+		if (!user) return;
+
+		const { data, error } = await supabase
+			.from("provision_events")
+			.select("resource_id, event_type, message, created_at")
+			.order("created_at", { ascending: false })
+			.limit(200);
+
+		if (error) {
+			console.warn("Unable to load provision events from Supabase.", error);
+			return;
+		}
+
+		const byResource = {};
+		for (const evt of data || []) {
+			if (!byResource[evt.resource_id]) {
+				byResource[evt.resource_id] = evt;
+			}
+		}
+
+		setResourceEvents(byResource);
+	}, [user]);
 
 	const loadTransactions = useCallback(async () => {
 		if (!user) {
@@ -77,7 +131,21 @@ export function DashboardProvider({ children }) {
 
 	useEffect(() => {
 		loadTransactions();
-	}, [loadTransactions]);
+		loadResources();
+		loadResourceEvents();
+	}, [loadTransactions, loadResources, loadResourceEvents]);
+
+
+	useEffect(() => {
+		if (!user) return;
+
+		const intervalId = setInterval(() => {
+			loadResources();
+			loadResourceEvents();
+		}, 15000);
+
+		return () => clearInterval(intervalId);
+	}, [user, loadResources, loadResourceEvents]);
 
 	const changePlan = (plan) => {
 		setCurrentPlan(plan);
@@ -86,10 +154,10 @@ export function DashboardProvider({ children }) {
 	const addResource = (resource) => {
 		const newResource = {
 			...resource,
-			id: Math.random().toString(36).substr(2, 9),
-			status: "Running", // Default to running
+			id: resource.id || Math.random().toString(36).slice(2, 11),
+			status: resource.status || "pending",
 			uptime: "Just now",
-			ip: `10.0.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+			ip: resource.ip || "Pending",
 		};
 		setResources((prev) => [newResource, ...prev]);
 	};
@@ -125,6 +193,9 @@ export function DashboardProvider({ children }) {
 				removeResource,
 				deductCredits,
 				refreshTransactions: loadTransactions,
+				refreshResources: loadResources,
+				resourceEvents,
+				refreshResourceEvents: loadResourceEvents,
 				changePlan,
 			}}
 		>
