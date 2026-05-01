@@ -35,5 +35,5 @@ export function reconcileDigitalOceanResources({ internalResources, providerReso
 }
 
 export function shouldRunDailyReconciliation(now = new Date()) {
-	return now.getUTCHours() === 3 && now.getUTCMinutes() === 0;
+	return now.getUTCHours() === 3 && now.getUTCMinutes() < 5;
 }

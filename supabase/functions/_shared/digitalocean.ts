@@ -15,7 +15,7 @@ function normalizeState(status?: string): ProviderServicePayload["state"] {
 	if (!status) return "pending";
 	if (["new", "in-progress", "off", "archive"].includes(status)) return "pending";
 	if (["active", "running", "ok"].includes(status)) return "active";
-	if (["deleting"].includes(status)) return "deleting";
+	if (status === "deleting") return "deleting";
 	return "failed";
 }
 

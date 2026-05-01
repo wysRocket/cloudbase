@@ -129,7 +129,6 @@ grant select on table public.tax_regions to authenticated;
 grant select, insert, update on table public.invoices to service_role;
 grant select, insert, update on table public.canary_launch_flags to service_role;
 grant select, insert, update on table public.tax_regions to service_role;
-grant usage, select on sequence public.invoices_id_seq to service_role;
 grant usage, select on sequence public.tax_regions_id_seq to service_role;
 grant usage, select on sequence public.canary_launch_flags_id_seq to service_role;
 
