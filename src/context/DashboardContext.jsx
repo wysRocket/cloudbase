@@ -10,11 +10,21 @@ import { useAuth } from "./AuthContext";
 
 const DashboardContext = createContext();
 
-const initialResources = []; // Empty by default as per user request
-
+const initialResources = [];
 const initialTransactions = [];
-
 const defaultPlan = { name: "Pro Plan", credits: 2900, price: 29 };
+
+function mapResource(resource) {
+	return {
+		id: resource.id,
+		name: resource.name,
+		region: resource.region,
+		type: resource.type || "Resource",
+		ip: resource.ip_address || resource.ip || "-",
+		status: resource.status || "Pending",
+		uptime: resource.uptime || null,
+	};
+}
 
 export function DashboardProvider({ children }) {
 	const { user } = useAuth();
@@ -34,8 +44,27 @@ export function DashboardProvider({ children }) {
 		return saved ? JSON.parse(saved) : defaultPlan;
 	});
 
-	// Calculate balance from transactions
 	const balance = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+
+	const refreshResources = useCallback(async () => {
+		if (!user) {
+			setResources(initialResources);
+			return;
+		}
+
+		const { data, error } = await supabase
+			.from("service_resources")
+			.select("id, name, region, type, ip_address, ip, status, uptime")
+			.eq("user_id", user.id)
+			.order("created_at", { ascending: false });
+
+		if (error) {
+			console.warn("Unable to load resources from Supabase.", error);
+			return;
+		}
+
+		setResources((data || []).map(mapResource));
+	}, [user]);
 
 	const loadTransactions = useCallback(async () => {
 		if (!user) {
@@ -76,8 +105,37 @@ export function DashboardProvider({ children }) {
 	}, [resources, transactions, currentPlan]);
 
 	useEffect(() => {
+		refreshResources();
 		loadTransactions();
-	}, [loadTransactions]);
+	}, [refreshResources, loadTransactions]);
+
+	useEffect(() => {
+		if (!user) {
+			return undefined;
+		}
+
+		const channel = supabase
+			.channel(`dashboard-resources-${user.id}`)
+			.on(
+				"postgres_changes",
+				{ event: "*", schema: "public", table: "service_resources", filter: `user_id=eq.${user.id}` },
+				() => {
+					refreshResources();
+				},
+			)
+			.on(
+				"postgres_changes",
+				{ event: "*", schema: "public", table: "provision_events", filter: `user_id=eq.${user.id}` },
+				() => {
+					refreshResources();
+				},
+			)
+			.subscribe();
+
+		return () => {
+			supabase.removeChannel(channel);
+		};
+	}, [user, refreshResources]);
 
 	const changePlan = (plan) => {
 		setCurrentPlan(plan);
@@ -87,7 +145,7 @@ export function DashboardProvider({ children }) {
 		const newResource = {
 			...resource,
 			id: Math.random().toString(36).substr(2, 9),
-			status: "Running", // Default to running
+			status: "Running",
 			uptime: "Just now",
 			ip: `10.0.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
 		};
@@ -124,6 +182,7 @@ export function DashboardProvider({ children }) {
 				addResource,
 				removeResource,
 				deductCredits,
+				refreshResources,
 				refreshTransactions: loadTransactions,
 				changePlan,
 			}}
