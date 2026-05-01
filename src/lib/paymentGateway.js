@@ -29,3 +29,14 @@ export async function refreshPaymentStatus(payload) {
 		"Unable to refresh payment status right now.",
 	);
 }
+
+export async function startResellerOrder(payload) {
+	const response = await supabase.functions.invoke("start-reseller-order", {
+		body: payload,
+	});
+
+	return unwrapFunctionResponse(
+		response,
+		"Unable to create reseller order right now.",
+	);
+}
