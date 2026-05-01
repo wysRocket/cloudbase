@@ -16,6 +16,40 @@ const initialTransactions = [];
 
 const defaultPlan = { name: "Pro Plan", credits: 2900, price: 29 };
 
+const providerSyncStatusMap = {
+	vps: "droplet-sync",
+	kubernetes: "kubernetes-cluster-sync",
+	database: "managed-database-sync",
+	gpu: "gpu-droplet-sync",
+	gameServer: "game-server-droplet-sync",
+};
+
+const serviceLifecycleByType = {
+	vps: ["queued", "provisioning", "bootstrapping", "running"],
+	kubernetes: [
+		"queued",
+		"provisioning-control-plane",
+		"provisioning-node-pool",
+		"configuring-networking",
+		"running",
+	],
+	database: [
+		"queued",
+		"provisioning-cluster",
+		"applying-backups-policy",
+		"syncing-connection-info",
+		"running",
+	],
+	gpu: ["queued", "provisioning-gpu-droplet", "configuring-drivers", "running"],
+	gameServer: [
+		"queued",
+		"provisioning-droplet",
+		"running-cloud-init-bootstrap",
+		"health-checking",
+		"running",
+	],
+};
+
 export function DashboardProvider({ children }) {
 	const { user } = useAuth();
 
@@ -84,12 +118,19 @@ export function DashboardProvider({ children }) {
 	};
 
 	const addResource = (resource) => {
+		const lifecycle = serviceLifecycleByType[resource.serviceType] || [
+			"queued",
+			"running",
+		];
 		const newResource = {
 			...resource,
 			id: Math.random().toString(36).substr(2, 9),
 			status: "Running", // Default to running
 			uptime: "Just now",
 			ip: `10.0.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+			lifecycle,
+			providerSyncStatus:
+				providerSyncStatusMap[resource.serviceType] || "generic-sync",
 		};
 		setResources((prev) => [newResource, ...prev]);
 	};

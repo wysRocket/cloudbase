@@ -4,11 +4,27 @@ import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
 
 const serviceTypes = [
-    { id: 'vps', name: 'Virtual Private Server', icon: 'server', description: 'High-performance NVMe VPS', price: '100 credits/mo', cost: 100, typeName: 'VPS (Standard)' },
-    { id: 'k8s', name: 'Kubernetes Cluster', icon: 'cubes', description: 'Managed K8s control plane', price: '1000 credits/mo', cost: 1000, typeName: 'Kubernetes (Managed)' },
-    { id: 'db', name: 'Managed Database', icon: 'database', description: 'Postgres, MySQL, Redis', price: '300 credits/mo', cost: 300, typeName: 'Database (PG/MySQL)' },
-    { id: 'gpu', name: 'GPU Instance', icon: 'chip', description: 'NVIDIA H100 / A100', price: '50 credits/hr', cost: 50, typeName: 'GPU (H100)' },
+    { id: 'vps', name: 'Virtual Private Server', icon: 'server', description: 'High-performance NVMe VPS', price: '100 credits/mo', cost: 100, typeName: 'VPS (Standard)', serviceType: 'vps' },
+    { id: 'k8s', name: 'Kubernetes Cluster', icon: 'cubes', description: 'Managed K8s control plane via DigitalOcean Kubernetes', price: '1000 credits/mo', cost: 1000, typeName: 'Kubernetes (Managed)', serviceType: 'kubernetes' },
+    { id: 'db', name: 'Managed Database', icon: 'database', description: 'Postgres, MySQL, Redis', price: '300 credits/mo', cost: 300, typeName: 'Database (PG/MySQL)', serviceType: 'database' },
+    { id: 'gpu', name: 'GPU Instance', icon: 'chip', description: 'NVIDIA H100 / A100', price: '50 credits/hr', cost: 50, typeName: 'GPU (H100)', serviceType: 'gpu' },
+    { id: 'game', name: 'Game Server', icon: 'gamepad-2', description: 'Droplet + cloud-init bootstrap profile', price: '200 credits/mo', cost: 200, typeName: 'Game Server (Managed Bootstrap)', serviceType: 'gameServer' },
 ]
+
+const gpuProfiles = {
+    h100: { label: 'H100 80GB', dropletSize: 'gpu-h100x1-80gb', cpu: 16, ram: '120GB', vram: '80GB' },
+    a100: { label: 'A100 80GB', dropletSize: 'gpu-a100x1-80gb', cpu: 12, ram: '96GB', vram: '80GB' },
+}
+
+const gameServerProfiles = {
+    minecraft: { label: 'Minecraft', bootstrap: 'minecraft-papermc', cloudInit: 'bootstrap-minecraft.yml' },
+    cs2: { label: 'Counter-Strike 2', bootstrap: 'cs2-dedicated', cloudInit: 'bootstrap-cs2.yml' },
+}
+
+const dbEngines = {
+    postgres: { version: '16', port: 5432 },
+    mysql: { version: '8.0', port: 3306 },
+}
 
 const regions = [
     { id: 'us-east', name: 'New York, USA', flag: '🇺🇸' },
@@ -23,6 +39,9 @@ export default function NewService() {
     const { addResource, balance, deductCredits } = useDashboard()
     const [selectedType, setSelectedType] = useState(serviceTypes[0].id)
     const [selectedRegion, setSelectedRegion] = useState(regions[0].id)
+    const [selectedGpuProfile, setSelectedGpuProfile] = useState('h100')
+    const [selectedDbEngine, setSelectedDbEngine] = useState('postgres')
+    const [selectedGameProfile, setSelectedGameProfile] = useState('minecraft')
     const [isDeploying, setIsDeploying] = useState(false)
     const [deployError, setDeployError] = useState('')
 
@@ -41,8 +60,41 @@ export default function NewService() {
             addResource({
                 name: `${selectedTypeInfo.id}-${Math.random().toString(36).substr(2, 5)}`,
                 type: selectedTypeInfo.typeName,
+                serviceType: selectedTypeInfo.serviceType,
                 region: regionInfo.id,
-                price: selectedTypeInfo.price
+                price: selectedTypeInfo.price,
+                provider: 'digitalocean',
+                providerPath: selectedTypeInfo.serviceType === 'vps' ? '/v2/droplets' : `/v2/${selectedTypeInfo.id}`,
+                providerHandler: selectedTypeInfo.serviceType === 'kubernetes' ? 'digitalocean-kubernetes-provisioner' : 'digitalocean-service-provisioner',
+                provisioning: {
+                    kubernetes: selectedTypeInfo.serviceType === 'kubernetes' ? {
+                        clusterName: `k8s-${Math.random().toString(36).slice(2, 8)}`,
+                        nodePool: 's-4vcpu-8gb',
+                        version: '1.31.x-do.2',
+                        lifecycle: ['create-cluster', 'wait-control-plane', 'create-nodepool', 'sync-kubeconfig'],
+                    } : null,
+                    database: selectedTypeInfo.serviceType === 'database' ? {
+                        engine: selectedDbEngine,
+                        version: dbEngines[selectedDbEngine].version,
+                        lifecycle: ['create-cluster', 'apply-user', 'create-default-db', 'sync-connection-info'],
+                        connectionInfo: {
+                            host: `${selectedDbEngine}-${Math.random().toString(36).slice(2, 8)}.db.cloudbase.internal`,
+                            port: dbEngines[selectedDbEngine].port,
+                            username: 'app_user',
+                            database: 'app',
+                            ssl: true,
+                        },
+                    } : null,
+                    gpu: selectedTypeInfo.serviceType === 'gpu' ? {
+                        profile: selectedGpuProfile,
+                        ...gpuProfiles[selectedGpuProfile],
+                    } : null,
+                    gameServer: selectedTypeInfo.serviceType === 'gameServer' ? {
+                        strategy: 'droplet-cloud-init-bootstrap',
+                        profile: selectedGameProfile,
+                        ...gameServerProfiles[selectedGameProfile],
+                    } : null,
+                },
             })
             navigate('/dashboard')
         } catch {
@@ -98,6 +150,48 @@ export default function NewService() {
                             ))}
                         </div>
                     </div>
+
+                    {selectedType === 'gpu' && (
+                        <div className="bg-[#0f1629] border border-white/5 rounded-2xl p-6">
+                            <h2 className="text-xl font-bold mb-4">3. GPU Profile</h2>
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                {Object.entries(gpuProfiles).map(([id, profile]) => (
+                                    <button key={id} onClick={() => setSelectedGpuProfile(id)} className={`text-left p-4 rounded-xl border ${selectedGpuProfile === id ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400' : 'bg-white/5 border-transparent text-slate-400'}`}>
+                                        <div className="font-bold">{profile.label}</div>
+                                        <div className="text-xs opacity-70">{profile.dropletSize}</div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {selectedType === 'db' && (
+                        <div className="bg-[#0f1629] border border-white/5 rounded-2xl p-6">
+                            <h2 className="text-xl font-bold mb-4">3. Database Engine</h2>
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                {Object.keys(dbEngines).map((engine) => (
+                                    <button key={engine} onClick={() => setSelectedDbEngine(engine)} className={`text-left p-4 rounded-xl border ${selectedDbEngine === engine ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400' : 'bg-white/5 border-transparent text-slate-400'}`}>
+                                        <div className="font-bold uppercase">{engine}</div>
+                                        <div className="text-xs opacity-70">v{dbEngines[engine].version}</div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {selectedType === 'game' && (
+                        <div className="bg-[#0f1629] border border-white/5 rounded-2xl p-6">
+                            <h2 className="text-xl font-bold mb-4">3. Game Bootstrap Profile</h2>
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                {Object.entries(gameServerProfiles).map(([id, profile]) => (
+                                    <button key={id} onClick={() => setSelectedGameProfile(id)} className={`text-left p-4 rounded-xl border ${selectedGameProfile === id ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400' : 'bg-white/5 border-transparent text-slate-400'}`}>
+                                        <div className="font-bold">{profile.label}</div>
+                                        <div className="text-xs opacity-70">{profile.cloudInit}</div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Summary Sidebar */}
