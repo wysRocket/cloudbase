@@ -13,7 +13,7 @@ export default function Privacy() {
 						<h1 className="text-5xl font-black tracking-tighter mb-6">
 							Privacy Policy
 						</h1>
-						<p className="text-slate-400 mb-12">Last updated: January 2024</p>
+						<p className="text-slate-400 mb-12">Last updated: May 1, 2026</p>
 					</motion.div>
 
 					<div className="prose prose-invert prose-lg max-w-none space-y-8">
@@ -93,8 +93,28 @@ export default function Privacy() {
 							</p>
 						</section>
 
+						
+
 						<section>
-							<h2 className="text-2xl font-bold mb-4">4. Data Security</h2>
+							<h2 className="text-2xl font-bold mb-4">
+								4. International Data Handling
+							</h2>
+							<p className="text-slate-300 leading-relaxed">
+								Because Cloudbase operates globally, personal data may be processed in jurisdictions outside your home country. We apply contractual safeguards, least-privilege access controls, and encryption in transit/at rest to protect cross-border data transfers.
+							</p>
+						</section>
+
+						<section>
+							<h2 className="text-2xl font-bold mb-4">
+								5. Data Retention and Deletion
+							</h2>
+							<p className="text-slate-300 leading-relaxed">
+								We retain account, billing, audit, and security log data only for as long as needed to deliver services, meet legal obligations, and resolve disputes. After account termination, residual backups and logs are purged according to our backup lifecycle and retention schedule.
+							</p>
+						</section>
+
+						<section>
+							<h2 className="text-2xl font-bold mb-4">6. Data Security</h2>
 							<p className="text-slate-300 leading-relaxed">
 								We implement appropriate security measures to protect your
 								personal information. All data is encrypted in transit and at
@@ -103,7 +123,7 @@ export default function Privacy() {
 						</section>
 
 						<section>
-							<h2 className="text-2xl font-bold mb-4">5. Your Rights</h2>
+							<h2 className="text-2xl font-bold mb-4">7. Your Rights</h2>
 							<p className="text-slate-300 leading-relaxed">
 								You have the right to access, correct, or delete your personal
 								information. You may also opt out of marketing communications at
@@ -112,7 +132,7 @@ export default function Privacy() {
 						</section>
 
 						<section>
-							<h2 className="text-2xl font-bold mb-4">6. Contact Us</h2>
+							<h2 className="text-2xl font-bold mb-4">8. Contact Us</h2>
 							<p className="text-slate-300 leading-relaxed">
 								If you have any questions about this Privacy Policy, please
 								contact us at contact@cloudbaseservice.com.
