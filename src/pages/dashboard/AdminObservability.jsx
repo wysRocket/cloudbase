@@ -118,6 +118,9 @@ export default function AdminObservability() {
 	const [roles, setRoles] = useState([]);
 	const [transactions, setTransactions] = useState([]);
 
+	const [serviceFlags, setServiceFlags] = useState([]);
+	const [reconciliationRows, setReconciliationRows] = useState([]);
+
 	// Filter / pagination state
 	const [dateRange, setDateRange] = useState("all");
 	const [txSearch, setTxSearch] = useState("");
@@ -135,7 +138,7 @@ export default function AdminObservability() {
 		}
 		setLoading(true);
 		setError("");
-		const [profilesRes, rolesRes, txRes] = await Promise.all([
+		const [profilesRes, rolesRes, txRes, flagsRes, reconRes] = await Promise.all([
 			supabase
 				.from("profiles")
 				.select("id, email, created_at")
@@ -149,6 +152,16 @@ export default function AdminObservability() {
 				.select("id, user_id, description, amount, type, status, created_at")
 				.order("created_at", { ascending: false })
 				.limit(300),
+			supabase
+				.from("service_rollout_flags")
+				.select("id, service_type, region, enabled, rollout_percent, updated_at")
+				.order("service_type", { ascending: true })
+				.limit(200),
+			supabase
+				.from("provisioning_reconciliation")
+				.select("id, day, paid_count, provisioned_count, mismatch_count, status, created_at")
+				.order("day", { ascending: false })
+				.limit(30),
 		]);
 		if (profilesRes.error || rolesRes.error || txRes.error) {
 			setError(
@@ -163,6 +176,8 @@ export default function AdminObservability() {
 		setProfiles(profilesRes.data || []);
 		setRoles(rolesRes.data || []);
 		setTransactions(txRes.data || []);
+		setServiceFlags(flagsRes.error ? [] : flagsRes.data || []);
+		setReconciliationRows(reconRes.error ? [] : reconRes.data || []);
 		setLoading(false);
 	}, [isAdmin, adminLoading]);
 
@@ -315,6 +330,35 @@ export default function AdminObservability() {
 	);
 
 	const recentUsers = profiles.slice(0, 8);
+
+	const queueBacklog = rangeTransactions.filter((tx) => tx.status === "Queued").length;
+	const deadLetterCount = rangeTransactions.filter((tx) => tx.status === "DeadLetter").length;
+	const providerFailures = rangeTransactions.filter((tx) =>
+		(tx.status || "").toLowerCase().includes("provider_fail"),
+	).length;
+	const paymentProvisionMismatch = reconciliationRows
+		.reduce((sum, row) => sum + (row.mismatch_count || 0), 0);
+
+	const alertCards = [
+		{
+			id: "dead-letter",
+			label: "Dead-letter growth",
+			value: deadLetterCount,
+			state: deadLetterCount > 10 ? "Critical" : deadLetterCount > 0 ? "Watch" : "Healthy",
+		},
+		{
+			id: "provider-failures",
+			label: "Provider API failure spikes",
+			value: providerFailures,
+			state: providerFailures > 8 ? "Critical" : providerFailures > 0 ? "Watch" : "Healthy",
+		},
+		{
+			id: "mismatch",
+			label: "Payment/provision mismatch",
+			value: paymentProvisionMismatch,
+			state: paymentProvisionMismatch > 0 ? "Critical" : "Healthy",
+		},
+	];
 
 	// ─── Guards ──────────────────────────────────────────────────────────────────
 
@@ -787,6 +831,60 @@ export default function AdminObservability() {
 							);
 						})}
 					</div>
+				</div>
+			</div>
+
+
+			{/* Queue + Failure Metrics */}
+			<div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+					<h2 className="font-bold text-lg">Queue Health</h2>
+					<p className="text-xs text-slate-500 mb-4">Backlog and dead-letter trends</p>
+					<p className="text-3xl font-bold text-cyan-300">{queueBacklog}</p>
+					<p className="text-xs text-slate-500">queued events</p>
+					<p className="mt-3 text-lg font-semibold text-red-300">{deadLetterCount}</p>
+					<p className="text-xs text-slate-500">dead-lettered events</p>
+				</div>
+				<div className="xl:col-span-2 rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+					<h2 className="font-bold text-lg mb-3">Operational Alerts</h2>
+					<div className="grid sm:grid-cols-3 gap-3">
+						{alertCards.map((alert) => (
+							<div key={alert.id} className="rounded-xl border border-white/10 p-3 bg-black/20">
+								<p className="text-xs text-slate-500">{alert.label}</p>
+								<p className="text-2xl font-bold text-white mt-1">{alert.value}</p>
+								<p className={`text-xs mt-1 ${alert.state === "Critical" ? "text-red-300" : alert.state === "Watch" ? "text-amber-300" : "text-emerald-300"}`}>{alert.state}</p>
+							</div>
+						))}
+					</div>
+				</div>
+			</div>
+
+			{/* Feature Flags + Reconciliation + Runbooks */}
+			<div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+				<div className="xl:col-span-2 rounded-2xl border border-white/10 bg-[#0d1527] overflow-hidden">
+					<div className="p-4 border-b border-white/5">
+						<h2 className="font-bold">Service Rollout Flags</h2>
+						<p className="text-xs text-slate-500">Per service type and region phased rollout</p>
+					</div>
+					<div className="divide-y divide-white/5">
+						{serviceFlags.length === 0 ? <p className="p-4 text-sm text-slate-500">No rollout flags found.</p> : serviceFlags.slice(0, 12).map((flag) => (
+							<div key={flag.id} className="p-3 grid grid-cols-4 gap-2 text-sm">
+								<p className="text-white">{flag.service_type}</p>
+								<p className="text-slate-300">{flag.region}</p>
+								<p className="text-cyan-300">{flag.rollout_percent || 0}%</p>
+								<p className={flag.enabled ? "text-emerald-300" : "text-slate-500"}>{flag.enabled ? "Enabled" : "Disabled"}</p>
+							</div>
+						))}
+					</div>
+				</div>
+				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+					<h2 className="font-bold text-lg">Incident Runbooks</h2>
+					<ul className="mt-3 space-y-2 text-sm text-slate-300 list-disc list-inside">
+						<li>Retry pipeline: replay transient failures with exponential backoff.</li>
+						<li>Rollback: disable impacted region flags and halt new provisioning.</li>
+						<li>Orphan cleanup: detect paid-but-unprovisioned resources and reconcile.</li>
+						<li>Provider outage mode: shift to degraded mode and queue async retries.</li>
+					</ul>
 				</div>
 			</div>
 
