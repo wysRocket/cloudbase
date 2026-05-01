@@ -39,20 +39,21 @@ create or replace function public.reseller_order_must_be_paid()
 returns trigger
 language plpgsql
 as $$
+declare
+  v_status public.order_payment_status;
 begin
-  if new.order_id is null then
+  select ro.status into v_status
+  from public.reseller_orders ro
+  where ro.id = new.order_id;
+
+  if v_status is null then
     raise exception using
       errcode = 'P0001',
-      message = 'Provisioning order linkage is required',
-      detail = 'error_code=PROVISION_ORDER_LINK_REQUIRED';
+      message = 'Provisioning order linkage is missing or invalid',
+      detail = 'error_code=PROVISION_ORDER_LINK_MISSING';
   end if;
 
-  if not exists (
-    select 1
-    from public.reseller_orders ro
-    where ro.id = new.order_id
-      and ro.status = 'paid'
-  ) then
+  if v_status <> 'paid' then
     raise exception using
       errcode = 'P0001',
       message = 'Provisioning order must be paid before queueing',
@@ -83,6 +84,13 @@ declare
   v_status public.order_payment_status;
   v_job_id bigint;
 begin
+  if auth.uid() <> p_reseller_id then
+    raise exception using
+      errcode = 'P0001',
+      message = 'Caller does not match the reseller identity',
+      detail = 'error_code=PROVISION_RESELLER_MISMATCH';
+  end if;
+
   if p_order_id is null then
     raise exception using
       errcode = 'P0001',
@@ -127,5 +135,8 @@ begin
   return v_job_id;
 end;
 $$;
+
+create index if not exists reseller_orders_reseller_id_status_idx
+  on public.reseller_orders (reseller_id, status);
 
 commit;
