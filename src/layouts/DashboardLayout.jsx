@@ -5,7 +5,7 @@ import DashboardSidebar from "../components/dashboard/DashboardSidebar";
 import { DashboardProvider } from "../context/DashboardContext";
 import { useAuth } from "../context/AuthContext";
 
-const initialNotifications = [
+const fallbackNotifications = [
 	{
 		id: 1,
 		title: "Welcome to CloudbaseTop!",
@@ -37,10 +37,26 @@ export default function DashboardLayout({ children }) {
 	const location = useLocation();
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 	const [showNotifications, setShowNotifications] = useState(false);
-	const [notifications, setNotifications] = useState(initialNotifications);
+	const [notifications, setNotifications] = useState(() => {
+		const saved = localStorage.getItem("wys_notifications");
+		return saved ? JSON.parse(saved) : fallbackNotifications;
+	});
 	const notifRef = useRef(null);
 
 	const unreadCount = notifications.filter((n) => !n.read).length;
+
+	useEffect(() => {
+		const handleStorage = () => {
+			const saved = localStorage.getItem("wys_notifications");
+			if (saved) setNotifications(JSON.parse(saved));
+		};
+		window.addEventListener("storage", handleStorage);
+		const timer = setInterval(handleStorage, 1500);
+		return () => {
+			window.removeEventListener("storage", handleStorage);
+			clearInterval(timer);
+		};
+	}, []);
 
 	useEffect(() => {
 		if (!loading && !user) {

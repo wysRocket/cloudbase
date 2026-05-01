@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
 
 const serviceTypes = [
-    { id: 'vps', name: 'Virtual Private Server', icon: 'server', description: 'High-performance NVMe VPS', price: '100 credits/mo', cost: 100, typeName: 'VPS (Standard)' },
-    { id: 'k8s', name: 'Kubernetes Cluster', icon: 'cubes', description: 'Managed K8s control plane', price: '1000 credits/mo', cost: 1000, typeName: 'Kubernetes (Managed)' },
-    { id: 'db', name: 'Managed Database', icon: 'database', description: 'Postgres, MySQL, Redis', price: '300 credits/mo', cost: 300, typeName: 'Database (PG/MySQL)' },
-    { id: 'gpu', name: 'GPU Instance', icon: 'chip', description: 'NVIDIA H100 / A100', price: '50 credits/hr', cost: 50, typeName: 'GPU (H100)' },
+    { id: 'vps', name: 'Virtual Private Server', icon: 'server', description: 'High-performance NVMe VPS', price: '100 credits/mo', cost: 100, typeName: 'VPS (Standard)', serviceType: 'vps' },
+    { id: 'k8s', name: 'Kubernetes Cluster', icon: 'cubes', description: 'Managed K8s control plane', price: '1000 credits/mo', cost: 1000, typeName: 'Kubernetes (Managed)', serviceType: 'kubernetes' },
+    { id: 'db', name: 'Managed Database', icon: 'database', description: 'Postgres, MySQL, Redis', price: '300 credits/mo', cost: 300, typeName: 'Database (PG/MySQL)', serviceType: 'database' },
+    { id: 'gpu', name: 'GPU Instance', icon: 'chip', description: 'NVIDIA H100 / A100', price: '50 credits/hr', cost: 50, typeName: 'GPU (H100)', serviceType: 'gpu' },
+    { id: 'game', name: 'Game Server', icon: 'gamepad', description: 'Low-latency multiplayer node', price: '180 credits/mo', cost: 180, typeName: 'Game Server (Dedicated)', serviceType: 'game_server' },
 ]
 
 const regions = [
@@ -42,7 +43,8 @@ export default function NewService() {
                 name: `${selectedTypeInfo.id}-${Math.random().toString(36).substr(2, 5)}`,
                 type: selectedTypeInfo.typeName,
                 region: regionInfo.id,
-                price: selectedTypeInfo.price
+                price: selectedTypeInfo.price,
+                serviceType: selectedTypeInfo.serviceType
             })
             navigate('/dashboard')
         } catch {
