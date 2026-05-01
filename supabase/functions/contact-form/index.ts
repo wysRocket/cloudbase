@@ -1,5 +1,11 @@
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { MAIL_FROM, MAIL_TO, sendEmail } from "../_shared/mailer.ts";
+import {
+	enforceCatalogAllowlist,
+	readJson,
+	requestMeta,
+	writeAuditTrail,
+} from "../_shared/security.ts";
 
 Deno.serve(async (request) => {
 	if (request.method === "OPTIONS") {
@@ -11,7 +17,9 @@ Deno.serve(async (request) => {
 	}
 
 	try {
-		const body = await request.json();
+		const body = readJson<Record<string, unknown>>(await request.json(), {});
+		enforceCatalogAllowlist(body);
+		const meta = requestMeta(request);
 		const firstName = String(body?.firstName || "").trim();
 		const lastName = String(body?.lastName || "").trim();
 		const email = String(body?.email || "").trim();
@@ -46,6 +54,14 @@ Deno.serve(async (request) => {
 			`,
 		});
 
+		await writeAuditTrail({
+			action: "contact-form",
+			actor: email || "anonymous",
+			requestId: meta.requestId,
+			ipHash: meta.ipHash,
+			userAgentHash: meta.userAgentHash,
+			payload: { email, company },
+		});
 		return jsonResponse({ ok: true }, 200, request);
 	} catch (error) {
 		return jsonResponse(
