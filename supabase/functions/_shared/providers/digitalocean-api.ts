@@ -64,6 +64,9 @@ export async function provisionResource(args: ProvisionArgs): Promise<{ provider
 
 export async function executeLifecycleAction(args: { action: string; providerResourceId: string }): Promise<string> {
 	const dropletId = args.providerResourceId;
+	if (!/^\d+$/.test(dropletId)) {
+		throw new Error("Invalid provider resource ID format.");
+	}
 	switch (args.action) {
 		case "suspend":
 			await apiRequest(`/droplets/${dropletId}/actions`, { method: "POST", body: JSON.stringify({ type: "power_off" }) });
@@ -75,7 +78,7 @@ export async function executeLifecycleAction(args: { action: string; providerRes
 			await apiRequest(`/droplets/${dropletId}`, { method: "DELETE" });
 			return "deleted";
 		case "resize":
-			return "active";
+			throw new Error("Resize action is not yet implemented.");
 		default:
 			throw new Error(`Unsupported lifecycle action '${args.action}'.`);
 	}
