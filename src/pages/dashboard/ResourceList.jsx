@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
 
 export default function ResourceList({ typeFilter, title }) {
-    const { resources } = useDashboard()
+    const { resources, removeResource, updateResourceStatus } = useDashboard()
 
     const filteredResources = typeFilter
         ? resources.filter(r => r.type.toLowerCase().includes(typeFilter.toLowerCase()))
@@ -60,8 +60,10 @@ export default function ResourceList({ typeFilter, title }) {
                                                 <span className="text-green-400">{res.status}</span>
                                             </div>
                                         </td>
-                                        <td className="p-4 text-right pr-6">
-                                            <button className="text-cyan-400 hover:text-cyan-300">Manage</button>
+                                        <td className="p-4 text-right pr-6 space-x-3">
+                                            <button onClick={() => updateResourceStatus(res.id, 'running')} className="text-cyan-400 hover:text-cyan-300">Status</button>
+                                            <button onClick={() => updateResourceStatus(res.id, 'deleting')} className="text-amber-400 hover:text-amber-300">Delete Flow</button>
+                                            <button onClick={() => removeResource(res.id)} className="text-red-400 hover:text-red-300">Confirm Delete</button>
                                         </td>
                                     </tr>
                                 ))}

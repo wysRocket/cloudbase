@@ -7,6 +7,10 @@ import {
 } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "./AuthContext";
+import {
+	buildServiceMetadata,
+	normalizeResourceStatus,
+} from "../lib/resourceOrchestration";
 
 const DashboardContext = createContext();
 
@@ -87,11 +91,22 @@ export function DashboardProvider({ children }) {
 		const newResource = {
 			...resource,
 			id: Math.random().toString(36).substr(2, 9),
-			status: "Running", // Default to running
+			status: normalizeResourceStatus(resource.status || "provisioning"),
 			uptime: "Just now",
 			ip: `10.0.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+			metadata: buildServiceMetadata(resource.serviceId, resource.metadata),
 		};
 		setResources((prev) => [newResource, ...prev]);
+	};
+
+	const updateResourceStatus = (id, status) => {
+		setResources((prev) =>
+			prev.map((resource) =>
+				resource.id === id
+					? { ...resource, status: normalizeResourceStatus(status) }
+					: resource,
+			),
+		);
 	};
 
 	const removeResource = (id) => {
@@ -123,6 +138,7 @@ export function DashboardProvider({ children }) {
 				currentPlan,
 				addResource,
 				removeResource,
+				updateResourceStatus,
 				deductCredits,
 				refreshTransactions: loadTransactions,
 				changePlan,
