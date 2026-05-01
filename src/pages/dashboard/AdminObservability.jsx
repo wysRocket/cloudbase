@@ -331,11 +331,11 @@ export default function AdminObservability() {
 
 	const recentUsers = profiles.slice(0, 8);
 
-	const queueBacklog = rangeTransactions.filter((tx) => tx.status === "Queued").length;
-	const deadLetterCount = rangeTransactions.filter((tx) => tx.status === "DeadLetter").length;
-	const providerFailures = rangeTransactions.filter((tx) =>
-		(tx.status || "").toLowerCase().includes("provider_fail"),
-	).length;
+	// Queue/job health metrics are not available from credit_transactions.
+	// These will be wired to provision_jobs table data when that query is added.
+	const queueBacklog = 0;
+	const deadLetterCount = 0;
+	const providerFailures = 0;
 	const paymentProvisionMismatch = reconciliationRows
 		.reduce((sum, row) => sum + (row.paid_but_not_provisioned_count || 0) + (row.provisioned_without_payment_count || 0), 0);
 

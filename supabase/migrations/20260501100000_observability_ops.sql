@@ -36,14 +36,15 @@ create or replace function public.run_daily_paid_provision_reconciliation()
 returns void
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   paid_total int := 0;
   provisioned_total int := 0;
   mismatch_total int := 0;
 begin
-  select count(*) into paid_total from public.credit_transactions where type = 'credit' and status = 'Completed';
-  select count(*) into provisioned_total from public.credit_transactions where type = 'debit' and status = 'Completed';
+  select count(*) into paid_total from public.credit_transactions where type = 'credit' and lower(status) = 'completed';
+  select count(*) into provisioned_total from public.credit_transactions where type = 'debit' and lower(status) = 'completed';
   mismatch_total := greatest(abs(paid_total - provisioned_total), 0);
 
   insert into public.daily_reconciliation_runs(run_date, paid_count, provisioned_count, mismatch_count, status, details)

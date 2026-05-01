@@ -6,7 +6,7 @@ import {
 	requireEnvVars,
 } from "../_shared/security.ts";
 
-requireEnvVars(["RESEND_API_KEY", "MAIL_FROM", "MAIL_TO"]);
+requireEnvVars(["SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "SMTP_PORT"]);
 
 Deno.serve(async (request) => {
 	if (request.method === "OPTIONS") {

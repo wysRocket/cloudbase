@@ -13,6 +13,7 @@ create or replace function public.run_daily_provisioning_reconciliation()
 returns void
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   paid_total integer := 0;
@@ -22,7 +23,7 @@ begin
   select count(*) into paid_total
   from public.credit_transactions
   where type = 'credit'
-    and status = 'Completed'
+    and lower(status) = 'completed'
     and created_at::date = current_date;
 
   select count(*) into provisioned_total

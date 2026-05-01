@@ -108,6 +108,9 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  updated_job public.provision_jobs;
+  next_error_class text;
   next_status text;
   next_attempts integer;
 begin
