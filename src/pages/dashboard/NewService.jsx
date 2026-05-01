@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
+import { createServiceOrder, confirmServicePayment, provisionService } from '../../lib/resellerApi'
 
 const serviceTypes = [
     { id: 'vps', name: 'Virtual Private Server', icon: 'server', description: 'High-performance NVMe VPS', price: '100 credits/mo', cost: 100, typeName: 'VPS (Standard)' },
@@ -20,7 +21,7 @@ const regions = [
 
 export default function NewService() {
     const navigate = useNavigate()
-    const { addResource, balance, deductCredits } = useDashboard()
+    const { addResource, balance } = useDashboard()
     const [selectedType, setSelectedType] = useState(serviceTypes[0].id)
     const [selectedRegion, setSelectedRegion] = useState(regions[0].id)
     const [isDeploying, setIsDeploying] = useState(false)
@@ -37,16 +38,26 @@ export default function NewService() {
         setDeployError('')
 
         try {
-            await deductCredits(`${selectedTypeInfo.typeName} deployment`, selectedTypeInfo.cost)
+            const orderResponse = await createServiceOrder({
+                serviceType: selectedTypeInfo.id,
+                serviceName: selectedTypeInfo.typeName,
+                region: regionInfo.id,
+                amountCredits: selectedTypeInfo.cost,
+                displayPrice: selectedTypeInfo.price,
+            })
+
+            await confirmServicePayment({ orderId: orderResponse.orderId })
+            const provisioned = await provisionService({ orderId: orderResponse.orderId })
+
             addResource({
-                name: `${selectedTypeInfo.id}-${Math.random().toString(36).substr(2, 5)}`,
+                name: provisioned.resource?.name || `${selectedTypeInfo.id}-${Math.random().toString(36).substr(2, 5)}`,
                 type: selectedTypeInfo.typeName,
                 region: regionInfo.id,
-                price: selectedTypeInfo.price
+                price: selectedTypeInfo.price,
             })
             navigate('/dashboard')
-        } catch {
-            setDeployError('Failed to deduct credits. Please try again.')
+        } catch (error) {
+            setDeployError(error instanceof Error ? error.message : 'Failed to deploy service. Please try again.')
         } finally {
             setIsDeploying(false)
         }
