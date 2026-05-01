@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
+import { enqueueLifecycleAction, syncResourceStatus } from '../../lib/resellerApi'
 
 function statusClasses(status) {
   const normalized = String(status || '').toLowerCase()
@@ -10,12 +12,49 @@ function statusClasses(status) {
   return 'bg-cyan-500 text-cyan-400'
 }
 
+function nextActionsForStatus(status) {
+  const normalized = String(status || '').toLowerCase()
+  if (normalized === 'active') return ['suspend', 'delete']
+  if (normalized === 'suspended') return ['resume', 'delete']
+  if (['pending', 'provisioning', 'processing', 'queued'].includes(normalized)) return ['delete']
+  if (normalized === 'failed') return ['delete']
+  return []
+}
+
 export default function ResourceList({ typeFilter, title }) {
-  const { resources } = useDashboard()
+  const { resources, refreshResources } = useDashboard()
+  const [busyMap, setBusyMap] = useState({})
+  const [errorMap, setErrorMap] = useState({})
 
   const filteredResources = typeFilter
     ? resources.filter((r) => r.type.toLowerCase().includes(typeFilter.toLowerCase()))
     : resources
+
+  const runAction = async (resourceId, action) => {
+    setBusyMap((prev) => ({ ...prev, [resourceId]: true }))
+    setErrorMap((prev) => ({ ...prev, [resourceId]: '' }))
+    try {
+      await enqueueLifecycleAction({ resourceId, action })
+      await refreshResources()
+    } catch (error) {
+      setErrorMap((prev) => ({ ...prev, [resourceId]: error.message || 'Action failed.' }))
+    } finally {
+      setBusyMap((prev) => ({ ...prev, [resourceId]: false }))
+    }
+  }
+
+  const runSync = async (resourceId) => {
+    setBusyMap((prev) => ({ ...prev, [resourceId]: true }))
+    setErrorMap((prev) => ({ ...prev, [resourceId]: '' }))
+    try {
+      await syncResourceStatus({ resourceId })
+      await refreshResources()
+    } catch (error) {
+      setErrorMap((prev) => ({ ...prev, [resourceId]: error.message || 'Sync failed.' }))
+    } finally {
+      setBusyMap((prev) => ({ ...prev, [resourceId]: false }))
+    }
+  }
 
   return (
     <>
@@ -59,8 +98,10 @@ export default function ResourceList({ typeFilter, title }) {
               <tbody className="divide-y divide-white/5">
                 {filteredResources.map((res) => {
                   const [dotClass, textClass] = statusClasses(res.status).split(' ')
+                  const rowBusy = Boolean(busyMap[res.id])
+                  const actions = nextActionsForStatus(res.status)
                   return (
-                    <tr key={res.id} className="hover:bg-white/5 transition-colors">
+                    <tr key={res.id} className="hover:bg-white/5 transition-colors align-top">
                       <td className="p-4 pl-6 font-medium text-white">{res.name}</td>
                       <td className="p-4 text-slate-400">{res.region}</td>
                       <td className="p-4 text-slate-400 font-mono text-xs">{res.ip}</td>
@@ -71,7 +112,26 @@ export default function ResourceList({ typeFilter, title }) {
                         </div>
                       </td>
                       <td className="p-4 text-right pr-6">
-                        <button className="text-cyan-400 hover:text-cyan-300">Manage</button>
+                        <div className="flex items-center justify-end gap-2 flex-wrap">
+                          <button
+                            className="text-xs px-2 py-1 rounded bg-white/10 text-slate-200 hover:bg-white/20 disabled:opacity-50"
+                            disabled={rowBusy}
+                            onClick={() => runSync(res.id)}
+                          >
+                            Sync
+                          </button>
+                          {actions.map((action) => (
+                            <button
+                              key={action}
+                              className="text-xs px-2 py-1 rounded bg-cyan-600/80 text-white hover:bg-cyan-600 disabled:opacity-50"
+                              disabled={rowBusy}
+                              onClick={() => runAction(res.id, action)}
+                            >
+                              {action}
+                            </button>
+                          ))}
+                        </div>
+                        {errorMap[res.id] && <p className="text-red-400 text-xs mt-2">{errorMap[res.id]}</p>}
                       </td>
                     </tr>
                   )
