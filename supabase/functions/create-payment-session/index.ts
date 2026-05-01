@@ -13,21 +13,42 @@ import {
 	parseCreatePaymentResponse,
 } from "../../../shared/payments/safepay-server.js";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
+import {
+	checkRateLimit,
+	enforceAllowlist,
+	getAuditMetadata,
+	getEnvOrThrow,
+	parseCreatePaymentRequest,
+	requireEnvVars,
+} from "../_shared/security.ts";
 import { createAdminClient, createUserClient } from "../_shared/supabase.ts";
 
 const gatewayUrl =
 	Deno.env.get("SAFEPAY_GATEWAY_URL") ||
 	"https://www.safepayto.me/new/gateway/";
 
-function requiredEnv(name: string) {
-	const value = Deno.env.get(name);
+const PLAN_ALLOWLIST = ["topup", "starter", "pro", "business"] as const;
+const REGION_ALLOWLIST = [
+	"global",
+	"us-east",
+	"eu-central",
+	"ap-southeast",
+] as const;
+const SERVICE_TYPE_ALLOWLIST = [
+	"credits",
+	"vps",
+	"k8s",
+	"database",
+	"gpu",
+] as const;
 
-	if (!value) {
-		throw new Error(`Missing required environment variable: ${name}`);
-	}
-
-	return value;
-}
+requireEnvVars([
+	"SUPABASE_URL",
+	"SUPABASE_ANON_KEY",
+	"SUPABASE_SERVICE_ROLE_KEY",
+	"SAFEPAY_MERCHANT_ID",
+	"SAFEPAY_MERCHANT_SECRET",
+]);
 
 Deno.serve(async (request) => {
 	if (request.method === "OPTIONS") {
@@ -56,16 +77,20 @@ Deno.serve(async (request) => {
 			);
 		}
 
-		const body = await request.json();
-		const currency = String(body?.currency || "").toUpperCase();
-		const merchantId = requiredEnv("SAFEPAY_MERCHANT_ID");
-		const merchantSecret = requiredEnv("SAFEPAY_MERCHANT_SECRET");
+		const parsedBody = parseCreatePaymentRequest(await request.json());
+		const { currency, amount, customer, plan, region, serviceType } =
+			parsedBody;
+		enforceAllowlist(plan, PLAN_ALLOWLIST, "plan");
+		enforceAllowlist(region, REGION_ALLOWLIST, "region");
+		enforceAllowlist(serviceType, SERVICE_TYPE_ALLOWLIST, "service type");
+		const merchantId = getEnvOrThrow("SAFEPAY_MERCHANT_ID");
+		const merchantSecret = getEnvOrThrow("SAFEPAY_MERCHANT_SECRET");
 
 		let amountMinor: number;
 		let creditsToAdd: number;
 
 		try {
-			amountMinor = amountMajorToMinor(body?.amount, currency);
+			amountMinor = amountMajorToMinor(amount, currency);
 			creditsToAdd = creditsFromMinorAmount(amountMinor, currency);
 		} catch (error) {
 			return jsonResponse(
@@ -99,12 +124,12 @@ Deno.serve(async (request) => {
 		}
 
 		const normalizedCustomer = normalizeCustomerProfile({
-			firstName: body?.customer?.firstName || existingProfile?.first_name,
-			lastName: body?.customer?.lastName || existingProfile?.last_name,
+			firstName: customer.firstName || existingProfile?.first_name,
+			lastName: customer.lastName || existingProfile?.last_name,
 			email: user.email || existingProfile?.email,
-			phone: body?.customer?.phone || existingProfile?.phone,
-			countryCode: body?.customer?.countryCode || existingProfile?.country_code,
-			city: body?.customer?.city || existingProfile?.city,
+			phone: customer.phone || existingProfile?.phone,
+			countryCode: customer.countryCode || existingProfile?.country_code,
+			city: customer.city || existingProfile?.city,
 		});
 		const missingFields = getMissingCustomerFields(normalizedCustomer);
 
@@ -213,6 +238,17 @@ Deno.serve(async (request) => {
 			);
 		}
 
+		const rate = checkRateLimit(user.id, "create-payment-session", 10, 60_000);
+		if (!rate.allowed) {
+			return jsonResponse(
+				{ error: "Rate limit exceeded. Try again later." },
+				429,
+				request,
+			);
+		}
+
+		const audit = getAuditMetadata(request, user.id);
+
 		const { data: order, error: orderError } = await adminClient
 			.from("payment_orders")
 			.insert({
@@ -230,7 +266,11 @@ Deno.serve(async (request) => {
 				customer_phone: normalizedCustomer.phone,
 				customer_country_code: normalizedCustomer.countryCode,
 				customer_city: normalizedCustomer.city,
-				raw_create_response: providerText,
+				raw_create_response: JSON.stringify({
+					providerText,
+					audit,
+					catalog: { plan, region, serviceType },
+				}),
 			})
 			.select("id")
 			.single();

@@ -13,7 +13,7 @@ export default function Terms() {
 						<h1 className="text-5xl font-black tracking-tighter mb-6">
 							Terms of Service
 						</h1>
-						<p className="text-slate-400 mb-12">Last updated: January 2024</p>
+						<p className="text-slate-400 mb-12">Last updated: May 1, 2026</p>
 					</motion.div>
 
 					<div className="prose prose-invert prose-lg max-w-none space-y-8">
@@ -92,12 +92,26 @@ export default function Terms() {
 								<li>Use our services only in full compliance with all applicable local, national, and international laws and regulations.</li>
 								<li>Refrain from using the services for any illegal, malicious, or abusive activities, including but not limited to spamming, hosting malware, or unauthorized access to other systems.</li>
 								<li>Promptly pay all applicable fees according to our pricing and billing terms.</li>
+								<li>When reselling or sub-allocating infrastructure purchased from Cloudbase, maintain your own acceptable-use enforcement, abuse response channel, and downstream customer verification controls.</li>
+								<li>You remain liable for legal, regulatory, and policy violations caused by your downstream users, tenants, or resold workloads.</li>
+							</ul>
+						</section>
+
+						<section>
+							<h2 className="text-2xl font-bold mb-4">4. Infrastructure Resale Responsibilities</h2>
+							<p className="text-slate-300 leading-relaxed mb-4">
+								If you operate as an infrastructure reseller, managed-service provider, or intermediary, you are responsible for pass-through governance and abuse prevention.
+							</p>
+							<ul className="list-disc list-inside text-slate-300 space-y-2 leading-relaxed">
+								<li><strong className="text-white">Downstream Accountability:</strong> You must maintain auditable identity and billing records for your end customers and provide them upon lawful request.</li>
+								<li><strong className="text-white">Abuse Handling:</strong> You must respond to abuse notices, takedown requirements, and incident escalations within commercially reasonable timelines.</li>
+								<li><strong className="text-white">Restricted Workloads:</strong> You may not knowingly enable sanctions evasion, malware distribution, credential theft, phishing, botnet control, or prohibited regulated use-cases.</li>
 							</ul>
 						</section>
 
 						<section>
 							<h2 className="text-2xl font-bold mb-4">
-								4. Service Level Agreement
+								5. Service Level Agreement
 							</h2>
 							<p className="text-slate-300 leading-relaxed">
 								We guarantee 99.9% uptime for all services. If we fail to meet
@@ -107,7 +121,7 @@ export default function Terms() {
 						</section>
 
 						<section>
-							<h2 className="text-2xl font-bold mb-4">5. Billing, Payments and Service Suspension</h2>
+							<h2 className="text-2xl font-bold mb-4">6. Billing, Payments and Service Suspension</h2>
 							<p className="text-slate-300 leading-relaxed mb-4">
 								Cloudbase operates on a prepaid, credit-based billing model:
 							</p>
@@ -120,7 +134,7 @@ export default function Terms() {
 						</section>
 
 						<section>
-							<h2 className="text-2xl font-bold mb-4">6. Strict No-Refund Policy</h2>
+							<h2 className="text-2xl font-bold mb-4">7. Strict No-Refund Policy</h2>
 							<p className="text-slate-300 leading-relaxed mb-4">
 								<strong className="text-white">No-Refund Policy for Digital Goods and Cloud Credits:</strong>
 							</p>
@@ -132,7 +146,7 @@ export default function Terms() {
 						</section>
 
 						<section>
-							<h2 className="text-2xl font-bold mb-4">7. Termination</h2>
+							<h2 className="text-2xl font-bold mb-4">8. Termination</h2>
 							<p className="text-slate-300 leading-relaxed">
 								Either party may terminate the agreement at any time. Upon
 								termination, your access to services will be suspended and data
@@ -142,7 +156,7 @@ export default function Terms() {
 
 						<section>
 							<h2 className="text-2xl font-bold mb-4">
-								8. Limitation of Liability
+								9. Limitation of Liability
 							</h2>
 							<p className="text-slate-300 leading-relaxed">
 								Cloudbase shall not be liable for any indirect, incidental, or
