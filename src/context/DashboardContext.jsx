@@ -30,15 +30,9 @@ function mapResourceRow(resource) {
 export function DashboardProvider({ children }) {
 	const { user } = useAuth();
 
-	const [resources, setResources] = useState(() => {
-		const saved = localStorage.getItem("wys_resources");
-		return saved ? JSON.parse(saved) : initialResources;
-	});
+	const [resources, setResources] = useState(initialResources);
 
-	const [transactions, setTransactions] = useState(() => {
-		const saved = localStorage.getItem("wys_transactions");
-		return saved ? JSON.parse(saved) : initialTransactions;
-	});
+	const [transactions, setTransactions] = useState(initialTransactions);
 
 
 	const [resourceEvents, setResourceEvents] = useState({});
@@ -47,8 +41,6 @@ export function DashboardProvider({ children }) {
 		const saved = localStorage.getItem("wys_plan");
 		return saved ? JSON.parse(saved) : defaultPlan;
 	});
-
-	const balance = transactions.reduce((sum, tx) => sum + tx.amount, 0);
 	const [resourceActionState, setResourceActionState] = useState({});
 
 	const mapResource = useCallback((res) => ({
@@ -133,10 +125,25 @@ export function DashboardProvider({ children }) {
 	}, [user]);
 
 	useEffect(() => {
-		localStorage.setItem("wys_resources", JSON.stringify(resources));
-		localStorage.setItem("wys_transactions", JSON.stringify(transactions));
+		if (!user?.id) {
+			setResources(initialResources);
+			setTransactions(initialTransactions);
+			return;
+		}
+		const resKey = `wys_resources_${user.id}`;
+		const txKey = `wys_transactions_${user.id}`;
+		const savedRes = localStorage.getItem(resKey);
+		const savedTx = localStorage.getItem(txKey);
+		if (savedRes) setResources(JSON.parse(savedRes));
+		if (savedTx) setTransactions(JSON.parse(savedTx));
+	}, [user?.id]);
+
+	useEffect(() => {
+		if (!user?.id) return;
+		localStorage.setItem(`wys_resources_${user.id}`, JSON.stringify(resources));
+		localStorage.setItem(`wys_transactions_${user.id}`, JSON.stringify(transactions));
 		localStorage.setItem("wys_plan", JSON.stringify(currentPlan));
-	}, [resources, transactions, currentPlan]);
+	}, [user?.id, resources, transactions, currentPlan]);
 
 	useEffect(() => {
 		loadTransactions();
