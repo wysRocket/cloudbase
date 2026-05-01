@@ -117,6 +117,9 @@ export default function AdminObservability() {
 	const [profiles, setProfiles] = useState([]);
 	const [roles, setRoles] = useState([]);
 	const [transactions, setTransactions] = useState([]);
+	const [alerts, setAlerts] = useState([]);
+	const [featureFlags, setFeatureFlags] = useState([]);
+	const [reconRuns, setReconRuns] = useState([]);
 
 	// Filter / pagination state
 	const [dateRange, setDateRange] = useState("all");
@@ -135,7 +138,7 @@ export default function AdminObservability() {
 		}
 		setLoading(true);
 		setError("");
-		const [profilesRes, rolesRes, txRes] = await Promise.all([
+		const [profilesRes, rolesRes, txRes, alertsRes, flagsRes, reconRes] = await Promise.all([
 			supabase
 				.from("profiles")
 				.select("id, email, created_at")
@@ -149,12 +152,18 @@ export default function AdminObservability() {
 				.select("id, user_id, description, amount, type, status, created_at")
 				.order("created_at", { ascending: false })
 				.limit(300),
+			supabase.from("observability_alert_events").select("id, alert_type, severity, status, value, threshold, context, created_at").order("created_at", { ascending: false }).limit(100),
+			supabase.from("service_feature_flags").select("id, service_type, region, enabled, rollout_percent, notes, updated_at").order("updated_at", { ascending: false }).limit(100),
+			supabase.from("daily_reconciliation_runs").select("id, run_date, paid_count, provisioned_count, mismatch_count, status, details, created_at").order("run_date", { ascending: false }).limit(30),
 		]);
-		if (profilesRes.error || rolesRes.error || txRes.error) {
+		if (profilesRes.error || rolesRes.error || txRes.error || alertsRes.error || flagsRes.error || reconRes.error) {
 			setError(
 				profilesRes.error?.message ||
 					rolesRes.error?.message ||
 					txRes.error?.message ||
+					alertsRes.error?.message ||
+					flagsRes.error?.message ||
+					reconRes.error?.message ||
 					"Unable to load backoffice observability data.",
 			);
 			setLoading(false);
@@ -163,6 +172,9 @@ export default function AdminObservability() {
 		setProfiles(profilesRes.data || []);
 		setRoles(rolesRes.data || []);
 		setTransactions(txRes.data || []);
+		setAlerts(alertsRes.data || []);
+		setFeatureFlags(flagsRes.data || []);
+		setReconRuns(reconRes.data || []);
 		setLoading(false);
 	}, [isAdmin, adminLoading]);
 
@@ -225,6 +237,11 @@ export default function AdminObservability() {
 	const suspiciousEvents = transactions.filter(
 		(tx) => (tx.status || "Completed") !== "Completed",
 	).length;
+
+	const queueDepth = alerts.filter((a) => a.alert_type === "dead_letter_growth").reduce((max, a) => Math.max(max, Number(a.value || 0)), 0);
+	const providerFailures = alerts.filter((a) => a.alert_type === "provider_api_failure_spike").reduce((sum, a) => sum + Number(a.value || 0), 0);
+	const paymentProvisionMismatches = reconRuns[0]?.mismatch_count || 0;
+	const enabledFlags = featureFlags.filter((f) => f.enabled).length;
 
 	// ─── Cashflow series (6 months) ──────────────────────────────────────────────
 
@@ -612,6 +629,34 @@ export default function AdminObservability() {
 							</div>
 						</div>
 					</div>
+				</div>
+			</div>
+
+
+			{/* Queue + Failure Metrics */}
+			<div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+					<h2 className="font-bold text-lg mb-1">Queue Health</h2><p className="text-3xl font-black text-amber-300">{queueDepth.toLocaleString()}</p>
+				</div>
+				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+					<h2 className="font-bold text-lg mb-1">Provider API Failures</h2><p className="text-3xl font-black text-red-400">{providerFailures.toLocaleString()}</p>
+				</div>
+				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+					<h2 className="font-bold text-lg mb-1">Payment/Provision Drift</h2>
+					<p className={`text-3xl font-black ${paymentProvisionMismatches > 0 ? "text-red-400" : "text-emerald-300"}`}>{paymentProvisionMismatches.toLocaleString()}</p>
+				</div>
+			</div>
+			<div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+					<h3 className="font-bold text-lg mb-3">Alert Policies</h3>
+					<ul className="space-y-2 text-sm">{["dead_letter_growth", "provider_api_failure_spike", "payment_provision_mismatch"].map((type) => { const hit = alerts.find((a) => a.alert_type === type); return <li key={type} className="flex items-center justify-between border border-white/5 rounded-lg px-3 py-2"><span className="text-slate-300">{type}</span><span className={hit && hit.status !== "ok" ? "text-red-400" : "text-emerald-300"}>{hit?.status || "ok"}</span></li>; })}</ul>
+				</div>
+				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+					<h3 className="font-bold text-lg mb-1">Feature Flags</h3><p className="text-2xl font-bold text-cyan-300 mb-3">{enabledFlags}/{featureFlags.length} enabled</p>
+				</div>
+				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+					<h3 className="font-bold text-lg mb-3">Incident Runbooks</h3>
+					<ul className="space-y-2 text-xs text-slate-300"><li className="border border-white/5 rounded-lg px-3 py-2"><strong>Retry:</strong> replay failed jobs.</li><li className="border border-white/5 rounded-lg px-3 py-2"><strong>Rollback:</strong> disable impacted feature flags.</li><li className="border border-white/5 rounded-lg px-3 py-2"><strong>Orphan cleanup:</strong> reconcile paid rows without provision.</li><li className="border border-white/5 rounded-lg px-3 py-2"><strong>Provider outage mode:</strong> queue acceptance and defer provisioning.</li></ul>
 				</div>
 			</div>
 
