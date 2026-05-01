@@ -71,7 +71,7 @@ export default function NewService() {
     setDeployError('')
 
     try {
-      const resourceName = `${selectedTypeInfo.id}-${Math.random().toString(36).slice(2, 7)}`
+      const resourceName = `${selectedTypeInfo.id}-${crypto.randomUUID().slice(0, 8)}`
       await deductCredits(`${selectedTypeInfo.typeName} deployment`, quoteCost)
 
       const resource = await createServiceResource({

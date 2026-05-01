@@ -190,12 +190,12 @@ export function DashboardProvider({ children }) {
 			setActionLoading(id, action, true);
 			try {
 				if (action === "delete") {
-					const { error } = await supabase.from("resources").delete().eq("id", id).eq("user_id", user.id);
+					const { error } = await supabase.from("service_resources").delete().eq("id", id).eq("user_id", user.id);
 					if (error) throw error;
 				} else {
 					const { error } = await supabase
-						.from("resources")
-						.update({ status: action === "suspend" ? "Suspended" : "Running" })
+						.from("service_resources")
+						.update({ status: action === "suspend" ? "suspended" : "active" })
 						.eq("id", id)
 						.eq("user_id", user.id);
 					if (error) throw error;
