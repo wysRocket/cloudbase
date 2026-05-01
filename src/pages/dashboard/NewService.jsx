@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
+import { startResellerOrder } from '../../lib/paymentGateway'
 
 const serviceTypes = [
     { id: 'vps', name: 'Virtual Private Server', icon: 'server', description: 'High-performance NVMe VPS', price: '100 credits/mo', cost: 100, typeName: 'VPS (Standard)' },
@@ -20,7 +21,7 @@ const regions = [
 
 export default function NewService() {
     const navigate = useNavigate()
-    const { deployResource, balance } = useDashboard()
+    const { balance } = useDashboard()
     const [selectedType, setSelectedType] = useState(serviceTypes[0].id)
     const [selectedRegion, setSelectedRegion] = useState(regions[0].id)
     const [isDeploying, setIsDeploying] = useState(false)
@@ -37,10 +38,13 @@ export default function NewService() {
         setDeployError('')
 
         try {
-            await deployResource({ typeInfo: selectedTypeInfo, region: regionInfo.id })
-            navigate('/dashboard')
-        } catch (error) {
-            setDeployError(error?.message || 'Deployment failed. Please retry or contact support.')
+            const session = await startResellerOrder({
+                sku: selectedTypeInfo.id,
+                region: regionInfo.id
+            })
+            navigate(`/dashboard/billing?paymentId=${session.paymentOrderId}`)
+        } catch {
+            setDeployError('Failed to start checkout. Please try again.')
         } finally {
             setIsDeploying(false)
         }

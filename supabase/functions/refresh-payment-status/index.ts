@@ -77,7 +77,7 @@ Deno.serve(async (request) => {
 		const { data: order, error: orderError } = await adminClient
 			.from("payment_orders")
 			.select(
-				"id, user_id, invoice, amount_minor, currency, credits_to_add, status, provider_transaction_id, completed_at",
+				"id, user_id, invoice, amount_minor, currency, credits_to_add, status, provider_transaction_id, completed_at, external_reference",
 			)
 			.eq("invoice", invoice)
 			.maybeSingle();
@@ -210,6 +210,23 @@ Deno.serve(async (request) => {
 				500,
 				request,
 			);
+		}
+
+		if (refreshSummary.status === "completed" && order.external_reference) {
+			await adminClient
+				.from("orders")
+				.update({ state: "paid" })
+				.eq("id", order.external_reference)
+				.in("state", ["pending_payment", "payment_processing"]);
+
+			await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/provider-provision`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+				},
+				body: JSON.stringify({ orderId: order.external_reference }),
+			});
 		}
 
 		let creditsApplied = Boolean(existingCredit);
