@@ -54,3 +54,29 @@ export async function enqueueProvisionJob({ resourceId }) {
 
   return data
 }
+
+
+export async function requestLifecycleAction({ resourceId, action }) {
+  const idempotencyKey = `${action}-${resourceId}`
+  const { data, error } = await supabase.functions.invoke('provider-lifecycle', {
+    body: { resourceId, action, idempotencyKey },
+  })
+
+  if (error) {
+    throw new Error(error.message || 'Unable to enqueue lifecycle action.')
+  }
+
+  return data
+}
+
+export async function syncResourceStatus({ resourceId }) {
+  const { data, error } = await supabase.functions.invoke('provider-sync-status', {
+    body: { resourceId },
+  })
+
+  if (error) {
+    throw new Error(error.message || 'Unable to sync resource status.')
+  }
+
+  return data
+}

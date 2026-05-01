@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
+import { requestLifecycleAction, syncResourceStatus } from '../../lib/resellerApi'
 
 function statusClasses(status) {
   const normalized = String(status || '').toLowerCase()
@@ -11,11 +13,42 @@ function statusClasses(status) {
 }
 
 export default function ResourceList({ typeFilter, title }) {
-  const { resources, resourceEvents } = useDashboard()
+  const { resources, resourceEvents, refreshResources, refreshResourceEvents } = useDashboard()
+  const [actionState, setActionState] = useState({})
+  const [actionError, setActionError] = useState({})
 
   const filteredResources = typeFilter
     ? resources.filter((r) => r.type.toLowerCase().includes(typeFilter.toLowerCase()))
     : resources
+
+
+  async function runAction(resourceId, action) {
+    setActionState((prev) => ({ ...prev, [resourceId + ':' + action]: true }))
+    setActionError((prev) => ({ ...prev, [resourceId]: '' }))
+    try {
+      await requestLifecycleAction({ resourceId, action })
+      await refreshResources()
+      await refreshResourceEvents()
+    } catch (error) {
+      setActionError((prev) => ({ ...prev, [resourceId]: error instanceof Error ? error.message : 'Action failed.' }))
+    } finally {
+      setActionState((prev) => ({ ...prev, [resourceId + ':' + action]: false }))
+    }
+  }
+
+  async function runSync(resourceId) {
+    setActionState((prev) => ({ ...prev, [resourceId + ':sync']: true }))
+    setActionError((prev) => ({ ...prev, [resourceId]: '' }))
+    try {
+      await syncResourceStatus({ resourceId })
+      await refreshResources()
+      await refreshResourceEvents()
+    } catch (error) {
+      setActionError((prev) => ({ ...prev, [resourceId]: error instanceof Error ? error.message : 'Sync failed.' }))
+    } finally {
+      setActionState((prev) => ({ ...prev, [resourceId + ':sync']: false }))
+    }
+  }
 
   return (
     <>
@@ -76,7 +109,13 @@ export default function ResourceList({ typeFilter, title }) {
                         </div>
                       </td>
                       <td className="p-4 text-right pr-6">
-                        <button className="text-cyan-400 hover:text-cyan-300">Manage</button>
+                        <div className="flex justify-end gap-2 flex-wrap">
+                          <button onClick={() => runAction(res.id, 'suspend')} disabled={actionState[res.id + ':suspend']} className="text-xs px-2 py-1 rounded bg-white/5 text-amber-300 disabled:opacity-50">Suspend</button>
+                          <button onClick={() => runAction(res.id, 'resume')} disabled={actionState[res.id + ':resume']} className="text-xs px-2 py-1 rounded bg-white/5 text-green-300 disabled:opacity-50">Resume</button>
+                          <button onClick={() => runAction(res.id, 'delete')} disabled={actionState[res.id + ':delete']} className="text-xs px-2 py-1 rounded bg-white/5 text-red-300 disabled:opacity-50">Delete</button>
+                          <button onClick={() => runSync(res.id)} disabled={actionState[res.id + ':sync']} className="text-xs px-2 py-1 rounded bg-white/5 text-cyan-300 disabled:opacity-50">Sync</button>
+                        </div>
+                        {actionError[res.id] && <p className="text-[11px] text-red-400 mt-1">{actionError[res.id]}</p>}
                       </td>
                     </tr>
                   )
