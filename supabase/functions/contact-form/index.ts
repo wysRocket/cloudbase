@@ -1,11 +1,12 @@
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { MAIL_FROM, MAIL_TO, sendEmail } from "../_shared/mailer.ts";
 import {
-	enforceCatalogAllowlist,
-	readJson,
-	requestMeta,
-	writeAuditTrail,
+	getAuditMetadata,
+	parseContactRequest,
+	requireEnvVars,
 } from "../_shared/security.ts";
+
+requireEnvVars(["RESEND_API_KEY", "MAIL_FROM", "MAIL_TO"]);
 
 Deno.serve(async (request) => {
 	if (request.method === "OPTIONS") {
@@ -17,24 +18,10 @@ Deno.serve(async (request) => {
 	}
 
 	try {
-		const body = readJson<Record<string, unknown>>(await request.json(), {});
-		enforceCatalogAllowlist(body);
-		const meta = requestMeta(request);
-		const firstName = String(body?.firstName || "").trim();
-		const lastName = String(body?.lastName || "").trim();
-		const email = String(body?.email || "").trim();
-		const phone = String(body?.phone || "").trim();
-		const company = String(body?.company || "").trim();
-		const cloudSpend = String(body?.cloudSpend || "").trim();
-		const message = String(body?.message || "").trim();
-
-		if (!email || !message) {
-			return jsonResponse(
-				{ error: "Email and message are required." },
-				400,
-				request,
-			);
-		}
+		const parsed = parseContactRequest(await request.json());
+		const { firstName, lastName, email, phone, company, cloudSpend, message } =
+			parsed;
+		const audit = getAuditMetadata(request, email || null);
 
 		await sendEmail({
 			from: MAIL_FROM,
@@ -42,6 +29,7 @@ Deno.serve(async (request) => {
 			subject: `Contact Form: ${firstName} ${lastName} — ${company || email}`,
 			html: `
 				<h2>New Contact Form Submission</h2>
+				<p><strong>Actor:</strong> ${audit.actorId || "anonymous"}<br/><strong>Request ID:</strong> ${audit.requestId}<br/><strong>Correlation ID:</strong> ${audit.correlationId}</p>
 				<table cellpadding="6" style="border-collapse:collapse;font-family:sans-serif;font-size:14px;">
 					<tr><td><strong>Name</strong></td><td>${firstName} ${lastName}</td></tr>
 					<tr><td><strong>Email</strong></td><td><a href="mailto:${email}">${email}</a></td></tr>
@@ -54,14 +42,6 @@ Deno.serve(async (request) => {
 			`,
 		});
 
-		await writeAuditTrail({
-			action: "contact-form",
-			actor: email || "anonymous",
-			requestId: meta.requestId,
-			ipHash: meta.ipHash,
-			userAgentHash: meta.userAgentHash,
-			payload: { email, company },
-		});
 		return jsonResponse({ ok: true }, 200, request);
 	} catch (error) {
 		return jsonResponse(

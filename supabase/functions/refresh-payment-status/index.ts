@@ -4,11 +4,10 @@ import { buildRequestHash } from "../../../shared/payments/safepay-server.js";
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { MAIL_FROM, MAIL_TO, sendEmail } from "../_shared/mailer.ts";
 import {
-	enforceCatalogAllowlist,
-	enforceRateLimit,
-	readJson,
-	requestMeta,
-	writeAuditTrail,
+	checkRateLimit,
+	getAuditMetadata,
+	getEnvOrThrow,
+	requireEnvVars,
 } from "../_shared/security.ts";
 import { createAdminClient, createUserClient } from "../_shared/supabase.ts";
 
@@ -16,20 +15,18 @@ const gatewayUrl =
 	Deno.env.get("SAFEPAY_GATEWAY_URL") ||
 	"https://www.safepayto.me/new/gateway/";
 
-function requiredEnv(name: string) {
-	const value = Deno.env.get(name);
-
-	if (!value) {
-		throw new Error(`Missing required environment variable: ${name}`);
-	}
-
-	return value;
-}
-
 function toProviderStatusId(value: unknown) {
 	const parsed = Number(value);
 	return Number.isInteger(parsed) ? parsed : null;
 }
+
+requireEnvVars([
+	"SUPABASE_URL",
+	"SUPABASE_ANON_KEY",
+	"SUPABASE_SERVICE_ROLE_KEY",
+	"SAFEPAY_MERCHANT_ID",
+	"SAFEPAY_MERCHANT_SECRET",
+]);
 
 Deno.serve(async (request) => {
 	if (request.method === "OPTIONS") {
@@ -58,17 +55,10 @@ Deno.serve(async (request) => {
 			);
 		}
 
-		const body = readJson<Record<string, unknown>>(await request.json(), {});
-		enforceCatalogAllowlist(body);
-		const meta = requestMeta(request);
-		await enforceRateLimit(
-			user.id,
-			"refresh-payment-status",
-			meta.requestId,
-			60,
-			500,
-		);
-		const invoice = String(body?.invoice || "").trim();
+		const body = await request.json();
+		const invoice = String(
+			(body as Record<string, unknown>)?.invoice || "",
+		).trim();
 
 		if (!invoice) {
 			return jsonResponse({ error: "Invoice is required." }, 400, request);
@@ -77,7 +67,7 @@ Deno.serve(async (request) => {
 		const { data: order, error: orderError } = await adminClient
 			.from("payment_orders")
 			.select(
-				"id, user_id, invoice, amount_minor, currency, credits_to_add, status, provider_transaction_id, completed_at, external_reference",
+				"id, user_id, invoice, amount_minor, currency, credits_to_add, status, provider_transaction_id, completed_at",
 			)
 			.eq("invoice", invoice)
 			.maybeSingle();
@@ -86,8 +76,19 @@ Deno.serve(async (request) => {
 			return jsonResponse({ error: "Payment not found." }, 404, request);
 		}
 
-		const merchantId = requiredEnv("SAFEPAY_MERCHANT_ID");
-		const merchantSecret = requiredEnv("SAFEPAY_MERCHANT_SECRET");
+		const merchantId = getEnvOrThrow("SAFEPAY_MERCHANT_ID");
+		const merchantSecret = getEnvOrThrow("SAFEPAY_MERCHANT_SECRET");
+
+		const rate = checkRateLimit(user.id, "refresh-payment-status", 60, 60_000);
+		if (!rate.allowed) {
+			return jsonResponse(
+				{ error: "Rate limit exceeded. Try again later." },
+				429,
+				request,
+			);
+		}
+
+		const audit = getAuditMetadata(request, user.id);
 
 		const payload = new URLSearchParams({
 			_cmd: "request",
@@ -133,7 +134,7 @@ Deno.serve(async (request) => {
 				.from("payment_orders")
 				.update({
 					last_checked_at: new Date().toISOString(),
-					raw_status_response: providerJson,
+					raw_status_response: { providerJson, audit },
 					provider_status_text: String(
 						providerJson.error || providerJson.error_code || "pending",
 					),
@@ -192,7 +193,7 @@ Deno.serve(async (request) => {
 				provider_status_text: providerStatusText,
 				provider_transaction_id:
 					refreshSummary.providerTransactionId || order.provider_transaction_id,
-				raw_status_response: providerJson,
+				raw_status_response: { providerJson, audit },
 				last_checked_at: nowIso,
 				completed_at:
 					refreshSummary.status === "completed"
@@ -210,23 +211,6 @@ Deno.serve(async (request) => {
 				500,
 				request,
 			);
-		}
-
-		if (refreshSummary.status === "completed" && order.external_reference) {
-			await adminClient
-				.from("orders")
-				.update({ state: "paid" })
-				.eq("id", order.external_reference)
-				.in("state", ["pending_payment", "payment_processing"]);
-
-			await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/provider-provision`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-				},
-				body: JSON.stringify({ orderId: order.external_reference }),
-			});
 		}
 
 		let creditsApplied = Boolean(existingCredit);
@@ -280,15 +264,6 @@ Deno.serve(async (request) => {
 			}
 		}
 
-		await writeAuditTrail({
-			userId: user.id,
-			action: "refresh-payment-status",
-			actor: user.email || user.id,
-			requestId: meta.requestId,
-			ipHash: meta.ipHash,
-			userAgentHash: meta.userAgentHash,
-			payload: { invoice, status: refreshSummary.status },
-		});
 		return jsonResponse(
 			{
 				invoice,

@@ -1,128 +1,149 @@
-import { createHash } from "node:crypto";
-import { createAdminClient } from "./supabase.ts";
+const rateWindowStore = new Map<string, { count: number; resetAt: number }>();
 
-const PLAN_ALLOWLIST = new Set(["starter", "pro", "business", "enterprise"]);
-const REGION_ALLOWLIST = new Set(["us-east", "eu-west", "ap-south"]);
-const SERVICE_TYPE_ALLOWLIST = new Set([
-	"vps",
-	"k8s",
-	"gpu",
-	"database",
-	"gameserver",
-]);
+export type AuditMetadata = {
+	actorId: string | null;
+	requestId: string;
+	correlationId: string;
+	timestamp: string;
+};
 
-const REQUIRED_ENV = [
-	"SAFEPAY_MERCHANT_ID",
-	"SAFEPAY_MERCHANT_SECRET",
-	"RESEND_API_KEY",
-	"SECRET_ROTATION_CHECKLIST_ACK",
-	"SAFEPAY_MERCHANT_SECRET_VERSION",
-	"RESEND_API_KEY_VERSION",
-] as const;
-
-for (const envName of REQUIRED_ENV) {
-	if (!Deno.env.get(envName)) {
-		throw new Error(`Startup env validation failed: missing ${envName}`);
+export function requireEnvVars(vars: string[]) {
+	const missing = vars.filter((name) => !Deno.env.get(name));
+	if (missing.length > 0) {
+		throw new Error(
+			`Missing required environment variables: ${missing.join(", ")}`,
+		);
 	}
 }
 
-if (Deno.env.get("SECRET_ROTATION_CHECKLIST_ACK") !== "true") {
-	throw new Error(
-		"Startup env validation failed: SECRET_ROTATION_CHECKLIST_ACK must be true.",
-	);
-}
+export function getAuditMetadata(
+	request: Request,
+	actorId: string | null,
+): AuditMetadata {
+	const requestId =
+		request.headers.get("x-request-id") ||
+		request.headers.get("cf-ray") ||
+		crypto.randomUUID();
+	const correlationId = request.headers.get("x-correlation-id") || requestId;
 
-export function readJson<T>(value: unknown, fallback: T): T {
-	if (typeof value !== "object" || value === null) return fallback;
-	return value as T;
-}
-
-export function enforceCatalogAllowlist(payload: Record<string, unknown>) {
-	const plan = String(payload.plan ?? "")
-		.trim()
-		.toLowerCase();
-	const region = String(payload.region ?? "")
-		.trim()
-		.toLowerCase();
-	const serviceType = String(payload.serviceType ?? "")
-		.trim()
-		.toLowerCase();
-
-	if (plan && !PLAN_ALLOWLIST.has(plan))
-		throw new Error("Plan is not allowed.");
-	if (region && !REGION_ALLOWLIST.has(region))
-		throw new Error("Region is not allowed.");
-	if (serviceType && !SERVICE_TYPE_ALLOWLIST.has(serviceType))
-		throw new Error("Service type is not allowed.");
-}
-
-export function requestMeta(request: Request) {
-	const requestId = request.headers.get("x-request-id") || crypto.randomUUID();
-	const ip =
-		request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-	const userAgent = request.headers.get("user-agent") ?? "unknown";
 	return {
+		actorId,
 		requestId,
-		ipHash: createHash("sha256").update(ip).digest("hex"),
-		userAgentHash: createHash("sha256").update(userAgent).digest("hex"),
+		correlationId,
+		timestamp: new Date().toISOString(),
 	};
 }
 
-export async function enforceRateLimit(
-	userId: string,
-	action: string,
-	requestId: string,
-	perHour: number,
-	perDay: number,
-) {
-	const admin = createAdminClient();
-	const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-	const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-
-	const [{ count: hourCount, error: hErr }, { count: dayCount, error: dErr }] =
-		await Promise.all([
-			admin
-				.from("function_rate_limits")
-				.select("id", { count: "exact", head: true })
-				.eq("user_id", userId)
-				.eq("action", action)
-				.gte("created_at", hourAgo),
-			admin
-				.from("function_rate_limits")
-				.select("id", { count: "exact", head: true })
-				.eq("user_id", userId)
-				.eq("action", action)
-				.gte("created_at", dayAgo),
-		]);
-
-	if (hErr || dErr) throw new Error("Unable to enforce rate limits.");
-	if ((hourCount ?? 0) >= perHour || (dayCount ?? 0) >= perDay)
-		throw new Error("Rate limit exceeded for this action.");
-
-	const { error: insertErr } = await admin
-		.from("function_rate_limits")
-		.insert({ user_id: userId, action, request_id: requestId });
-	if (insertErr && insertErr.code !== "23505")
-		throw new Error("Unable to persist rate limit state.");
+export function withAudit<T extends Record<string, unknown>>(
+	payload: T,
+	audit: AuditMetadata,
+): T & { audit_metadata: AuditMetadata } {
+	return {
+		...payload,
+		audit_metadata: audit,
+	};
 }
 
-export async function writeAuditTrail(args: {
-	userId?: string;
-	action: string;
-	actor: string;
-	requestId: string;
-	ipHash: string;
-	userAgentHash: string;
-	payload?: unknown;
-}) {
-	const admin = createAdminClient();
-	await admin.from("function_audit_trail").insert({
-		user_id: args.userId ?? null,
-		action: args.action,
-		actor: args.actor,
-		request_id: args.requestId,
-		ip_hash: args.ipHash,
-		user_agent_hash: args.userAgentHash,
-		payload: args.payload ?? null,
-	});
+export function enforceAllowlist(
+	value: string,
+	allowlist: readonly string[],
+	field: string,
+) {
+	if (!allowlist.includes(value)) {
+		throw new Error(
+			`Invalid ${field}. Allowed values: ${allowlist.join(", ")}`,
+		);
+	}
+}
+
+export function assertObject(
+	value: unknown,
+	name: string,
+): Record<string, unknown> {
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		throw new Error(`${name} must be an object.`);
+	}
+	return value as Record<string, unknown>;
+}
+
+export function checkRateLimit(
+	userId: string,
+	endpoint: string,
+	maxRequests: number,
+	windowMs: number,
+) {
+	const now = Date.now();
+	const key = `${endpoint}:${userId}`;
+	const current = rateWindowStore.get(key);
+
+	if (!current || now >= current.resetAt) {
+		rateWindowStore.set(key, { count: 1, resetAt: now + windowMs });
+		return {
+			allowed: true,
+			remaining: maxRequests - 1,
+			resetAt: now + windowMs,
+		};
+	}
+
+	if (current.count >= maxRequests) {
+		return { allowed: false, remaining: 0, resetAt: current.resetAt };
+	}
+
+	current.count += 1;
+	rateWindowStore.set(key, current);
+	return {
+		allowed: true,
+		remaining: maxRequests - current.count,
+		resetAt: current.resetAt,
+	};
+}
+
+export function parseContactRequest(rawBody: unknown) {
+	const body = assertObject(rawBody, "Request body");
+	const firstName = String(body.firstName || "").trim();
+	const lastName = String(body.lastName || "").trim();
+	const email = String(body.email || "").trim();
+	const phone = String(body.phone || "").trim();
+	const company = String(body.company || "").trim();
+	const cloudSpend = String(body.cloudSpend || "").trim();
+	const message = String(body.message || "").trim();
+
+	if (!email || !message) {
+		throw new Error("Email and message are required.");
+	}
+
+	return { firstName, lastName, email, phone, company, cloudSpend, message };
+}
+
+export function parseCreatePaymentRequest(rawBody: unknown) {
+	const body = assertObject(rawBody, "Request body");
+	const currency = String(body.currency || "")
+		.trim()
+		.toUpperCase();
+	const amount = body.amount;
+	const customer = body.customer ? assertObject(body.customer, "customer") : {};
+	const serviceType = String(body.serviceType || "credits")
+		.trim()
+		.toLowerCase();
+	const region = String(body.region || "global")
+		.trim()
+		.toLowerCase();
+	const plan = String(body.plan || "topup")
+		.trim()
+		.toLowerCase();
+
+	return {
+		currency,
+		amount,
+		customer,
+		serviceType,
+		region,
+		plan,
+	};
+}
+
+export function getEnvOrThrow(name: string) {
+	const value = Deno.env.get(name);
+	if (!value) throw new Error(`Missing required environment variable: ${name}`);
+	return value;
 }
