@@ -10,43 +10,11 @@ import { useAuth } from "./AuthContext";
 
 const DashboardContext = createContext();
 
-const initialResources = [];
+const initialResources = []; // Empty by default as per user request
+
 const initialTransactions = [];
+
 const defaultPlan = { name: "Pro Plan", credits: 2900, price: 29 };
-
-export const normalizedStatusMap = {
-	creating: "provisioning",
-	provisioning: "provisioning",
-	bootstrapping: "provisioning",
-	starting: "provisioning",
-	running: "running",
-	ready: "running",
-	active: "running",
-	stopping: "stopped",
-	stopped: "stopped",
-	deleting: "deleting",
-	failed: "error",
-	error: "error",
-};
-
-export function normalizeServiceStatus(status = "unknown") {
-	const normalized = normalizedStatusMap[String(status).toLowerCase()];
-	return normalized || "unknown";
-}
-
-function createSecureDbConnection(resourceName, dbEngine) {
-	const user = `${resourceName.slice(0, 8)}_app`;
-	const maskedPassword = `••••••••${Math.floor(1000 + Math.random() * 9000)}`;
-	return {
-		host: `${resourceName}.internal.db.cloudbase.local`,
-		port: dbEngine === "redis" ? 6379 : dbEngine === "mysql" ? 3306 : 5432,
-		database: `${resourceName.replace(/-/g, "_")}_main`,
-		user,
-		maskedPassword,
-		sslMode: "require",
-		rotationPolicy: "30-day automatic credential rotation",
-	};
-}
 
 export function DashboardProvider({ children }) {
 	const { user } = useAuth();
@@ -55,40 +23,76 @@ export function DashboardProvider({ children }) {
 		const saved = localStorage.getItem("wys_resources");
 		return saved ? JSON.parse(saved) : initialResources;
 	});
+
 	const [transactions, setTransactions] = useState(() => {
 		const saved = localStorage.getItem("wys_transactions");
 		return saved ? JSON.parse(saved) : initialTransactions;
 	});
+
 	const [currentPlan, setCurrentPlan] = useState(() => {
 		const saved = localStorage.getItem("wys_plan");
 		return saved ? JSON.parse(saved) : defaultPlan;
 	});
 
+	// Calculate balance from transactions
 	const balance = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+	const [resourceActionState, setResourceActionState] = useState({});
 
-	const loadTransactions = useCallback(async () => {
+	const mapResource = useCallback((res) => ({
+		...res,
+		status: res.status || "Unknown",
+		events: (res.provision_events || []).slice().sort((a, b) =>
+			new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+		),
+	}), []);
+
+	const loadResources = useCallback(async () => {
 		if (!user) return;
+
 		const { data, error } = await supabase
-			.from("credit_transactions")
-			.select("id, description, amount, type, status, currency_paid, currency, created_at")
+			.from("resources")
+			.select("id, name, type, region, ip, status, created_at, provision_events(*)")
 			.eq("user_id", user.id)
 			.order("created_at", { ascending: false });
+
+		if (error) {
+			console.warn("Unable to load resources from Supabase.", error);
+			return;
+		}
+
+		setResources((data || []).map(mapResource));
+	}, [mapResource, user]);
+
+	const loadTransactions = useCallback(async () => {
+		if (!user) {
+			return;
+		}
+
+		const { data, error } = await supabase
+			.from("credit_transactions")
+			.select(
+				"id, description, amount, type, status, currency_paid, currency, created_at",
+			)
+			.eq("user_id", user.id)
+			.order("created_at", { ascending: false });
+
 		if (error) {
 			console.warn("Unable to load credit transactions from Supabase.", error);
 			return;
 		}
-		setTransactions(
-			(data || []).map((tx) => ({
-				id: `tx_${tx.id}`,
-				date: new Date(tx.created_at).toISOString().split("T")[0],
-				description: tx.description,
-				amount: tx.amount,
-				status: tx.status || "Completed",
-				type: tx.type,
-				currencyPaid: tx.currency_paid || "-",
-				currency: tx.currency || null,
-			})),
-		);
+
+		const mapped = (data || []).map((tx) => ({
+			id: `tx_${tx.id}`,
+			date: new Date(tx.created_at).toISOString().split("T")[0],
+			description: tx.description,
+			amount: tx.amount,
+			status: tx.status || "Completed",
+			type: tx.type,
+			currencyPaid: tx.currency_paid || "-",
+			currency: tx.currency || null,
+		}));
+
+		setTransactions(mapped);
 	}, [user]);
 
 	useEffect(() => {
@@ -101,46 +105,73 @@ export function DashboardProvider({ children }) {
 		loadTransactions();
 	}, [loadTransactions]);
 
-	const changePlan = (plan) => setCurrentPlan(plan);
+	useEffect(() => {
+		loadResources();
+	}, [loadResources]);
+
+	useEffect(() => {
+		if (!user) return undefined;
+
+		const interval = setInterval(() => {
+			loadResources();
+		}, 15000);
+
+		return () => clearInterval(interval);
+	}, [loadResources, user]);
+
+	const changePlan = (plan) => {
+		setCurrentPlan(plan);
+	};
 
 	const addResource = (resource) => {
 		const newResource = {
 			...resource,
 			id: Math.random().toString(36).substr(2, 9),
-			status: normalizeServiceStatus(resource.status || "creating"),
+			status: "Running", // Default to running
 			uptime: "Just now",
-			ip: resource.ip || `10.0.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+			ip: `10.0.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
 		};
 		setResources((prev) => [newResource, ...prev]);
 	};
 
-	const updateResourceStatus = (id, status) => {
-		setResources((prev) =>
-			prev.map((resource) =>
-				resource.id === id ? { ...resource, status: normalizeServiceStatus(status) } : resource,
-			),
-		);
+	const removeResource = (id) => {
+		setResources((prev) => prev.filter((r) => r.id !== id));
 	};
 
-	const createManagedDatabase = ({ name, region, engine }) => {
-		const connection = createSecureDbConnection(name, engine);
-		addResource({
-			name,
-			type: "Database (Managed)",
-			region,
-			price: "300 credits/mo",
-			engine,
-			status: "provisioning",
-			connection,
-		});
+	const setActionLoading = (id, action, loading, error = "") => {
+		setResourceActionState((prev) => ({
+			...prev,
+			[id]: {
+				action: loading ? action : "",
+				error,
+			},
+		}));
 	};
 
-	const removeResource = (id) => setResources((prev) => prev.filter((r) => r.id !== id));
+	const runLifecycleAction = useCallback(
+		async (id, action) => {
+			setActionLoading(id, action, true);
+			try {
+				if (action === "delete") {
+					const { error } = await supabase.from("resources").delete().eq("id", id).eq("user_id", user.id);
+					if (error) throw error;
+				} else {
+					const { error } = await supabase
+						.from("resources")
+						.update({ status: action === "suspend" ? "Suspended" : "Running" })
+						.eq("id", id)
+						.eq("user_id", user.id);
+					if (error) throw error;
+				}
 
-	const deleteService = (id) => {
-		updateResourceStatus(id, "deleting");
-		setTimeout(() => removeResource(id), 350);
-	};
+				await loadResources();
+				setActionLoading(id, action, false);
+			} catch (error) {
+				setActionLoading(id, action, false, error.message || "Action failed");
+			}
+		},
+		[loadResources, user],
+	);
 
 	const deductCredits = useCallback(
 		async (description, amount) => {
@@ -162,16 +193,18 @@ export function DashboardProvider({ children }) {
 		<DashboardContext.Provider
 			value={{
 				resources,
+				resourceActionState,
 				balance,
 				transactions,
 				currentPlan,
 				addResource,
 				removeResource,
-				deleteService,
-				createManagedDatabase,
-				updateResourceStatus,
-				normalizeServiceStatus,
+				suspendResource: (id) => runLifecycleAction(id, "suspend"),
+				resumeResource: (id) => runLifecycleAction(id, "resume"),
+				deleteResource: (id) => runLifecycleAction(id, "delete"),
+				syncResource: loadResources,
 				deductCredits,
+				refreshResources: loadResources,
 				refreshTransactions: loadTransactions,
 				changePlan,
 			}}
