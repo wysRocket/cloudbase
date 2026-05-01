@@ -117,9 +117,9 @@ export default function AdminObservability() {
 	const [profiles, setProfiles] = useState([]);
 	const [roles, setRoles] = useState([]);
 	const [transactions, setTransactions] = useState([]);
-	const [alerts, setAlerts] = useState([]);
-	const [featureFlags, setFeatureFlags] = useState([]);
-	const [reconRuns, setReconRuns] = useState([]);
+
+	const [serviceFlags, setServiceFlags] = useState([]);
+	const [reconciliationRows, setReconciliationRows] = useState([]);
 
 	// Filter / pagination state
 	const [dateRange, setDateRange] = useState("all");
@@ -138,7 +138,7 @@ export default function AdminObservability() {
 		}
 		setLoading(true);
 		setError("");
-		const [profilesRes, rolesRes, txRes, alertsRes, flagsRes, reconRes] = await Promise.all([
+		const [profilesRes, rolesRes, txRes, flagsRes, reconRes] = await Promise.all([
 			supabase
 				.from("profiles")
 				.select("id, email, created_at")
@@ -152,18 +152,22 @@ export default function AdminObservability() {
 				.select("id, user_id, description, amount, type, status, created_at")
 				.order("created_at", { ascending: false })
 				.limit(300),
-			supabase.from("observability_alert_events").select("id, alert_type, severity, status, value, threshold, context, created_at").order("created_at", { ascending: false }).limit(100),
-			supabase.from("service_feature_flags").select("id, service_type, region, enabled, rollout_percent, notes, updated_at").order("updated_at", { ascending: false }).limit(100),
-			supabase.from("daily_reconciliation_runs").select("id, run_date, paid_count, provisioned_count, mismatch_count, status, details, created_at").order("run_date", { ascending: false }).limit(30),
+			supabase
+				.from("service_rollout_flags")
+				.select("id, service_type, region, enabled, rollout_percent, updated_at")
+				.order("service_type", { ascending: true })
+				.limit(200),
+			supabase
+				.from("provisioning_reconciliation")
+				.select("id, day, paid_count, provisioned_count, mismatch_count, status, created_at")
+				.order("day", { ascending: false })
+				.limit(30),
 		]);
-		if (profilesRes.error || rolesRes.error || txRes.error || alertsRes.error || flagsRes.error || reconRes.error) {
+		if (profilesRes.error || rolesRes.error || txRes.error) {
 			setError(
 				profilesRes.error?.message ||
 					rolesRes.error?.message ||
 					txRes.error?.message ||
-					alertsRes.error?.message ||
-					flagsRes.error?.message ||
-					reconRes.error?.message ||
 					"Unable to load backoffice observability data.",
 			);
 			setLoading(false);
@@ -172,9 +176,8 @@ export default function AdminObservability() {
 		setProfiles(profilesRes.data || []);
 		setRoles(rolesRes.data || []);
 		setTransactions(txRes.data || []);
-		setAlerts(alertsRes.data || []);
-		setFeatureFlags(flagsRes.data || []);
-		setReconRuns(reconRes.data || []);
+		setServiceFlags(flagsRes.error ? [] : flagsRes.data || []);
+		setReconciliationRows(reconRes.error ? [] : reconRes.data || []);
 		setLoading(false);
 	}, [isAdmin, adminLoading]);
 
@@ -237,33 +240,6 @@ export default function AdminObservability() {
 	const suspiciousEvents = transactions.filter(
 		(tx) => (tx.status || "Completed") !== "Completed",
 	).length;
-	const queueDepth = useMemo(
-		() =>
-			transactions.filter((tx) => (tx.status || "Completed") === "Pending")
-				.length,
-		[transactions],
-	);
-	const failureRate = useMemo(() => {
-		if (!rangeTransactions.length) return 0;
-		const failed = rangeTransactions.filter(
-			(tx) => (tx.status || "Completed") !== "Completed",
-		).length;
-		return (failed / rangeTransactions.length) * 100;
-	}, [rangeTransactions]);
-	const apiLatencyMs = useMemo(() => {
-		// Proxy signal until provider-side latency events are wired.
-		const pendingCount = transactions.filter(
-			(tx) => (tx.status || "Completed") === "Pending",
-		).length;
-		return 120 + pendingCount * 8;
-	}, [transactions]);
-	const deadLetterSpike = queueDepth >= 8;
-	const paymentProvisionMismatch = suspiciousEvents >= 3;
-
-	const queueDepth = alerts.filter((a) => a.alert_type === "dead_letter_growth").reduce((max, a) => Math.max(max, Number(a.value || 0)), 0);
-	const providerFailures = alerts.filter((a) => a.alert_type === "provider_api_failure_spike").reduce((sum, a) => sum + Number(a.value || 0), 0);
-	const paymentProvisionMismatches = reconRuns[0]?.mismatch_count || 0;
-	const enabledFlags = featureFlags.filter((f) => f.enabled).length;
 
 	// ─── Cashflow series (6 months) ──────────────────────────────────────────────
 
@@ -354,6 +330,35 @@ export default function AdminObservability() {
 	);
 
 	const recentUsers = profiles.slice(0, 8);
+
+	const queueBacklog = rangeTransactions.filter((tx) => tx.status === "Queued").length;
+	const deadLetterCount = rangeTransactions.filter((tx) => tx.status === "DeadLetter").length;
+	const providerFailures = rangeTransactions.filter((tx) =>
+		(tx.status || "").toLowerCase().includes("provider_fail"),
+	).length;
+	const paymentProvisionMismatch = reconciliationRows
+		.reduce((sum, row) => sum + (row.mismatch_count || 0), 0);
+
+	const alertCards = [
+		{
+			id: "dead-letter",
+			label: "Dead-letter growth",
+			value: deadLetterCount,
+			state: deadLetterCount > 10 ? "Critical" : deadLetterCount > 0 ? "Watch" : "Healthy",
+		},
+		{
+			id: "provider-failures",
+			label: "Provider API failure spikes",
+			value: providerFailures,
+			state: providerFailures > 8 ? "Critical" : providerFailures > 0 ? "Watch" : "Healthy",
+		},
+		{
+			id: "mismatch",
+			label: "Payment/provision mismatch",
+			value: paymentProvisionMismatch,
+			state: paymentProvisionMismatch > 0 ? "Critical" : "Healthy",
+		},
+	];
 
 	// ─── Guards ──────────────────────────────────────────────────────────────────
 
@@ -500,110 +505,6 @@ export default function AdminObservability() {
 						<p className="text-[11px] text-slate-600 mt-1">{card.sub}</p>
 					</motion.div>
 				))}
-			</div>
-
-			{/* SRE Signal Board */}
-			<div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-				{[
-					{
-						label: "Queue Depth",
-						value: queueDepth.toLocaleString(),
-						sub: "Pending provisioning jobs",
-						tone: queueDepth > 10 ? "text-red-400" : "text-cyan-300",
-					},
-					{
-						label: "Failure Rate",
-						value: `${failureRate.toFixed(2)}%`,
-						sub: "Non-completed transactions",
-						tone: failureRate > 5 ? "text-red-400" : "text-emerald-300",
-					},
-					{
-						label: "API Latency",
-						value: `${apiLatencyMs.toLocaleString()} ms`,
-						sub: "Provider edge p95 proxy",
-						tone: apiLatencyMs > 300 ? "text-red-400" : "text-amber-300",
-					},
-				].map((card) => (
-					<div
-						key={card.label}
-						className="rounded-2xl border border-white/10 bg-[#0d1527] p-4"
-					>
-						<p className="text-[11px] uppercase tracking-[0.18em] text-slate-500 mb-1">
-							{card.label}
-						</p>
-						<p className={`text-2xl font-bold ${card.tone}`}>{card.value}</p>
-						<p className="text-[11px] text-slate-600 mt-1">{card.sub}</p>
-					</div>
-				))}
-			</div>
-
-			{/* Alert + Reconciliation + Rollout */}
-			<div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
-					<h2 className="font-bold text-lg mb-1">Alert Policies</h2>
-					<p className="text-xs text-slate-500 mb-4">
-						Dead-letter and payment/provision mismatch detection
-					</p>
-					<div className="space-y-3 text-sm">
-						<div className="flex items-center justify-between rounded-lg bg-white/5 p-3 border border-white/5">
-							<span className="text-slate-300">Dead-letter spike</span>
-							<span
-								className={`font-semibold ${
-									deadLetterSpike ? "text-red-400" : "text-emerald-300"
-								}`}
-							>
-								{deadLetterSpike ? "Triggered" : "Healthy"}
-							</span>
-						</div>
-						<div className="flex items-center justify-between rounded-lg bg-white/5 p-3 border border-white/5">
-							<span className="text-slate-300">Payment/provision mismatch</span>
-							<span
-								className={`font-semibold ${
-									paymentProvisionMismatch ? "text-red-400" : "text-emerald-300"
-								}`}
-							>
-								{paymentProvisionMismatch ? "Triggered" : "Healthy"}
-							</span>
-						</div>
-					</div>
-				</div>
-				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
-					<h2 className="font-bold text-lg mb-1">Reconciliation Cron</h2>
-					<p className="text-xs text-slate-500 mb-4">
-						Automated sweeps for paid-but-unprovisioned and orphan resources
-					</p>
-					<ul className="space-y-2 text-sm text-slate-300">
-						<li className="rounded-lg bg-white/5 p-3 border border-white/5">
-							Every 10 min: paid, missing resource
-						</li>
-						<li className="rounded-lg bg-white/5 p-3 border border-white/5">
-							Hourly: orphan resource ownership checks
-						</li>
-						<li className="rounded-lg bg-white/5 p-3 border border-white/5">
-							Daily: replay failed fulfillment queue
-						</li>
-					</ul>
-				</div>
-				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
-					<h2 className="font-bold text-lg mb-1">Feature Flag Rollout</h2>
-					<p className="text-xs text-slate-500 mb-4">
-						Progressive release by service type and region
-					</p>
-					<ul className="space-y-2 text-sm">
-						<li className="rounded-lg bg-white/5 p-3 border border-white/5 flex items-center justify-between">
-							<span className="text-slate-300">GPU / us-east</span>
-							<span className="text-cyan-300 font-semibold">25%</span>
-						</li>
-						<li className="rounded-lg bg-white/5 p-3 border border-white/5 flex items-center justify-between">
-							<span className="text-slate-300">VPS / eu-west</span>
-							<span className="text-cyan-300 font-semibold">10%</span>
-						</li>
-						<li className="rounded-lg bg-white/5 p-3 border border-white/5 flex items-center justify-between">
-							<span className="text-slate-300">K8s / ap-south</span>
-							<span className="text-cyan-300 font-semibold">5%</span>
-						</li>
-					</ul>
-				</div>
 			</div>
 
 			{/* Cashflow chart + Credit donut */}
@@ -755,34 +656,6 @@ export default function AdminObservability() {
 							</div>
 						</div>
 					</div>
-				</div>
-			</div>
-
-
-			{/* Queue + Failure Metrics */}
-			<div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
-					<h2 className="font-bold text-lg mb-1">Queue Health</h2><p className="text-3xl font-black text-amber-300">{queueDepth.toLocaleString()}</p>
-				</div>
-				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
-					<h2 className="font-bold text-lg mb-1">Provider API Failures</h2><p className="text-3xl font-black text-red-400">{providerFailures.toLocaleString()}</p>
-				</div>
-				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
-					<h2 className="font-bold text-lg mb-1">Payment/Provision Drift</h2>
-					<p className={`text-3xl font-black ${paymentProvisionMismatches > 0 ? "text-red-400" : "text-emerald-300"}`}>{paymentProvisionMismatches.toLocaleString()}</p>
-				</div>
-			</div>
-			<div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
-					<h3 className="font-bold text-lg mb-3">Alert Policies</h3>
-					<ul className="space-y-2 text-sm">{["dead_letter_growth", "provider_api_failure_spike", "payment_provision_mismatch"].map((type) => { const hit = alerts.find((a) => a.alert_type === type); return <li key={type} className="flex items-center justify-between border border-white/5 rounded-lg px-3 py-2"><span className="text-slate-300">{type}</span><span className={hit && hit.status !== "ok" ? "text-red-400" : "text-emerald-300"}>{hit?.status || "ok"}</span></li>; })}</ul>
-				</div>
-				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
-					<h3 className="font-bold text-lg mb-1">Feature Flags</h3><p className="text-2xl font-bold text-cyan-300 mb-3">{enabledFlags}/{featureFlags.length} enabled</p>
-				</div>
-				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
-					<h3 className="font-bold text-lg mb-3">Incident Runbooks</h3>
-					<ul className="space-y-2 text-xs text-slate-300"><li className="border border-white/5 rounded-lg px-3 py-2"><strong>Retry:</strong> replay failed jobs.</li><li className="border border-white/5 rounded-lg px-3 py-2"><strong>Rollback:</strong> disable impacted feature flags.</li><li className="border border-white/5 rounded-lg px-3 py-2"><strong>Orphan cleanup:</strong> reconcile paid rows without provision.</li><li className="border border-white/5 rounded-lg px-3 py-2"><strong>Provider outage mode:</strong> queue acceptance and defer provisioning.</li></ul>
 				</div>
 			</div>
 
@@ -958,6 +831,60 @@ export default function AdminObservability() {
 							);
 						})}
 					</div>
+				</div>
+			</div>
+
+
+			{/* Queue + Failure Metrics */}
+			<div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+					<h2 className="font-bold text-lg">Queue Health</h2>
+					<p className="text-xs text-slate-500 mb-4">Backlog and dead-letter trends</p>
+					<p className="text-3xl font-bold text-cyan-300">{queueBacklog}</p>
+					<p className="text-xs text-slate-500">queued events</p>
+					<p className="mt-3 text-lg font-semibold text-red-300">{deadLetterCount}</p>
+					<p className="text-xs text-slate-500">dead-lettered events</p>
+				</div>
+				<div className="xl:col-span-2 rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+					<h2 className="font-bold text-lg mb-3">Operational Alerts</h2>
+					<div className="grid sm:grid-cols-3 gap-3">
+						{alertCards.map((alert) => (
+							<div key={alert.id} className="rounded-xl border border-white/10 p-3 bg-black/20">
+								<p className="text-xs text-slate-500">{alert.label}</p>
+								<p className="text-2xl font-bold text-white mt-1">{alert.value}</p>
+								<p className={`text-xs mt-1 ${alert.state === "Critical" ? "text-red-300" : alert.state === "Watch" ? "text-amber-300" : "text-emerald-300"}`}>{alert.state}</p>
+							</div>
+						))}
+					</div>
+				</div>
+			</div>
+
+			{/* Feature Flags + Reconciliation + Runbooks */}
+			<div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+				<div className="xl:col-span-2 rounded-2xl border border-white/10 bg-[#0d1527] overflow-hidden">
+					<div className="p-4 border-b border-white/5">
+						<h2 className="font-bold">Service Rollout Flags</h2>
+						<p className="text-xs text-slate-500">Per service type and region phased rollout</p>
+					</div>
+					<div className="divide-y divide-white/5">
+						{serviceFlags.length === 0 ? <p className="p-4 text-sm text-slate-500">No rollout flags found.</p> : serviceFlags.slice(0, 12).map((flag) => (
+							<div key={flag.id} className="p-3 grid grid-cols-4 gap-2 text-sm">
+								<p className="text-white">{flag.service_type}</p>
+								<p className="text-slate-300">{flag.region}</p>
+								<p className="text-cyan-300">{flag.rollout_percent || 0}%</p>
+								<p className={flag.enabled ? "text-emerald-300" : "text-slate-500"}>{flag.enabled ? "Enabled" : "Disabled"}</p>
+							</div>
+						))}
+					</div>
+				</div>
+				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+					<h2 className="font-bold text-lg">Incident Runbooks</h2>
+					<ul className="mt-3 space-y-2 text-sm text-slate-300 list-disc list-inside">
+						<li>Retry pipeline: replay transient failures with exponential backoff.</li>
+						<li>Rollback: disable impacted region flags and halt new provisioning.</li>
+						<li>Orphan cleanup: detect paid-but-unprovisioned resources and reconcile.</li>
+						<li>Provider outage mode: shift to degraded mode and queue async retries.</li>
+					</ul>
 				</div>
 			</div>
 
