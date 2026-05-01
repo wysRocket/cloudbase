@@ -1,42 +1,60 @@
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { createAdminClient, createUserClient } from "../_shared/supabase.ts";
-import { assertCatalogAllowlist, assertQuota, fingerprintRequest, rejectRestrictedClientFields, ServiceAction, validateBasePayload } from "../_shared/provider-guard.ts";
 
-const ALLOWED_ACTIONS: ServiceAction[] = ["start", "stop", "restart", "delete"];
+type LifecycleAction = "suspend" | "resume" | "resize" | "delete";
+
+function parsePayload(body: unknown): { resourceId: string; action: LifecycleAction; idempotencyKey: string } {
+	const resourceId = String((body as Record<string, unknown>)?.resourceId || "").trim();
+	const action = String((body as Record<string, unknown>)?.action || "").trim() as LifecycleAction;
+	const idempotencyKey = String((body as Record<string, unknown>)?.idempotencyKey || "").trim();
+	if (!resourceId) throw new Error("resourceId is required.");
+	if (!idempotencyKey) throw new Error("idempotencyKey is required.");
+	if (!["suspend", "resume", "resize", "delete"].includes(action)) throw new Error("Invalid lifecycle action.");
+	return { resourceId, action, idempotencyKey };
+}
 
 Deno.serve(async (request) => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(request) });
-  if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, request);
+	if (request.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(request) });
+	if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, request);
 
-  const authHeader = request.headers.get("Authorization");
-  const userClient = createUserClient(authHeader);
-  const adminClient = createAdminClient();
-  const { data: { user }, error } = await userClient.auth.getUser();
-  if (error || !user) return jsonResponse({ error: "Unauthorized." }, 401, request);
+	try {
+		const authHeader = request.headers.get("Authorization");
+		const userClient = createUserClient(authHeader);
+		const adminClient = createAdminClient();
+		const { data: { user }, error: userError } = await userClient.auth.getUser();
+		if (userError || !user) return jsonResponse({ error: "You must be signed in." }, 401, request);
 
-  try {
-    const body = await request.json();
-    const action = String(body?.action ?? "").trim() as ServiceAction;
-    if (!ALLOWED_ACTIONS.includes(action)) throw new Error("Invalid lifecycle action.");
+		const input = parsePayload(await request.json());
+		const { data: resource } = await adminClient
+			.from("service_resources")
+			.select("id, user_id")
+			.eq("id", input.resourceId)
+			.eq("user_id", user.id)
+			.maybeSingle();
+		if (!resource) return jsonResponse({ error: "Resource not found." }, 404, request);
 
-    rejectRestrictedClientFields(body, ["provider_override", "billing_cycle", "price_override"]);
-    const payload = validateBasePayload(body);
-    await assertCatalogAllowlist(payload);
-    await assertQuota(user.id, "provision_events", 1 / 60, 10, action);
+		const { data: existingJob } = await adminClient
+			.from("provision_jobs")
+			.select("id")
+			.eq("idempotency_key", input.idempotencyKey)
+			.maybeSingle();
+		if (existingJob) return jsonResponse({ status: "accepted", jobId: existingJob.id, deduplicated: true }, 202, request);
 
-    const actorFingerprint = fingerprintRequest(request, user.id);
-    const { error: eventError } = await adminClient.from("provision_events").insert({
-      user_id: user.id,
-      actor_id: user.id,
-      actor_type: "user",
-      request_fingerprint: actorFingerprint,
-      action,
-      metadata: { planCode: payload.planCode, region: payload.region, service_type: payload.service_type, idempotencyKey: payload.idempotencyKey },
-    });
-    if (eventError) return jsonResponse({ error: eventError.message }, 500, request);
+		const { data: job, error: insertError } = await adminClient
+			.from("provision_jobs")
+			.insert({
+				resource_id: input.resourceId,
+				action: input.action,
+				idempotency_key: input.idempotencyKey,
+				status: "queued",
+				request_payload: { action: input.action },
+			})
+			.select("id")
+			.single();
+		if (insertError) return jsonResponse({ error: insertError.message }, 500, request);
 
-    return jsonResponse({ ok: true, accepted: true }, 202, request);
-  } catch (e) {
-    return jsonResponse({ error: e instanceof Error ? e.message : "Invalid request." }, 422, request);
-  }
+		return jsonResponse({ status: "accepted", jobId: job.id, deduplicated: false }, 202, request);
+	} catch (error) {
+		return jsonResponse({ error: error instanceof Error ? error.message : "Invalid request." }, 422, request);
+	}
 });

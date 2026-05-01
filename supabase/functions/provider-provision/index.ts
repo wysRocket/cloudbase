@@ -1,36 +1,66 @@
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { createAdminClient, createUserClient } from "../_shared/supabase.ts";
 
+type ProvisionRequest = {
+	resourceId: string;
+	idempotencyKey: string;
+};
+
+function parseProvisionRequest(body: unknown): ProvisionRequest {
+	const resourceId = String((body as Record<string, unknown>)?.resourceId || "").trim();
+	const idempotencyKey = String((body as Record<string, unknown>)?.idempotencyKey || "").trim();
+	if (!resourceId) throw new Error("resourceId is required.");
+	if (!idempotencyKey) throw new Error("idempotencyKey is required.");
+	return { resourceId, idempotencyKey };
+}
+
 Deno.serve(async (request) => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(request) });
-  if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, request);
+	if (request.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(request) });
+	if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, request);
 
-  try {
-    const authHeader = request.headers.get("Authorization");
-    const userClient = createUserClient(authHeader);
-    const adminClient = createAdminClient();
+	try {
+		const authHeader = request.headers.get("Authorization");
+		const userClient = createUserClient(authHeader);
+		const adminClient = createAdminClient();
+		const { data: { user }, error: userError } = await userClient.auth.getUser();
+		if (userError || !user) return jsonResponse({ error: "You must be signed in." }, 401, request);
 
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) return jsonResponse({ error: "You must be signed in." }, 401, request);
+		const input = parseProvisionRequest(await request.json());
+		const { data: resource, error: resourceError } = await adminClient
+			.from("service_resources")
+			.select("id, user_id, status")
+			.eq("id", input.resourceId)
+			.eq("user_id", user.id)
+			.maybeSingle();
 
-    const { orderId } = await request.json();
-    const normalizedOrderId = String(orderId || "").trim();
-    if (!normalizedOrderId) return jsonResponse({ error: "orderId is required." }, 400, request);
+		if (resourceError) return jsonResponse({ error: resourceError.message }, 500, request);
+		if (!resource) return jsonResponse({ error: "Resource not found." }, 404, request);
 
-    const { data: order, error: orderError } = await adminClient
-      .from("orders")
-      .select("id, user_id, status")
-      .eq("id", normalizedOrderId)
-      .maybeSingle();
+		const { data: existingJob } = await adminClient
+			.from("provision_jobs")
+			.select("id, status")
+			.eq("idempotency_key", input.idempotencyKey)
+			.maybeSingle();
 
-    if (orderError || !order || order.user_id !== user.id) return jsonResponse({ error: "Order not found." }, 404, request);
-    if (order.status !== "paid") return jsonResponse({ error: "Order must be paid before provisioning." }, 409, request);
+		if (existingJob) {
+			return jsonResponse({ status: "accepted", jobId: existingJob.id, deduplicated: true }, 202, request);
+		}
 
-    const { data, error } = await adminClient.rpc("enqueue_provision_jobs_for_order", { p_order_id: order.id });
-    if (error) return jsonResponse({ error: "Failed to enqueue provisioning jobs.", details: error.message }, 500, request);
+		const { data: job, error: insertError } = await adminClient
+			.from("provision_jobs")
+			.insert({
+				resource_id: input.resourceId,
+				action: "provision",
+				idempotency_key: input.idempotencyKey,
+				status: "queued",
+				request_payload: {},
+			})
+			.select("id")
+			.single();
 
-    return jsonResponse({ ok: true, jobs: data ?? 0 }, 200, request);
-  } catch (error) {
-    return jsonResponse({ error: error instanceof Error ? error.message : "Unknown error." }, 500, request);
-  }
+		if (insertError) return jsonResponse({ error: insertError.message }, 500, request);
+		return jsonResponse({ status: "accepted", jobId: job.id, deduplicated: false }, 202, request);
+	} catch (error) {
+		return jsonResponse({ error: error instanceof Error ? error.message : "Invalid request." }, 422, request);
+	}
 });

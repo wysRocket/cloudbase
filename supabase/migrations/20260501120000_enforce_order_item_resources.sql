@@ -2,8 +2,7 @@ begin;
 
 -- Clean up legacy rows created during direct-provisioning that never had an order item.
 delete from public.service_resources
-where order_item_id is null
-  and created_at < timestamptz '2026-05-01 00:00:00+00';
+where order_item_id is null;
 
 -- Enforce resource ownership through order items.
 alter table if exists public.service_resources
