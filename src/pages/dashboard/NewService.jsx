@@ -20,7 +20,7 @@ const regions = [
 
 export default function NewService() {
     const navigate = useNavigate()
-    const { addResource, balance, deductCredits } = useDashboard()
+    const { deployResource, balance } = useDashboard()
     const [selectedType, setSelectedType] = useState(serviceTypes[0].id)
     const [selectedRegion, setSelectedRegion] = useState(regions[0].id)
     const [isDeploying, setIsDeploying] = useState(false)
@@ -37,16 +37,10 @@ export default function NewService() {
         setDeployError('')
 
         try {
-            await deductCredits(`${selectedTypeInfo.typeName} deployment`, selectedTypeInfo.cost)
-            addResource({
-                name: `${selectedTypeInfo.id}-${Math.random().toString(36).substr(2, 5)}`,
-                type: selectedTypeInfo.typeName,
-                region: regionInfo.id,
-                price: selectedTypeInfo.price
-            })
+            await deployResource({ typeInfo: selectedTypeInfo, region: regionInfo.id })
             navigate('/dashboard')
-        } catch {
-            setDeployError('Failed to deduct credits. Please try again.')
+        } catch (error) {
+            setDeployError(error?.message || 'Deployment failed. Please retry or contact support.')
         } finally {
             setIsDeploying(false)
         }
