@@ -247,6 +247,27 @@ Deno.serve(async (request) => {
 			}
 		}
 
+		if (refreshSummary.status === "completed") {
+			const { data: appOrder } = await adminClient
+				.from("orders")
+				.select("id")
+				.eq("payment_order_id", order.id)
+				.maybeSingle();
+
+			if (appOrder?.id) {
+				await adminClient.from("orders").update({ status: "paid" }).eq("id", appOrder.id);
+				const { data: items } = await adminClient.from("order_items").select("id").eq("order_id", appOrder.id);
+				for (const item of items || []) {
+					const { data: existingJob } = await adminClient.from("provision_jobs").select("id").eq("order_item_id", item.id).maybeSingle();
+					if (!existingJob?.id) {
+						const { data: job } = await adminClient.from("provision_jobs").insert({ order_id: appOrder.id, order_item_id: item.id, user_id: user.id, status: "queued" }).select("id").single();
+						if (job?.id) await adminClient.from("provision_events").insert({ job_id: job.id, status: "queued", message: "Payment confirmed. Provisioning queued." });
+					}
+				}
+			}
+		}
+
+
 		return jsonResponse(
 			{
 				invoice,

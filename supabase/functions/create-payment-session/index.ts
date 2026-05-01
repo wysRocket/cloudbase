@@ -58,6 +58,8 @@ Deno.serve(async (request) => {
 
 		const body = await request.json();
 		const currency = String(body?.currency || "").toUpperCase();
+		const selectedSku = String(body?.sku || "").trim();
+		const selectedRegion = String(body?.region || "").trim();
 		const merchantId = requiredEnv("SAFEPAY_MERCHANT_ID");
 		const merchantSecret = requiredEnv("SAFEPAY_MERCHANT_SECRET");
 
@@ -108,6 +110,14 @@ Deno.serve(async (request) => {
 		});
 		const missingFields = getMissingCustomerFields(normalizedCustomer);
 
+		if (!selectedSku || !selectedRegion) {
+			return jsonResponse(
+				{ error: "sku and region are required." },
+				422,
+				request,
+			);
+		}
+
 		if (missingFields.length > 0) {
 			return jsonResponse(
 				{
@@ -134,6 +144,51 @@ Deno.serve(async (request) => {
 					details: profileError.message,
 				},
 				500,
+				request,
+			);
+		}
+
+
+		const lockExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+		const { data: createdOrder, error: createdOrderError } = await adminClient
+			.from("orders")
+			.insert({
+				user_id: user.id,
+				total_credits: creditsToAdd,
+				currency,
+				sku_lock_expires_at: lockExpiresAt,
+				status: "pending_payment",
+			})
+			.select("id")
+			.single();
+
+		if (createdOrderError || !createdOrder) {
+			return jsonResponse(
+				{ error: "Unable to create order.", details: createdOrderError?.message },
+				500,
+				request,
+			);
+		}
+
+		const { data: createdItem, error: createdItemError } = await adminClient
+			.from("order_items")
+			.insert({
+				order_id: createdOrder.id,
+				sku: selectedSku,
+				region: selectedRegion,
+				quantity: 1,
+				unit_credits: creditsToAdd,
+				status: "reserved",
+			})
+			.select("id")
+			.single();
+
+		if (createdItemError || !createdItem) {
+			await adminClient.from("orders").update({ status: "failed" }).eq("id", createdOrder.id);
+			return jsonResponse(
+				{ error: "Unable to reserve selected SKU.", details: createdItemError?.message },
+				409,
 				request,
 			);
 		}
@@ -246,9 +301,17 @@ Deno.serve(async (request) => {
 			);
 		}
 
+		await adminClient
+			.from("orders")
+			.update({ payment_order_id: order.id })
+			.eq("id", createdOrder.id);
+
+
 		return jsonResponse(
 			{
 				paymentId: order.id,
+				orderId: createdOrder.id,
+				orderItemId: createdItem.id,
 				invoice,
 				checkoutUrl,
 			},
