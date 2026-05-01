@@ -225,6 +225,28 @@ export default function AdminObservability() {
 	const suspiciousEvents = transactions.filter(
 		(tx) => (tx.status || "Completed") !== "Completed",
 	).length;
+	const queueDepth = useMemo(
+		() =>
+			transactions.filter((tx) => (tx.status || "Completed") === "Pending")
+				.length,
+		[transactions],
+	);
+	const failureRate = useMemo(() => {
+		if (!rangeTransactions.length) return 0;
+		const failed = rangeTransactions.filter(
+			(tx) => (tx.status || "Completed") !== "Completed",
+		).length;
+		return (failed / rangeTransactions.length) * 100;
+	}, [rangeTransactions]);
+	const apiLatencyMs = useMemo(() => {
+		// Proxy signal until provider-side latency events are wired.
+		const pendingCount = transactions.filter(
+			(tx) => (tx.status || "Completed") === "Pending",
+		).length;
+		return 120 + pendingCount * 8;
+	}, [transactions]);
+	const deadLetterSpike = queueDepth >= 8;
+	const paymentProvisionMismatch = suspiciousEvents >= 3;
 
 	// ─── Cashflow series (6 months) ──────────────────────────────────────────────
 
@@ -315,32 +337,6 @@ export default function AdminObservability() {
 	);
 
 	const recentUsers = profiles.slice(0, 8);
-	const infrastructureSignals = [
-		{ service: "VPS", queueDepth: 21, failureRate: 0.8, deadLetters: 1, p95LatencyMs: 382 },
-		{ service: "Kubernetes", queueDepth: 8, failureRate: 0.4, deadLetters: 0, p95LatencyMs: 245 },
-		{ service: "GPU", queueDepth: 13, failureRate: 1.2, deadLetters: 3, p95LatencyMs: 518 },
-		{ service: "Databases", queueDepth: 5, failureRate: 0.2, deadLetters: 0, p95LatencyMs: 221 },
-		{ service: "Game Servers", queueDepth: 17, failureRate: 1.1, deadLetters: 2, p95LatencyMs: 474 },
-	];
-	const totalDeadLetters = infrastructureSignals.reduce(
-		(sum, row) => sum + row.deadLetters,
-		0,
-	);
-	const totalQueueDepth = infrastructureSignals.reduce(
-		(sum, row) => sum + row.queueDepth,
-		0,
-	);
-	const averageFailureRate =
-		infrastructureSignals.reduce((sum, row) => sum + row.failureRate, 0) /
-		infrastructureSignals.length;
-
-	const featureFlagMatrix = [
-		{ service: "VPS", region: "us-east-1", flag: "rollout_vps_us_east", state: "enabled", rollout: "100%" },
-		{ service: "VPS", region: "eu-west-1", flag: "rollout_vps_eu_west", state: "canary", rollout: "25%" },
-		{ service: "Kubernetes", region: "us-west-2", flag: "rollout_k8s_us_west", state: "canary", rollout: "40%" },
-		{ service: "GPU", region: "ap-southeast-1", flag: "rollout_gpu_ap_south", state: "disabled", rollout: "0%" },
-		{ service: "Databases", region: "us-central-1", flag: "rollout_db_us_central", state: "enabled", rollout: "100%" },
-	];
 
 	// ─── Guards ──────────────────────────────────────────────────────────────────
 
@@ -489,96 +485,107 @@ export default function AdminObservability() {
 				))}
 			</div>
 
+			{/* SRE Signal Board */}
+			<div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+				{[
+					{
+						label: "Queue Depth",
+						value: queueDepth.toLocaleString(),
+						sub: "Pending provisioning jobs",
+						tone: queueDepth > 10 ? "text-red-400" : "text-cyan-300",
+					},
+					{
+						label: "Failure Rate",
+						value: `${failureRate.toFixed(2)}%`,
+						sub: "Non-completed transactions",
+						tone: failureRate > 5 ? "text-red-400" : "text-emerald-300",
+					},
+					{
+						label: "API Latency",
+						value: `${apiLatencyMs.toLocaleString()} ms`,
+						sub: "Provider edge p95 proxy",
+						tone: apiLatencyMs > 300 ? "text-red-400" : "text-amber-300",
+					},
+				].map((card) => (
+					<div
+						key={card.label}
+						className="rounded-2xl border border-white/10 bg-[#0d1527] p-4"
+					>
+						<p className="text-[11px] uppercase tracking-[0.18em] text-slate-500 mb-1">
+							{card.label}
+						</p>
+						<p className={`text-2xl font-bold ${card.tone}`}>{card.value}</p>
+						<p className="text-[11px] text-slate-600 mt-1">{card.sub}</p>
+					</div>
+				))}
+			</div>
+
+			{/* Alert + Reconciliation + Rollout */}
 			<div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-				<div className="xl:col-span-2 rounded-2xl border border-white/10 bg-[#0d1527] overflow-hidden">
-					<div className="p-4 border-b border-white/5">
-						<h2 className="font-bold text-lg">Infrastructure Signal Board</h2>
-						<p className="text-xs text-slate-500 mt-0.5">
-							Queue depth, failure rate, dead-letter volume, and service p95 latency
-						</p>
-					</div>
-					<div className="divide-y divide-white/5">
-						{infrastructureSignals.map((signal) => (
-							<div key={signal.service} className="p-4 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-								<p className="font-semibold text-white">{signal.service}</p>
-								<p className="text-slate-300">Queue: {signal.queueDepth}</p>
-								<p className={signal.failureRate > 1 ? "text-amber-300" : "text-emerald-300"}>
-									Failures: {signal.failureRate.toFixed(1)}%
-								</p>
-								<p className={signal.deadLetters > 0 ? "text-red-400" : "text-slate-400"}>
-									Dead-letter: {signal.deadLetters}
-								</p>
-								<p className="text-cyan-300">p95: {signal.p95LatencyMs}ms</p>
-							</div>
-						))}
-					</div>
-				</div>
-				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5 space-y-4">
-					<h2 className="font-bold text-lg">Alerting Hooks</h2>
-					<div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-						<p className="text-xs uppercase tracking-wider text-red-300">Dead-letter Growth Hook</p>
-						<p className="text-sm text-slate-300 mt-1">
-							Trigger PagerDuty + Slack when dead-letter count increases by 5+ within 10 minutes.
-						</p>
-					</div>
-					<div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-						<p className="text-xs uppercase tracking-wider text-amber-300">Provider API Failure Hook</p>
-						<p className="text-sm text-slate-300 mt-1">
-							Open incident when provider API failure rate exceeds 2% for 5 minutes.
-						</p>
-					</div>
-					<div className="pt-2 border-t border-white/10 text-xs text-slate-400 space-y-1">
-						<p>Total queue depth: <span className="text-white">{totalQueueDepth}</span></p>
-						<p>Total dead-letters: <span className={totalDeadLetters > 0 ? "text-red-400" : "text-slate-300"}>{totalDeadLetters}</span></p>
-						<p>Average failure rate: <span className="text-amber-300">{averageFailureRate.toFixed(2)}%</span></p>
-					</div>
-				</div>
-			</div>
-
-			<div className="rounded-2xl border border-white/10 bg-[#0d1527] overflow-hidden">
-				<div className="p-4 border-b border-white/5">
-					<h2 className="font-bold text-lg">Feature Flags by Service / Region</h2>
-					<p className="text-xs text-slate-500 mt-0.5">
-						Phased rollout controls for infrastructure workflows
+				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+					<h2 className="font-bold text-lg mb-1">Alert Policies</h2>
+					<p className="text-xs text-slate-500 mb-4">
+						Dead-letter and payment/provision mismatch detection
 					</p>
-				</div>
-				<div className="divide-y divide-white/5">
-					{featureFlagMatrix.map((flag) => (
-						<div key={`${flag.service}-${flag.region}`} className="p-4 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-							<p className="text-white font-semibold">{flag.service}</p>
-							<p className="text-slate-400">{flag.region}</p>
-							<p className="text-cyan-300 font-mono">{flag.flag}</p>
-							<p className={flag.state === "enabled" ? "text-emerald-300" : flag.state === "canary" ? "text-amber-300" : "text-slate-500"}>
-								{flag.state}
-							</p>
-							<p className="text-slate-300">{flag.rollout}</p>
+					<div className="space-y-3 text-sm">
+						<div className="flex items-center justify-between rounded-lg bg-white/5 p-3 border border-white/5">
+							<span className="text-slate-300">Dead-letter spike</span>
+							<span
+								className={`font-semibold ${
+									deadLetterSpike ? "text-red-400" : "text-emerald-300"
+								}`}
+							>
+								{deadLetterSpike ? "Triggered" : "Healthy"}
+							</span>
 						</div>
-					))}
+						<div className="flex items-center justify-between rounded-lg bg-white/5 p-3 border border-white/5">
+							<span className="text-slate-300">Payment/provision mismatch</span>
+							<span
+								className={`font-semibold ${
+									paymentProvisionMismatch ? "text-red-400" : "text-emerald-300"
+								}`}
+							>
+								{paymentProvisionMismatch ? "Triggered" : "Healthy"}
+							</span>
+						</div>
+					</div>
 				</div>
-			</div>
-
-			<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
-				<h2 className="font-bold text-lg mb-1">Operational Runbooks</h2>
-				<p className="text-xs text-slate-500 mb-4">
-					Manual procedures for retry, rollback, cleanup, and escalation
-				</p>
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-					<div className="rounded-xl border border-white/10 bg-black/20 p-4">
-						<h3 className="font-semibold text-white mb-2">Retry Runbook</h3>
-						<p className="text-slate-300">Pause impacted worker, replay failed jobs in capped batches (max 50), and monitor dead-letter delta before unpausing full throughput.</p>
-					</div>
-					<div className="rounded-xl border border-white/10 bg-black/20 p-4">
-						<h3 className="font-semibold text-white mb-2">Rollback Runbook</h3>
-						<p className="text-slate-300">Disable regional feature flags, revert provider adapter to previous stable version, and verify queue drain + API success before reopening rollout.</p>
-					</div>
-					<div className="rounded-xl border border-white/10 bg-black/20 p-4">
-						<h3 className="font-semibold text-white mb-2">Orphan Cleanup Runbook</h3>
-						<p className="text-slate-300">Detect resources without billing linkage, quarantine them, notify account owner, then hard-delete after grace window if no reconciliation occurs.</p>
-					</div>
-					<div className="rounded-xl border border-white/10 bg-black/20 p-4">
-						<h3 className="font-semibold text-white mb-2">Manual Intervention Runbook</h3>
-						<p className="text-slate-300">On-call can force-state provisioning jobs, attach incident timeline updates, and require post-incident RCA within 24 hours.</p>
-					</div>
+				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+					<h2 className="font-bold text-lg mb-1">Reconciliation Cron</h2>
+					<p className="text-xs text-slate-500 mb-4">
+						Automated sweeps for paid-but-unprovisioned and orphan resources
+					</p>
+					<ul className="space-y-2 text-sm text-slate-300">
+						<li className="rounded-lg bg-white/5 p-3 border border-white/5">
+							Every 10 min: paid, missing resource
+						</li>
+						<li className="rounded-lg bg-white/5 p-3 border border-white/5">
+							Hourly: orphan resource ownership checks
+						</li>
+						<li className="rounded-lg bg-white/5 p-3 border border-white/5">
+							Daily: replay failed fulfillment queue
+						</li>
+					</ul>
+				</div>
+				<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+					<h2 className="font-bold text-lg mb-1">Feature Flag Rollout</h2>
+					<p className="text-xs text-slate-500 mb-4">
+						Progressive release by service type and region
+					</p>
+					<ul className="space-y-2 text-sm">
+						<li className="rounded-lg bg-white/5 p-3 border border-white/5 flex items-center justify-between">
+							<span className="text-slate-300">GPU / us-east</span>
+							<span className="text-cyan-300 font-semibold">25%</span>
+						</li>
+						<li className="rounded-lg bg-white/5 p-3 border border-white/5 flex items-center justify-between">
+							<span className="text-slate-300">VPS / eu-west</span>
+							<span className="text-cyan-300 font-semibold">10%</span>
+						</li>
+						<li className="rounded-lg bg-white/5 p-3 border border-white/5 flex items-center justify-between">
+							<span className="text-slate-300">K8s / ap-south</span>
+							<span className="text-cyan-300 font-semibold">5%</span>
+						</li>
+					</ul>
 				</div>
 			</div>
 
