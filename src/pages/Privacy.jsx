@@ -13,7 +13,7 @@ export default function Privacy() {
 						<h1 className="text-5xl font-black tracking-tighter mb-6">
 							Privacy Policy
 						</h1>
-						<p className="text-slate-400 mb-12">Last updated: January 2024</p>
+						<p className="text-slate-400 mb-12">Last updated: May 1, 2026</p>
 					</motion.div>
 
 					<div className="prose prose-invert prose-lg max-w-none space-y-8">
@@ -94,7 +94,16 @@ export default function Privacy() {
 						</section>
 
 						<section>
-							<h2 className="text-2xl font-bold mb-4">4. Data Security</h2>
+							<h2 className="text-2xl font-bold mb-4">
+								4. Reseller and Downstream Processing
+							</h2>
+							<p className="text-slate-300 leading-relaxed">
+								Where customers resell or sub-allocate infrastructure, Cloudbase may process operational telemetry, incident reports, and abuse-handling metadata to enforce platform safety, fraud controls, and acceptable-use obligations. Reseller customers must provide lawful disclosures to their end users and obtain all required permissions for downstream processing.
+							</p>
+						</section>
+
+						<section>
+							<h2 className="text-2xl font-bold mb-4">5. Data Security</h2>
 							<p className="text-slate-300 leading-relaxed">
 								We implement appropriate security measures to protect your
 								personal information. All data is encrypted in transit and at
@@ -103,7 +112,7 @@ export default function Privacy() {
 						</section>
 
 						<section>
-							<h2 className="text-2xl font-bold mb-4">5. Your Rights</h2>
+							<h2 className="text-2xl font-bold mb-4">6. Your Rights</h2>
 							<p className="text-slate-300 leading-relaxed">
 								You have the right to access, correct, or delete your personal
 								information. You may also opt out of marketing communications at
@@ -112,7 +121,7 @@ export default function Privacy() {
 						</section>
 
 						<section>
-							<h2 className="text-2xl font-bold mb-4">6. Contact Us</h2>
+							<h2 className="text-2xl font-bold mb-4">7. Contact Us</h2>
 							<p className="text-slate-300 leading-relaxed">
 								If you have any questions about this Privacy Policy, please
 								contact us at contact@cloudbaseservice.com.
