@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { getServicePlans } from "../../data/serviceCatalog";
 
 const fadeInUp = {
 	initial: { opacity: 0, y: 30 },
@@ -9,14 +10,14 @@ const fadeInUp = {
 };
 
 export default function GameServers() {
-	const games = [
-		{ name: "Minecraft", icon: "⛏️", players: "Up to 200", price: 5 },
-		{ name: "Rust", icon: "🔫", players: "Up to 300", price: 15 },
-		{ name: "CS2", icon: "🎯", players: "Up to 64", price: 10 },
-		{ name: "ARK", icon: "🦖", players: "Up to 100", price: 20 },
-		{ name: "Valheim", icon: "⚔️", players: "Up to 64", price: 8 },
-		{ name: "Terraria", icon: "🌳", players: "Up to 16", price: 5 },
-	];
+	const games = getServicePlans("Game Servers").map((plan) => ({
+		name: plan.quota.game,
+		icon: plan.quota.icon || "🎮",
+		players: plan.quota.players,
+		price: plan.sell_price,
+	}));
+
+	
 
 	return (
 		<>

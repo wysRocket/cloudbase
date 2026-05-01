@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { getServicePlans } from "../../data/serviceCatalog";
 
 const fadeInUp = {
 	initial: { opacity: 0, y: 30 },
@@ -9,6 +10,7 @@ const fadeInUp = {
 };
 
 export default function Database() {
+	const plans = getServicePlans("Database");
 	return (
 		<>
 			{/* Hero */}
@@ -180,30 +182,7 @@ export default function Database() {
 						Database Pricing
 					</h2>
 					<div className="grid md:grid-cols-3 gap-8">
-						{[
-							{
-								name: "Starter",
-								ram: "1GB",
-								storage: "10GB",
-								connections: 25,
-								price: 15,
-							},
-							{
-								name: "Professional",
-								ram: "4GB",
-								storage: "50GB",
-								connections: 100,
-								price: 50,
-								popular: true,
-							},
-							{
-								name: "Business",
-								ram: "16GB",
-								storage: "200GB",
-								connections: 500,
-								price: 150,
-							},
-						].map((plan, i) => (
+						{plans.map((plan, i) => (
 							<div
 								key={i}
 								className={`glass p-10 rounded-[2rem] ${plan.popular ? "border-cyan-500/50 bg-cyan-950/20 scale-105" : ""}`}
@@ -213,17 +192,17 @@ export default function Database() {
 										Popular
 									</div>
 								)}
-								<h3 className="text-2xl font-bold mb-4">{plan.name}</h3>
+								<h3 className="text-2xl font-bold mb-4">{plan.provider_sku}</h3>
 								<div className="text-4xl font-black mb-6">
-									€{plan.price}
+									€{plan.sell_price}
 									<span className="text-lg font-normal text-slate-500">
 										/mo
 									</span>
 								</div>
 								<ul className="space-y-2 mb-8 text-slate-400">
-									<li>• {plan.ram} RAM</li>
-									<li>• {plan.storage} Storage</li>
-									<li>• {plan.connections} Connections</li>
+									<li>• {plan.quota.ram} RAM</li>
+									<li>• {plan.quota.storage} Storage</li>
+									<li>• {plan.quota.connections} Connections</li>
 									<li>• Daily Backups</li>
 								</ul>
 								<Link

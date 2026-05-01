@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { getServicePlans } from "../../data/serviceCatalog";
 
 const fadeInUp = {
 	initial: { opacity: 0, y: 30 },
@@ -9,6 +10,7 @@ const fadeInUp = {
 };
 
 export default function Kubernetes() {
+	const plans = getServicePlans("Kubernetes");
 	return (
 		<>
 			{/* Hero */}
@@ -130,30 +132,7 @@ export default function Kubernetes() {
 						Cluster Pricing
 					</h2>
 					<div className="grid md:grid-cols-3 gap-8">
-						{[
-							{
-								name: "Development",
-								nodes: "1-3 nodes",
-								cpu: "2 vCPU each",
-								ram: "4GB each",
-								price: 40,
-							},
-							{
-								name: "Production",
-								nodes: "3-10 nodes",
-								cpu: "4 vCPU each",
-								ram: "8GB each",
-								price: 100,
-								popular: true,
-							},
-							{
-								name: "Enterprise",
-								nodes: "Unlimited",
-								cpu: "Custom",
-								ram: "Custom",
-								price: "Custom",
-							},
-						].map((plan, i) => (
+						{plans.map((plan, i) => (
 							<div
 								key={i}
 								className={`glass p-10 rounded-[2rem] ${plan.popular ? "border-cyan-500/50 bg-cyan-950/20 scale-105" : ""}`}
@@ -163,28 +142,22 @@ export default function Kubernetes() {
 										Popular
 									</div>
 								)}
-								<h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-								<p className="text-slate-400 mb-6">{plan.nodes}</p>
+								<h3 className="text-2xl font-bold mb-2">{plan.provider_sku}</h3>
+								<p className="text-slate-400 mb-6">{plan.quota.nodes}</p>
 								<div className="text-4xl font-black mb-6">
-									{typeof plan.price === "number"
-										? `€${plan.price}`
-										: plan.price}
-									{typeof plan.price === "number" && (
-										<span className="text-lg font-normal text-slate-500">
-											/mo
-										</span>
-									)}
+									€{plan.sell_price}
+									<span className="text-lg font-normal text-slate-500">/mo</span>
 								</div>
 								<ul className="space-y-2 mb-8 text-slate-400">
-									<li>• {plan.cpu}</li>
-									<li>• {plan.ram}</li>
+									<li>• {plan.quota.cpu}</li>
+									<li>• {plan.quota.ram}</li>
 									<li>• Managed control plane</li>
 								</ul>
 								<Link
 									to="/contact"
 									className={`w-full py-3 rounded-xl font-bold text-center block ${plan.popular ? "bg-cyan-600 hover:bg-cyan-500" : "glass hover:bg-white/10"}`}
 								>
-									{plan.price === "Custom" ? "Contact Sales" : "Get Started"}
+									Get Started
 								</Link>
 							</div>
 						))}
