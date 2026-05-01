@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
+import { supabase } from '../../lib/supabaseClient'
 
 const serviceTypes = [
     { id: 'vps', name: 'Virtual Private Server', icon: 'server', description: 'High-performance NVMe VPS', price: '100 credits/mo', cost: 100, typeName: 'VPS (Standard)' },
     { id: 'k8s', name: 'Kubernetes Cluster', icon: 'cubes', description: 'Managed K8s control plane', price: '1000 credits/mo', cost: 1000, typeName: 'Kubernetes (Managed)' },
     { id: 'db', name: 'Managed Database', icon: 'database', description: 'Postgres, MySQL, Redis', price: '300 credits/mo', cost: 300, typeName: 'Database (PG/MySQL)' },
     { id: 'gpu', name: 'GPU Instance', icon: 'chip', description: 'NVIDIA H100 / A100', price: '50 credits/hr', cost: 50, typeName: 'GPU (H100)' },
-    { id: 'game', name: 'Game Server', icon: 'gamepad', description: 'Dedicated game server bootstrap', price: '200 credits/mo', cost: 200, typeName: 'Game Server (Droplet)' },
 ]
 
 const regions = [
@@ -21,13 +21,11 @@ const regions = [
 
 export default function NewService() {
     const navigate = useNavigate()
-    const { addResource, balance, deductCredits } = useDashboard()
+    const { balance } = useDashboard()
     const [selectedType, setSelectedType] = useState(serviceTypes[0].id)
     const [selectedRegion, setSelectedRegion] = useState(regions[0].id)
     const [isDeploying, setIsDeploying] = useState(false)
     const [deployError, setDeployError] = useState('')
-    const [gpuProfile, setGpuProfile] = useState('h100-single')
-    const [dbEngine, setDbEngine] = useState('PostgreSQL')
 
     const selectedTypeInfo = serviceTypes.find(t => t.id === selectedType)
     const canDeploy = balance >= selectedTypeInfo.cost
@@ -40,18 +38,21 @@ export default function NewService() {
         setDeployError('')
 
         try {
-            await deductCredits(`${selectedTypeInfo.typeName} deployment`, selectedTypeInfo.cost)
-            addResource({
-                name: `${selectedTypeInfo.id}-${Math.random().toString(36).substr(2, 5)}`,
-                type: selectedTypeInfo.typeName,
-                serviceId: selectedTypeInfo.id,
-                region: regionInfo.id,
-                price: selectedTypeInfo.price,
-                metadata: { gpuProfile, dbEngine }
+            const response = await supabase.functions.invoke('start-reseller-order', {
+                body: { sku: selectedTypeInfo.id, region: regionInfo.id }
             })
-            navigate('/dashboard')
-        } catch {
-            setDeployError('Failed to deduct credits. Please try again.')
+
+            if (response.error) {
+                throw new Error(response.error.message || 'Unable to start order')
+            }
+
+            if (!response.data?.paymentSession?.checkout_url) {
+                throw new Error('Payment session was not returned')
+            }
+
+            window.location.href = response.data.paymentSession.checkout_url
+        } catch (error) {
+            setDeployError(error instanceof Error ? error.message : 'Failed to start order. Please try again.')
         } finally {
             setIsDeploying(false)
         }
@@ -103,27 +104,6 @@ export default function NewService() {
                             ))}
                         </div>
                     </div>
-
-                    {selectedType === 'gpu' && (
-                        <div className="bg-[#0f1629] border border-white/5 rounded-2xl p-6">
-                            <h2 className="text-xl font-bold mb-4">3. GPU Profile</h2>
-                            <select value={gpuProfile} onChange={(e) => setGpuProfile(e.target.value)} className="w-full bg-white/5 rounded-xl p-3 border border-white/10">
-                                <option value="h100-single">H100 Single (16 vCPU / 64GB minimum)</option>
-                                <option value="a100-8x">A100 8x (64 vCPU / 256GB, us-east only)</option>
-                            </select>
-                        </div>
-                    )}
-
-                    {selectedType === 'db' && (
-                        <div className="bg-[#0f1629] border border-white/5 rounded-2xl p-6">
-                            <h2 className="text-xl font-bold mb-4">3. Database Engine</h2>
-                            <select value={dbEngine} onChange={(e) => setDbEngine(e.target.value)} className="w-full bg-white/5 rounded-xl p-3 border border-white/10">
-                                <option>PostgreSQL</option>
-                                <option>MySQL</option>
-                                <option>Redis</option>
-                            </select>
-                        </div>
-                    )}
                 </div>
 
                 {/* Summary Sidebar */}
@@ -165,7 +145,7 @@ export default function NewService() {
                             {isDeploying ? (
                                 <>
                                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    Deploying...
+                                    Starting order...
                                 </>
                             ) : (
                                 <>Deploy Resource</>
