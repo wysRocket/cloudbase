@@ -1,60 +1,187 @@
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { createAdminClient, createUserClient } from "../_shared/supabase.ts";
 
+type RequestBody = {
+	planCode?: string;
+	region?: string;
+	quantity?: number;
+	metadata?: Record<string, unknown>;
+};
+
+function normalizePlanCode(value: unknown) {
+	return String(value || "").trim().toLowerCase();
+}
+
+function normalizeRegion(value: unknown) {
+	return String(value || "").trim().toLowerCase();
+}
+
+function normalizeQuantity(value: unknown) {
+	const parsed = Number(value);
+	return Number.isInteger(parsed) ? parsed : NaN;
+}
+
 Deno.serve(async (request) => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(request) });
-  if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, request);
+	if (request.method === "OPTIONS") {
+		return new Response("ok", { headers: getCorsHeaders(request) });
+	}
 
-  try {
-    const authHeader = request.headers.get("Authorization");
-    const userClient = createUserClient(authHeader);
-    const adminClient = createAdminClient();
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) return jsonResponse({ error: "You must be signed in to deploy." }, 401, request);
+	if (request.method !== "POST") {
+		return jsonResponse({ error: "Method not allowed." }, 405, request);
+	}
 
-    const body = await request.json();
-    const sku = String(body?.sku || "").trim();
-    const region = String(body?.region || "").trim();
-    if (!sku || !region) return jsonResponse({ error: "sku and region are required." }, 400, request);
+	try {
+		const authHeader = request.headers.get("Authorization");
+		const userClient = createUserClient(authHeader);
+		const adminClient = createAdminClient();
 
-    const { data: catalog, error: catalogError } = await adminClient
-      .from("reseller_skus")
-      .select("sku, price_minor, currency")
-      .eq("sku", sku)
-      .eq("is_active", true)
-      .maybeSingle();
-    if (catalogError) return jsonResponse({ error: "Failed to load SKU.", details: catalogError.message }, 500, request);
-    if (!catalog) return jsonResponse({ error: "Unknown SKU." }, 404, request);
+		const {
+			data: { user },
+			error: userError,
+		} = await userClient.auth.getUser();
 
-    const { data: order, error: orderError } = await adminClient
-      .from("orders")
-      .insert({ user_id: user.id, status: "pending", total_minor: catalog.price_minor, currency: catalog.currency })
-      .select("id, total_minor, currency")
-      .single();
-    if (orderError || !order) return jsonResponse({ error: "Failed to create order.", details: orderError?.message }, 500, request);
+		if (userError || !user) {
+			return jsonResponse(
+				{ error: "You must be signed in to start an order." },
+				401,
+				request,
+			);
+		}
 
-    const { data: orderItem, error: itemError } = await adminClient
-      .from("order_items")
-      .insert({ order_id: order.id, sku: catalog.sku, region, unit_price_minor: catalog.price_minor, quantity: 1 })
-      .select("id")
-      .single();
-    if (itemError || !orderItem) return jsonResponse({ error: "Failed to create order item.", details: itemError?.message }, 500, request);
+		const body = (await request.json()) as RequestBody;
+		const planCode = normalizePlanCode(body?.planCode);
+		const region = normalizeRegion(body?.region);
+		const quantity = normalizeQuantity(body?.quantity);
 
-    const paymentSession = {
-      provider: "mock",
-      checkout_url: `${new URL(request.url).origin}/dashboard/billing?order=${order.id}`,
-      amount_minor: order.total_minor,
-      currency: order.currency,
-    };
+		if (!planCode || !region || !Number.isFinite(quantity) || quantity < 1) {
+			return jsonResponse(
+				{
+					error:
+						"Invalid payload. planCode, region, and quantity (>= 1 integer) are required.",
+				},
+				422,
+				request,
+			);
+		}
 
-    const { error: sessionError } = await adminClient
-      .from("orders")
-      .update({ payment_session: paymentSession })
-      .eq("id", order.id);
-    if (sessionError) return jsonResponse({ error: "Failed to persist payment session.", details: sessionError.message }, 500, request);
+		const { data: serviceCatalog, error: catalogError } = await adminClient
+			.from("service_catalog")
+			.select("id, plan_code, region, unit_price_minor, currency, is_active")
+			.eq("plan_code", planCode)
+			.eq("region", region)
+			.eq("is_active", true)
+			.maybeSingle();
 
-    return jsonResponse({ orderId: order.id, orderItemId: orderItem.id, paymentSession }, 200, request);
-  } catch (error) {
-    return jsonResponse({ error: error instanceof Error ? error.message : "Unknown error." }, 500, request);
-  }
+		if (catalogError) {
+			return jsonResponse(
+				{ error: "Unable to validate catalog item.", details: catalogError.message },
+				500,
+				request,
+			);
+		}
+
+		if (!serviceCatalog) {
+			return jsonResponse(
+				{ error: "Invalid planCode or region for active service catalog." },
+				422,
+				request,
+			);
+		}
+
+		const unitPriceMinor = Number(serviceCatalog.unit_price_minor || 0);
+		const totalPriceMinor = unitPriceMinor * quantity;
+
+		const { data: order, error: orderError } = await adminClient
+			.from("orders")
+			.insert({
+				user_id: user.id,
+				status: "pending_payment",
+				total_price_minor: totalPriceMinor,
+				currency: serviceCatalog.currency,
+				metadata: body?.metadata || {},
+			})
+			.select("id, status, total_price_minor, currency")
+			.single();
+
+		if (orderError || !order) {
+			return jsonResponse(
+				{ error: "Unable to create order.", details: orderError?.message },
+				500,
+				request,
+			);
+		}
+
+		const { data: orderItem, error: itemError } = await adminClient
+			.from("order_items")
+			.insert({
+				order_id: order.id,
+				service_catalog_id: serviceCatalog.id,
+				plan_code: serviceCatalog.plan_code,
+				region: serviceCatalog.region,
+				quantity,
+				unit_price_minor: unitPriceMinor,
+				total_price_minor: totalPriceMinor,
+				currency: serviceCatalog.currency,
+			})
+			.select("id")
+			.single();
+
+		if (itemError || !orderItem) {
+			await adminClient.from("orders").delete().eq("id", order.id);
+
+			return jsonResponse(
+				{
+					error: "Unable to create order items; rolled back order.",
+					details: itemError?.message,
+				},
+				500,
+				request,
+			);
+		}
+
+		await adminClient.from("provision_events").insert([
+			{
+				order_id: order.id,
+				event_type: "order.created",
+				status: "queued",
+				payload: {
+					planCode,
+					region,
+					quantity,
+				},
+			},
+			{
+				order_id: order.id,
+				event_type: "payment.session_requested",
+				status: "queued",
+				payload: {
+					totalPriceMinor,
+					currency: serviceCatalog.currency,
+				},
+			},
+		]);
+
+		const paymentIntentReference = `order_${order.id}`;
+
+		return jsonResponse(
+			{
+				orderId: order.id,
+				status: order.status,
+				totalPriceMinor,
+				currency: serviceCatalog.currency,
+				paymentSession: {
+					provider: "internal",
+					paymentIntentReference,
+				},
+			},
+			200,
+			request,
+		);
+	} catch (error) {
+		return jsonResponse(
+			{ error: error instanceof Error ? error.message : "Unknown error." },
+			500,
+			request,
+		);
+	}
 });
