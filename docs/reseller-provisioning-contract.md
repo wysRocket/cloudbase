@@ -43,15 +43,13 @@ Response:
 ### `provider-provision`
 **POST** `/provider-provision`
 
+Enqueues a provisioning job for an existing `service_resources` row. The actual provisioning is handled asynchronously by the `provision-job-worker`.
+
 Request:
 ```json
 {
-  "jobId": "<uuid>",
   "resourceId": "<uuid>",
-  "serviceType": "vps",
-  "planCode": "do-vps-basic-2vcpu-4gb",
-  "region": "nyc3",
-  "config": {}
+  "idempotencyKey": "provision-<uuid>"
 }
 ```
 
@@ -59,9 +57,8 @@ Response:
 ```json
 {
   "status": "accepted",
-  "provider": "digitalocean",
-  "providerResourceId": "1234567890",
-  "normalizedStatus": "provisioning"
+  "jobId": "<uuid>",
+  "deduplicated": false
 }
 ```
 
@@ -98,7 +95,6 @@ Request:
 Response:
 ```json
 {
-  "providerStatus": "active",
   "normalizedStatus": "active",
   "updatedAt": "2026-05-01T10:00:00Z"
 }
@@ -110,7 +106,7 @@ Response:
 2. Payment webhook or polling marks order `paid`.
 3. Backend creates `service_resources` row in `pending`.
 4. Backend enqueues `provision_jobs` with action `provision`.
-5. `provision-job-worker` picks queued jobs and calls `provider-provision`.
+5. `provision-job-worker` picks queued jobs and executes the provider provisioning/lifecycle action directly (for DigitalOcean this is handled via `provisionResource` / `executeLifecycleAction`).
 6. Job writes `provision_events` and updates `service_resources.status`.
 7. UI polls `service_resources` and displays status progression.
 

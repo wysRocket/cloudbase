@@ -74,7 +74,7 @@ export default function ResourceList({ typeFilter, title }) {
               </svg>
             </div>
             <h3 className="text-lg font-medium text-white mb-2">No {title.toLowerCase()} found</h3>
-            <p className="mb-6">You don"t have any {title.toLowerCase()} in this region.</p>
+            <p className="mb-6">You don't have any {title.toLowerCase()} in this region.</p>
             <Link to="/dashboard/new" className="text-cyan-400 hover:text-cyan-300 font-medium">Deploy Now &rarr;</Link>
           </div>
         ) : (

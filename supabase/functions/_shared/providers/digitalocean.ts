@@ -19,8 +19,8 @@ export type CatalogQuoteResult = {
 	unitPriceCents: number;
 	lineTotalCents: number;
 	availability: "available" | "unavailable";
-	serviceType: ServiceType;
-	billingCycle: BillingCycle;
+	serviceType: ServiceType | null;
+	billingCycle: BillingCycle | null;
 };
 
 type ServiceCatalogRow = {
@@ -79,8 +79,8 @@ export async function quoteFromCatalog(
 			unitPriceCents: 0,
 			lineTotalCents: 0,
 			availability: "unavailable",
-			serviceType: "vps",
-			billingCycle: "monthly",
+			serviceType: null,
+			billingCycle: null,
 		};
 	}
 

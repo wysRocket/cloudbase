@@ -29,10 +29,10 @@ Deno.serve(async (request) => {
 		let normalizedStatus = resource.status;
 		if (resource.provider_resource_id) {
 			normalizedStatus = await syncResourceStatus(String(resource.provider_resource_id));
-			await adminClient.from("service_resources").update({ status: normalizedStatus, updated_at: new Date().toISOString() }).eq("id", resourceId);
+			await adminClient.from("service_resources").update({ status: normalizedStatus }).eq("id", resourceId);
 		}
 
-		return jsonResponse({ providerStatus: normalizedStatus, normalizedStatus, updatedAt: new Date().toISOString() }, 200, request);
+		return jsonResponse({ normalizedStatus, updatedAt: new Date().toISOString() }, 200, request);
 	} catch (error) {
 		return jsonResponse({ error: error instanceof Error ? error.message : "Invalid request." }, 422, request);
 	}

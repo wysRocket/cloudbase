@@ -128,11 +128,64 @@ create index if not exists idx_provision_jobs_resource on public.provision_jobs 
 create index if not exists idx_provision_events_resource_created on public.provision_events (resource_id, created_at desc);
 
 alter table public.service_catalog enable row level security;
+alter table public.service_catalog force row level security;
 alter table public.orders enable row level security;
+alter table public.orders force row level security;
 alter table public.order_items enable row level security;
+alter table public.order_items force row level security;
 alter table public.service_resources enable row level security;
+alter table public.service_resources force row level security;
 alter table public.provision_jobs enable row level security;
+alter table public.provision_jobs force row level security;
 alter table public.provision_events enable row level security;
+alter table public.provision_events force row level security;
+
+-- set_updated_at triggers for tables that have an updated_at column
+drop trigger if exists set_service_catalog_updated_at on public.service_catalog;
+create trigger set_service_catalog_updated_at
+  before update on public.service_catalog
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists set_orders_updated_at on public.orders;
+create trigger set_orders_updated_at
+  before update on public.orders
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists set_service_resources_updated_at on public.service_resources;
+create trigger set_service_resources_updated_at
+  before update on public.service_resources
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists set_provision_jobs_updated_at on public.provision_jobs;
+create trigger set_provision_jobs_updated_at
+  before update on public.provision_jobs
+  for each row execute function public.set_updated_at();
+
+-- Revoke all default privileges and grant minimal access to anon/authenticated
+revoke all on table public.service_catalog from anon, authenticated;
+revoke all on table public.orders from anon, authenticated;
+revoke all on table public.order_items from anon, authenticated;
+revoke all on table public.service_resources from anon, authenticated;
+revoke all on table public.provision_jobs from anon, authenticated;
+revoke all on table public.provision_events from anon, authenticated;
+
+-- authenticated users: read-only for catalog; read + insert for orders/items/resources; read-only for jobs/events
+grant select on table public.service_catalog to authenticated;
+grant select, insert on table public.orders to authenticated;
+grant select on table public.order_items to authenticated;
+grant select, insert on table public.service_resources to authenticated;
+grant select on table public.provision_jobs to authenticated;
+grant select on table public.provision_events to authenticated;
+
+-- service_role needs full access for Edge Functions (createAdminClient bypasses RLS but still needs table grants)
+grant select, insert, update, delete on table public.service_catalog to service_role;
+grant select, insert, update, delete on table public.orders to service_role;
+grant select, insert, update, delete on table public.order_items to service_role;
+grant select, insert, update, delete on table public.service_resources to service_role;
+grant select, insert, update, delete on table public.provision_jobs to service_role;
+grant select, insert, update, delete on table public.provision_events to service_role;
+
+-- RLS policies
 
 create policy "service_catalog_readable_by_authenticated"
   on public.service_catalog
@@ -140,16 +193,23 @@ create policy "service_catalog_readable_by_authenticated"
   to authenticated
   using (is_active = true);
 
-create policy "orders_owned_by_user"
+-- Orders: users can read their own orders and create new ones (status/payment fields are server-controlled)
+create policy "orders_readable_by_owner"
   on public.orders
-  for all
+  for select
   to authenticated
-  using (auth.uid() = user_id)
+  using (auth.uid() = user_id);
+
+create policy "orders_insertable_by_owner"
+  on public.orders
+  for insert
+  to authenticated
   with check (auth.uid() = user_id);
 
-create policy "order_items_owned_via_order"
+-- Order items: users can read items belonging to their own orders; inserts and mutations are server-side only
+create policy "order_items_readable_via_order"
   on public.order_items
-  for all
+  for select
   to authenticated
   using (
     exists (
@@ -158,21 +218,20 @@ create policy "order_items_owned_via_order"
       where o.id = order_items.order_id
         and o.user_id = auth.uid()
     )
-  )
-  with check (
-    exists (
-      select 1
-      from public.orders o
-      where o.id = order_items.order_id
-        and o.user_id = auth.uid()
-    )
   );
 
-create policy "resources_owned_by_user"
+-- Service resources: users can read their own and create new ones;
+-- status/provider_resource_id/connection_details are managed by backend workers only
+create policy "resources_readable_by_owner"
   on public.service_resources
-  for all
+  for select
   to authenticated
-  using (auth.uid() = user_id)
+  using (auth.uid() = user_id);
+
+create policy "resources_insertable_by_owner"
+  on public.service_resources
+  for insert
+  to authenticated
   with check (auth.uid() = user_id);
 
 create policy "provision_jobs_owned_via_resource"

@@ -60,10 +60,10 @@ Deno.serve(async (request) => {
 
 			await adminClient
 				.from("service_resources")
-				.update({ status: targetStatus, provider_resource_id: providerResourceId, updated_at: new Date().toISOString() })
+				.update({ status: targetStatus, provider_resource_id: providerResourceId })
 				.eq("id", job.resource_id);
 
-			await adminClient.from("provision_jobs").update({ status: "succeeded", updated_at: new Date().toISOString(), last_error: null }).eq("id", job.id);
+			await adminClient.from("provision_jobs").update({ status: "succeeded", last_error: null, locked_at: null, locked_by: null }).eq("id", job.id);
 			await adminClient.from("provision_events").insert({
 				job_id: job.id,
 				resource_id: job.resource_id,
@@ -84,7 +84,8 @@ Deno.serve(async (request) => {
 				attempt_count: nextAttempt,
 				next_run_at: new Date(Date.now() + nextAttempt * 60_000).toISOString(),
 				last_error: error instanceof Error ? error.message : "Unknown worker error",
-				updated_at: new Date().toISOString(),
+				locked_at: null,
+				locked_by: null,
 			}).eq("id", job.id);
 
 			await adminClient.from("provision_events").insert({
