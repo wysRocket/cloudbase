@@ -73,7 +73,9 @@ export async function provisionResource(args: ProvisionArgs): Promise<{ provider
 
 	if (args.serviceType === "kubernetes") {
 		const version = String(args.metadata.version || "1.30");
-		const nodeSize = String(args.metadata.nodeSize || args.metadata.node_size || "s-2vcpu-4gb");
+		const nodeSize = String(
+			args.metadata.nodeSize || args.metadata.node_size || "s-2vcpu-4gb",
+		);
 		const nodeCount = Number(args.metadata.nodeCount ?? args.metadata.node_count ?? 3);
 
 		if (!Number.isInteger(nodeCount) || nodeCount < 1 || nodeCount > 100) {

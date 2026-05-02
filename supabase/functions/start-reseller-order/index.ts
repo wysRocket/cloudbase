@@ -66,7 +66,9 @@ Deno.serve(async (request) => {
 
 		const { data: serviceCatalog, error: catalogError } = await adminClient
 			.from("service_catalog")
-			.select("id, plan_code, region, unit_price_minor, currency, is_active")
+			.select(
+				"id, plan_code, region, unit_price_minor, currency, is_active, service_type, metadata",
+			)
 			.eq("plan_code", planCode)
 			.eq("region", region)
 			.eq("is_active", true)
@@ -117,11 +119,13 @@ Deno.serve(async (request) => {
 				order_id: order.id,
 				service_catalog_id: serviceCatalog.id,
 				plan_code: serviceCatalog.plan_code,
+				service_type: serviceCatalog.service_type,
 				region: serviceCatalog.region,
 				quantity,
 				unit_price_minor: unitPriceMinor,
 				total_price_minor: totalPriceMinor,
 				currency: serviceCatalog.currency,
+				config: (serviceCatalog.metadata || {}) as Record<string, unknown>,
 			})
 			.select("id")
 			.single();
