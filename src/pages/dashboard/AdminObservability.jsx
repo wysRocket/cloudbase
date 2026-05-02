@@ -238,7 +238,7 @@ export default function AdminObservability() {
 		.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
 	const suspiciousEvents = transactions.filter(
-		(tx) => (tx.status || "Completed") !== "Completed",
+		(tx) => (tx.status || "completed").toLowerCase() !== "completed",
 	).length;
 
 	// ─── Cashflow series (6 months) ──────────────────────────────────────────────
@@ -984,7 +984,7 @@ export default function AdminObservability() {
 											? new Date(tx.created_at).toLocaleDateString()
 											: "N/A"}
 									</p>
-									{tx.status && tx.status !== "Completed" && (
+									{tx.status && tx.status && tx.status.toLowerCase() !== "completed" && (
 										<span className="text-[10px] text-red-400 bg-red-500/10 px-1 py-0.5 rounded">
 											{tx.status}
 										</span>
