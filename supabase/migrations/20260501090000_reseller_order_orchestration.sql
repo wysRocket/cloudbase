@@ -66,7 +66,12 @@ begin
 end;
 $$;
 
-drop trigger if exists service_resources_requires_paid_order on public.service_resources;
+do $$
+begin
+  if exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'service_resources') then
+    drop trigger if exists service_resources_requires_paid_order on public.service_resources;
+  end if;
+end $$;
 create trigger service_resources_requires_paid_order
 before insert or update on public.service_resources
 for each row execute function public.ensure_paid_order_item_for_service_resource();

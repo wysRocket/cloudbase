@@ -113,7 +113,7 @@ export default function ResourceList({ typeFilter, title }) {
                           <button onClick={() => runAction(res.id, "suspend")} disabled={actionState[res.id + ":suspend"]} className="text-xs px-2 py-1 rounded bg-white/5 text-amber-300 disabled:opacity-50">Suspend</button>
                           <button onClick={() => runAction(res.id, "resume")} disabled={actionState[res.id + ":resume"]} className="text-xs px-2 py-1 rounded bg-white/5 text-green-300 disabled:opacity-50">Resume</button>
                           <button onClick={() => runAction(res.id, "delete")} disabled={actionState[res.id + ":delete"]} className="text-xs px-2 py-1 rounded bg-white/5 text-red-300 disabled:opacity-50">Delete</button>
-                          <button onClick={() => runSync(res.id)} disabled={actionState[res.id + ":sync']} className="text-xs px-2 py-1 rounded bg-white/5 text-cyan-300 disabled:opacity-50">Sync</button>
+                          <button onClick={() => runSync(res.id)} disabled={actionState[res.id + ":sync"]} className="text-xs px-2 py-1 rounded bg-white/5 text-cyan-300 disabled:opacity-50">Sync</button>
                         </div>
                         {actionError[res.id] && <p className="text-[11px] text-red-400 mt-1">{actionError[res.id]}</p>}
                       </td>

@@ -41,7 +41,12 @@ begin
 end;
 $$;
 
-drop trigger if exists set_provision_jobs_updated_at on public.provision_jobs;
+do $$
+begin
+  if exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'provision_jobs') then
+    drop trigger if exists set_provision_jobs_updated_at on public.provision_jobs;
+  end if;
+end $$;
 create trigger set_provision_jobs_updated_at
 before update on public.provision_jobs
 for each row execute function public.set_provision_jobs_updated_at();

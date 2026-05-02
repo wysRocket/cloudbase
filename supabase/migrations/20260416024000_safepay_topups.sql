@@ -43,7 +43,12 @@ begin
 end;
 $$;
 
-drop trigger if exists on_auth_user_created on auth.users;
+do $$
+begin
+  if exists (select 1 from information_schema.tables where table_schema = 'auth' and table_name = 'users') then
+    drop trigger if exists on_auth_user_created on auth.users;
+  end if;
+end $$;
 
 create trigger on_auth_user_created
 after insert on auth.users
@@ -124,7 +129,12 @@ create index if not exists credit_transactions_user_id_idx
 create index if not exists credit_transactions_created_at_idx
   on public.credit_transactions (created_at desc);
 
-drop trigger if exists payment_orders_set_updated_at on public.payment_orders;
+do $$
+begin
+  if exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'payment_orders') then
+    drop trigger if exists payment_orders_set_updated_at on public.payment_orders;
+  end if;
+end $$;
 create trigger payment_orders_set_updated_at
 before update on public.payment_orders
 for each row execute function public.set_updated_at();
