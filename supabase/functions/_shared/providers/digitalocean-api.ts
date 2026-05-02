@@ -158,19 +158,23 @@ export async function executeLifecycleAction(args: { action: string; providerRes
 	}
 
 	if (/^[0-9a-f-]{36}$/i.test(id)) {
-		if (args.action !== "delete") {
-			throw new Error(`Unsupported lifecycle action '${args.action}'.`);
+		switch (args.action) {
+			case "delete":
+				await apiRequest(`/kubernetes/clusters/${id}`, { method: "DELETE" });
+				return "deleted";
+			default:
+				throw new Error(`Unsupported lifecycle action '${args.action}'.`);
 		}
-		await apiRequest(`/kubernetes/clusters/${id}`, { method: "DELETE" });
-		return "deleted";
 	}
 
 	if (/^[0-9a-f]{16,64}$/i.test(id)) {
-		if (args.action !== "delete") {
-			throw new Error(`Unsupported lifecycle action '${args.action}'.`);
+		switch (args.action) {
+			case "delete":
+				await apiRequest(`/databases/${id}`, { method: "DELETE" });
+				return "deleted";
+			default:
+				throw new Error(`Unsupported lifecycle action '${args.action}'.`);
 		}
-		await apiRequest(`/databases/${id}`, { method: "DELETE" });
-		return "deleted";
 	}
 
 	throw new Error("Invalid provider resource ID format.");
