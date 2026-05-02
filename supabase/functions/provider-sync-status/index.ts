@@ -33,7 +33,11 @@ Deno.serve(async (request) => {
 				serviceType: String(resource.service_type),
 			});
 			normalizedStatus = syncResult.status;
-			await adminClient.from("service_resources").update({ status: normalizedStatus }).eq("id", resourceId);
+			const updatePayload: Record<string, unknown> = { status: normalizedStatus };
+			if (syncResult.connectionDetails) {
+				updatePayload.connection_details = syncResult.connectionDetails;
+			}
+			await adminClient.from("service_resources").update(updatePayload).eq("id", resourceId);
 		}
 
 		return jsonResponse({ normalizedStatus, updatedAt: new Date().toISOString() }, 200, request);
