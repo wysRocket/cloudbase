@@ -1,3 +1,5 @@
+import type { LifecycleArgs, ProvisionArgs, ProvisionResult, SyncArgs, SyncResult } from "./digitalocean-api.ts";
+
 const DEFAULT_K8S_VERSION = "1.32.2-do.0";
 const DEFAULT_NODE_SIZE = "s-2vcpu-4gb";
 const BASE_URL = "https://api.digitalocean.com/v2";
@@ -30,33 +32,6 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return payload as T;
 }
 
-interface ProvisionArgs {
-  providerResourceId: string;
-  displayName: string;
-  region: string;
-  metadata: Record<string, string>;
-}
-
-interface ProvisionResult {
-  providerResourceId: string;
-  status: string;
-  connectionDetails?: Record<string, string>;
-}
-
-interface LifecycleArgs {
-  providerResourceId: string;
-  action: string;
-}
-
-interface SyncArgs {
-  providerResourceId: string;
-}
-
-interface SyncResult {
-  status: string;
-  connectionDetails?: Record<string, string>;
-}
-
 function mapState(state: string): string {
   if (state === "running") return "active";
   if (state === "degraded") return "error";
@@ -83,7 +58,7 @@ export async function provisionK8s(args: ProvisionArgs): Promise<ProvisionResult
   const cluster = created.kubernetes_cluster;
   return {
     providerResourceId: cluster.id,
-    status: mapState(cluster.status.state),
+    normalizedStatus: mapState(cluster.status.state),
   };
 }
 

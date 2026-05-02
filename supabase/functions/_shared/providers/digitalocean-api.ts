@@ -52,6 +52,26 @@ export type ProvisionArgs = {
 	metadata: Record<string, unknown>;
 };
 
+export type ProvisionResult = {
+	providerResourceId: string;
+	normalizedStatus: string;
+	connectionDetails?: Record<string, string>;
+};
+
+export type LifecycleArgs = {
+	providerResourceId: string;
+	action: string;
+};
+
+export type SyncArgs = {
+	providerResourceId: string;
+};
+
+export type SyncResult = {
+	status: string;
+	connectionDetails?: Record<string, string>;
+};
+
 export async function provisionResource(args: ProvisionArgs): Promise<{ providerResourceId: string; normalizedStatus: string }> {
 	if (args.serviceType !== "vps") {
 		throw new Error(`Provisioning for service type '${args.serviceType}' is not implemented yet.`);

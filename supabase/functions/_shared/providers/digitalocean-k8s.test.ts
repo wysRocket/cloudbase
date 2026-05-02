@@ -39,7 +39,7 @@ describe("provisionK8s", () => {
     expect(body.node_pools[0].count).toBe(1);
     expect(body.version).toBe("1.32.2-do.0");
 
-    expect(result).toEqual({ providerResourceId: "k8s-abc123", status: "provisioning" });
+    expect(result).toEqual({ providerResourceId: "k8s-abc123", normalizedStatus: "provisioning" });
   });
 
   it("uses default node size when metadata.nodeSize is absent", async () => {
@@ -74,6 +74,8 @@ describe("executeK8sLifecycle", () => {
       executeK8sLifecycle({ providerResourceId: "k8s-abc123", action: "suspend" }),
     ).rejects.toThrow("cannot be suspended");
 
+    fetchSpy.mockClear();
+
     await expect(
       executeK8sLifecycle({ providerResourceId: "k8s-abc123", action: "resume" }),
     ).rejects.toThrow("cannot be suspended");
@@ -90,5 +92,17 @@ describe("syncK8sStatus", () => {
     const [url] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(url).toBe("https://api.digitalocean.com/v2/kubernetes/clusters/k8s-abc123");
     expect(result).toEqual({ status: "active" });
+  });
+
+  it("maps degraded to error", async () => {
+    mockFetch({ kubernetes_cluster: { id: "k8s-abc123", status: { state: "degraded" } } });
+    const result = await syncK8sStatus({ providerResourceId: "k8s-abc123" });
+    expect(result.status).toBe("error");
+  });
+
+  it("maps unknown state to provisioning", async () => {
+    mockFetch({ kubernetes_cluster: { id: "k8s-abc123", status: { state: "new" } } });
+    const result = await syncK8sStatus({ providerResourceId: "k8s-abc123" });
+    expect(result.status).toBe("provisioning");
   });
 });
