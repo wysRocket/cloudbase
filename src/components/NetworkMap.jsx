@@ -34,9 +34,9 @@ export default function NetworkMap() {
                     }}></div>
 
                     {/* Connection Lines (A few decorative ones) */}
-                    <svg className="absolute inset-0 w-full h-full opacity-30 pointer-events-none">
+                    <svg className="absolute inset-0 w-full h-full opacity-30 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
                         <motion.path
-                            d="M 25% 35% L 50% 30% L 80% 40%"
+                            d="M 25 35 L 50 30 L 80 40"
                             fill="none"
                             stroke="#22d3ee"
                             strokeWidth="1"
@@ -45,7 +45,7 @@ export default function NetworkMap() {
                             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                         />
                         <motion.path
-                            d="M 50% 30% L 75% 65%"
+                            d="M 50 30 L 75 65"
                             fill="none"
                             stroke="#22d3ee"
                             strokeWidth="1"

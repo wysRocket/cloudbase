@@ -64,7 +64,12 @@ begin
 end;
 $$;
 
-drop trigger if exists trg_provider_provision_jobs_paid_guard on public.provider_provision_jobs;
+do $$
+begin
+  if exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'provider_provision_jobs') then
+    drop trigger if exists trg_provider_provision_jobs_paid_guard on public.provider_provision_jobs;
+  end if;
+end $$;
 create trigger trg_provider_provision_jobs_paid_guard
 before insert or update of order_id on public.provider_provision_jobs
 for each row execute function public.reseller_order_must_be_paid();
