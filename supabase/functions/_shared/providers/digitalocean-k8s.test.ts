@@ -37,6 +37,7 @@ describe("provisionK8s", () => {
     expect(body.region).toBe("nyc3");
     expect(body.node_pools[0].size).toBe("s-2vcpu-4gb");
     expect(body.node_pools[0].count).toBe(1);
+    expect(body.version).toBe("1.32.2-do.0");
 
     expect(result).toEqual({ providerResourceId: "k8s-abc123", status: "provisioning" });
   });
@@ -71,6 +72,10 @@ describe("executeK8sLifecycle", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     await expect(
       executeK8sLifecycle({ providerResourceId: "k8s-abc123", action: "suspend" }),
+    ).rejects.toThrow("cannot be suspended");
+
+    await expect(
+      executeK8sLifecycle({ providerResourceId: "k8s-abc123", action: "resume" }),
     ).rejects.toThrow("cannot be suspended");
 
     expect(fetchSpy).not.toHaveBeenCalled();
