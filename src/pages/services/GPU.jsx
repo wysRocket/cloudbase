@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { getServicePlans } from "../../data/serviceCatalog";
 
 const fadeInUp = {
 	initial: { opacity: 0, y: 30 },
@@ -9,6 +10,7 @@ const fadeInUp = {
 };
 
 export default function GPU() {
+	const gpus = getServicePlans("GPU Servers");
 	return (
 		<>
 			{/* Hero */}
@@ -78,39 +80,7 @@ export default function GPU() {
 						Available GPUs
 					</h2>
 					<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-						{[
-							{
-								name: "NVIDIA T4",
-								vram: "16GB GDDR6",
-								useCase: "Inference, Light Training",
-								price: 0.5,
-							},
-							{
-								name: "NVIDIA A10G",
-								vram: "24GB GDDR6",
-								useCase: "Training, Inference",
-								price: 1.0,
-							},
-							{
-								name: "NVIDIA A100",
-								vram: "40GB/80GB HBM2e",
-								useCase: "Heavy Training, Research",
-								price: 3.0,
-								popular: true,
-							},
-							{
-								name: "NVIDIA H100",
-								vram: "80GB HBM3",
-								useCase: "LLM Training, Cutting-edge AI",
-								price: 5.0,
-							},
-							{
-								name: "Multi-GPU Cluster",
-								vram: "Custom",
-								useCase: "Distributed Training",
-								price: "Custom",
-							},
-						].map((gpu, i) => (
+						{gpus.map((gpu, i) => (
 							<div
 								key={i}
 								className={`glass p-8 rounded-2xl ${gpu.popular ? "border-cyan-500/50 bg-cyan-950/20" : ""}`}
@@ -120,16 +90,12 @@ export default function GPU() {
 										Most Popular
 									</div>
 								)}
-								<h3 className="text-2xl font-bold mb-2">{gpu.name}</h3>
-								<p className="text-cyan-400 mb-4">{gpu.vram}</p>
-								<p className="text-slate-400 text-sm mb-6">{gpu.useCase}</p>
+								<h3 className="text-2xl font-bold mb-2">{gpu.provider_sku}</h3>
+								<p className="text-cyan-400 mb-4">{gpu.quota.vram}</p>
+								<p className="text-slate-400 text-sm mb-6">{gpu.quota.useCase}</p>
 								<div className="text-3xl font-bold mb-6">
-									{typeof gpu.price === "number" ? `€${gpu.price}` : gpu.price}
-									{typeof gpu.price === "number" && (
-										<span className="text-sm font-normal text-slate-500">
-											/hour
-										</span>
-									)}
+									€{gpu.sell_price}
+									<span className="text-sm font-normal text-slate-500">/hour</span>
 								</div>
 								<Link
 									to="/contact"

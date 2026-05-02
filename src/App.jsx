@@ -7,6 +7,7 @@ import Contact from "./pages/Contact";
 import Cookies from "./pages/Cookies";
 import Docs from "./pages/Docs";
 import AdminObservability from "./pages/dashboard/AdminObservability";
+import AdminServiceCatalog from "./pages/dashboard/AdminServiceCatalog";
 import Billing from "./pages/dashboard/Billing";
 import Dashboard from "./pages/dashboard/Dashboard";
 import NewService from "./pages/dashboard/NewService";
@@ -194,6 +195,7 @@ function App() {
 								<Route path="billing" element={<Billing />} />
 								<Route path="settings" element={<Settings />} />
 								<Route path="admin" element={<AdminObservability />} />
+								<Route path="admin/catalog" element={<AdminServiceCatalog />} />
 							</Routes>
 						</DashboardLayout>
 					}

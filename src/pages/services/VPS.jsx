@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { getServicePlans } from "../../data/serviceCatalog";
 
 const fadeInUp = {
 	initial: { opacity: 0, y: 30 },
@@ -9,49 +10,7 @@ const fadeInUp = {
 };
 
 export default function VPS() {
-	const plans = [
-		{
-			name: "Micro",
-			ram: "1GB",
-			storage: "25GB",
-			cpu: "1 vCPU",
-			bandwidth: "1TB",
-			price: 5,
-		},
-		{
-			name: "Standard",
-			ram: "2GB",
-			storage: "50GB",
-			cpu: "1 vCPU",
-			bandwidth: "2TB",
-			price: 10,
-			popular: true,
-		},
-		{
-			name: "Premium",
-			ram: "4GB",
-			storage: "80GB",
-			cpu: "2 vCPU",
-			bandwidth: "4TB",
-			price: 20,
-		},
-		{
-			name: "Pro",
-			ram: "8GB",
-			storage: "160GB",
-			cpu: "4 vCPU",
-			bandwidth: "5TB",
-			price: 40,
-		},
-		{
-			name: "Enterprise",
-			ram: "16GB",
-			storage: "320GB",
-			cpu: "8 vCPU",
-			bandwidth: "6TB",
-			price: 80,
-		},
-	];
+	const plans = getServicePlans("VPS");
 
 	return (
 		<>
@@ -200,19 +159,19 @@ export default function VPS() {
 										className="border-b border-white/5 hover:bg-white/5 transition-colors"
 									>
 										<td className="p-6 font-bold">
-											{plan.name}
+											{plan.sku.replace("vps-", "").toUpperCase()}
 											{plan.popular && (
 												<span className="ml-2 text-xs bg-cyan-500 text-black px-2 py-1 rounded-full">
 													Popular
 												</span>
 											)}
 										</td>
-										<td className="p-6 text-slate-400">{plan.ram}</td>
-										<td className="p-6 text-slate-400">{plan.storage}</td>
-										<td className="p-6 text-slate-400">{plan.cpu}</td>
-										<td className="p-6 text-slate-400">{plan.bandwidth}</td>
+										<td className="p-6 text-slate-400">{plan.quota.ram}</td>
+										<td className="p-6 text-slate-400">{plan.quota.storage}</td>
+										<td className="p-6 text-slate-400">{plan.quota.cpu}</td>
+										<td className="p-6 text-slate-400">{plan.quota.bandwidth}</td>
 										<td className="p-6 font-bold text-cyan-400">
-											€{plan.price}/mo
+											€{plan.sell_price}/mo
 										</td>
 										<td className="p-6">
 											<Link
