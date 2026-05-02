@@ -14,6 +14,12 @@ For reseller/provisioning style requests, enforce server-side allowlists for:
 
 Current allowlist enforcement is implemented in `create-payment-session`.
 
+## Provider credentials (DigitalOcean)
+Provisioning and status sync rely on `DIGITALOCEAN_API_TOKEN` being present in the Edge Function environment.
+
+## Worker authentication
+The `provision-job-worker` function requires `PROVISION_WORKER_SECRET` and rejects calls that do not provide a matching `x-worker-secret` header.
+
 ## Per-user quota / rate limiting
 Use `checkRateLimit(userId, endpoint, maxRequests, windowMs)` for mutable/lifecycle endpoints.
 - `create-payment-session`: 10 requests/minute/user.
