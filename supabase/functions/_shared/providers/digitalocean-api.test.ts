@@ -18,10 +18,12 @@ vi.mock("./digitalocean-db.ts", () => ({
   syncDbStatus: vi.fn().mockResolvedValue({ status: "active" }),
 }));
 
-import { provisionResource, syncResourceStatus } from "./digitalocean-api";
+import { provisionResource, syncResourceStatus, executeLifecycleAction } from "./digitalocean-api";
 import { provisionDroplet, syncDropletStatus } from "./digitalocean-droplet";
 import { provisionK8s } from "./digitalocean-k8s";
 import { provisionDb } from "./digitalocean-db";
+import { executeDropletLifecycle } from "./digitalocean-droplet";
+import { executeK8sLifecycle } from "./digitalocean-k8s";
 
 const baseArgs = {
   providerResourceId: "",
@@ -55,6 +57,30 @@ describe("provisionResource routing", () => {
 
   it('throws for unknown service type', async () => {
     await expect(provisionResource("unknown", baseArgs)).rejects.toThrow("Unknown service type: unknown");
+  });
+
+  it("routes game_server to provisionDroplet with serviceType forwarded", async () => {
+    const args = { providerResourceId: "", displayName: "game", region: "nyc3", metadata: {} };
+    await provisionResource("game_server", args);
+    expect(provisionDroplet).toHaveBeenCalledWith({ ...args, serviceType: "game_server" });
+  });
+});
+
+describe("executeLifecycleAction", () => {
+  it("routes vps to executeDropletLifecycle", async () => {
+    const args = { providerResourceId: "drop-1", action: "delete" };
+    await executeLifecycleAction("vps", args);
+    expect(executeDropletLifecycle).toHaveBeenCalledWith(args);
+  });
+
+  it("routes kubernetes to executeK8sLifecycle", async () => {
+    const args = { providerResourceId: "k8s-1", action: "delete" };
+    await executeLifecycleAction("kubernetes", args);
+    expect(executeK8sLifecycle).toHaveBeenCalledWith(args);
+  });
+
+  it("throws for unknown service type", async () => {
+    await expect(executeLifecycleAction("unknown", { providerResourceId: "x", action: "delete" })).rejects.toThrow("Unknown service type: unknown");
   });
 });
 

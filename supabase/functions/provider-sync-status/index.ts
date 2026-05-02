@@ -28,9 +28,10 @@ Deno.serve(async (request) => {
 
 		let normalizedStatus = resource.status;
 		if (resource.provider_resource_id) {
-			const syncResult = await syncResourceStatus(String(resource.service_type), {
+			const serviceType = String(resource.service_type);
+			const syncResult = await syncResourceStatus(serviceType, {
 				providerResourceId: String(resource.provider_resource_id),
-				serviceType: String(resource.service_type),
+				serviceType,
 			});
 			normalizedStatus = syncResult.status;
 			const updatePayload: Record<string, unknown> = { status: normalizedStatus };
@@ -42,6 +43,6 @@ Deno.serve(async (request) => {
 
 		return jsonResponse({ normalizedStatus, updatedAt: new Date().toISOString() }, 200, request);
 	} catch (error) {
-		return jsonResponse({ error: error instanceof Error ? error.message : "Invalid request." }, 422, request);
+		return jsonResponse({ error: error instanceof Error ? error.message : "Invalid request." }, 500, request);
 	}
 });
