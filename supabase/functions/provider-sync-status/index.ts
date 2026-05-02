@@ -19,7 +19,7 @@ Deno.serve(async (request) => {
 
 		const { data: resource, error } = await adminClient
 			.from("service_resources")
-			.select("id, status, updated_at, provider_resource_id")
+			.select("id, status, updated_at, provider_resource_id, service_type")
 			.eq("id", resourceId)
 			.eq("user_id", user.id)
 			.maybeSingle();
@@ -28,7 +28,11 @@ Deno.serve(async (request) => {
 
 		let normalizedStatus = resource.status;
 		if (resource.provider_resource_id) {
-			normalizedStatus = await syncResourceStatus(String(resource.provider_resource_id));
+			const syncResult = await syncResourceStatus(String(resource.service_type), {
+				providerResourceId: String(resource.provider_resource_id),
+				serviceType: String(resource.service_type),
+			});
+			normalizedStatus = syncResult.status;
 			await adminClient.from("service_resources").update({ status: normalizedStatus }).eq("id", resourceId);
 		}
 

@@ -1,122 +1,88 @@
-const BASE_URL = "https://api.digitalocean.com/v2";
+import { executeDropletLifecycle, provisionDroplet, syncDropletStatus } from "./digitalocean-droplet.ts";
+import { executeDbLifecycle, provisionDb, syncDbStatus } from "./digitalocean-db.ts";
+import { executeK8sLifecycle, provisionK8s, syncK8sStatus } from "./digitalocean-k8s.ts";
 
-function getToken() {
-	const token = Deno.env.get("DIGITALOCEAN_API_TOKEN");
-	if (!token) throw new Error("Missing DIGITALOCEAN_API_TOKEN.");
-	return token;
+export interface ProvisionArgs {
+  providerResourceId: string;
+  displayName: string;
+  region: string;
+  metadata: Record<string, string>;
+  serviceType?: string;
 }
 
-async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-	const response = await fetch(`${BASE_URL}${path}`, {
-		...init,
-		headers: {
-			Authorization: `Bearer ${getToken()}`,
-			"Content-Type": "application/json",
-			...(init?.headers || {}),
-		},
-	});
-
-	const text = await response.text();
-	let payload: unknown = null;
-	if (text) {
-		try {
-			payload = JSON.parse(text);
-		} catch {
-			payload = { raw: text };
-		}
-	}
-
-	if (!response.ok) {
-		throw new Error(`DigitalOcean API error ${response.status}: ${JSON.stringify(payload)}`);
-	}
-
-	return payload as T;
+export interface ProvisionResult {
+  providerResourceId: string;
+  normalizedStatus: string;
+  connectionDetails?: Record<string, string>;
 }
 
-/**
- * Normalize DigitalOcean droplet statuses to the app's public.resource_status enum values.
- * DO can return: "new" | "active" | "off" | "archive"
- */
-function normalizeDOStatus(status: string): string {
-	if (status === "active") return "active";
-	if (status === "off") return "suspended";
-	if (status === "archive") return "deleted";
-	// "new" and any other transitional states map to provisioning
-	return "provisioning";
+export interface LifecycleArgs {
+  providerResourceId: string;
+  action: string;
 }
 
-export type ProvisionArgs = {
-	serviceType: string;
-	region: string;
-	displayName: string;
-	metadata: Record<string, unknown>;
-};
-
-export type ProvisionResult = {
-	providerResourceId: string;
-	normalizedStatus: string;
-	connectionDetails?: Record<string, string>;
-};
-
-export type LifecycleArgs = {
-	providerResourceId: string;
-	action: string;
-};
-
-export type SyncArgs = {
-	providerResourceId: string;
-};
-
-export type SyncResult = {
-	status: string;
-	connectionDetails?: Record<string, string>;
-};
-
-export async function provisionResource(args: ProvisionArgs): Promise<{ providerResourceId: string; normalizedStatus: string }> {
-	if (args.serviceType !== "vps") {
-		throw new Error(`Provisioning for service type '${args.serviceType}' is not implemented yet.`);
-	}
-
-	const size = String(args.metadata.sizeSlug || "s-1vcpu-2gb");
-	const image = String(args.metadata.imageSlug || "ubuntu-22-04-x64");
-
-	const created = await apiRequest<{ droplet: { id: number; status: string } }>("/droplets", {
-		method: "POST",
-		body: JSON.stringify({
-			name: args.displayName,
-			region: args.region,
-			size,
-			image,
-			monitoring: true,
-		}),
-	});
-
-	return { providerResourceId: String(created.droplet.id), normalizedStatus: normalizeDOStatus(created.droplet.status) };
+export interface SyncArgs {
+  providerResourceId: string;
+  serviceType: string;
 }
 
-export async function executeLifecycleAction(args: { action: string; providerResourceId: string }): Promise<string> {
-	const dropletId = args.providerResourceId;
-	if (!/^\d+$/.test(dropletId)) {
-		throw new Error("Invalid provider resource ID format.");
-	}
-	switch (args.action) {
-		case "suspend":
-			await apiRequest(`/droplets/${dropletId}/actions`, { method: "POST", body: JSON.stringify({ type: "power_off" }) });
-			return "suspended";
-		case "resume":
-			await apiRequest(`/droplets/${dropletId}/actions`, { method: "POST", body: JSON.stringify({ type: "power_on" }) });
-			return "active";
-		case "delete":
-			await apiRequest(`/droplets/${dropletId}`, { method: "DELETE" });
-			return "deleted";
-		case "resize":
-			throw new Error("Resize action is not yet implemented. Please contact support for manual resizing.");
-		default:
-			throw new Error(`Unsupported lifecycle action '${args.action}'.`);
-	}
+export interface SyncResult {
+  status: string;
+  connectionDetails?: Record<string, string>;
 }
 
-export async function syncResourceStatus(providerResourceId: string): Promise<string> {
-	const result = await apiRequest<{ droplet: { status: string } }>(`/droplets/${providerResourceId}`);
-	return normalizeDOStatus(result.droplet.status);
+type ServiceType = "vps" | "gpu" | "game_server" | "kubernetes" | "database";
+
+export async function provisionResource(
+  serviceType: string,
+  args: ProvisionArgs,
+): Promise<ProvisionResult> {
+  switch (serviceType as ServiceType) {
+    case "vps":
+    case "gpu":
+    case "game_server":
+      return provisionDroplet({ ...args, serviceType });
+    case "kubernetes":
+      return provisionK8s(args);
+    case "database":
+      return provisionDb(args);
+    default:
+      throw new Error(`Unknown service type: ${serviceType}`);
+  }
+}
+
+export async function executeLifecycleAction(
+  serviceType: string,
+  args: LifecycleArgs,
+): Promise<string> {
+  switch (serviceType as ServiceType) {
+    case "vps":
+    case "gpu":
+    case "game_server":
+      return executeDropletLifecycle(args);
+    case "kubernetes":
+      return executeK8sLifecycle(args);
+    case "database":
+      return executeDbLifecycle(args);
+    default:
+      throw new Error(`Unknown service type: ${serviceType}`);
+  }
+}
+
+export async function syncResourceStatus(
+  serviceType: string,
+  args: SyncArgs,
+): Promise<SyncResult> {
+  switch (serviceType as ServiceType) {
+    case "vps":
+    case "gpu":
+    case "game_server":
+      return syncDropletStatus(args);
+    case "kubernetes":
+      return syncK8sStatus(args);
+    case "database":
+      return syncDbStatus(args);
+    default:
+      throw new Error(`Unknown service type: ${serviceType}`);
+  }
 }
