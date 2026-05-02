@@ -18,7 +18,14 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
     },
   });
   const text = await res.text();
-  const payload = text ? JSON.parse(text) : null;
+  let payload: unknown = null;
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = { raw: text };
+    }
+  }
   if (!res.ok) throw new Error(`DO API ${res.status}: ${JSON.stringify(payload)}`);
   return payload as T;
 }
@@ -91,6 +98,7 @@ export async function executeDropletLifecycle(args: LifecycleArgs): Promise<stri
 }
 
 export async function syncDropletStatus(args: SyncArgs): Promise<SyncResult> {
+  if (!/^\d+$/.test(args.providerResourceId)) throw new Error("Invalid droplet ID.");
   const result = await apiRequest<{
     droplet: { status: string; networks: { v4: { ip_address: string; type: string }[] } };
   }>(`/droplets/${args.providerResourceId}`);
