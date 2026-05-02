@@ -117,3 +117,6 @@ dist
 .pnp.*
 public/.DS_Store
 .DS_Store
+
+# Git worktrees
+.worktrees/
