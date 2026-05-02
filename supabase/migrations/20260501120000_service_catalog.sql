@@ -34,11 +34,9 @@ before update on public.service_catalog
 for each row execute function public.touch_service_catalog_updated_at();
 
 insert into public.service_catalog (sku, service_type, provider, provider_sku, region, base_cost, sell_price, billing_cycle, quota, margin_percent, active) values
-('vps-micro','VPS','Cloudbase','CB-VPS-MICRO','eu-central-1',3.25,5,'monthly','{"ram":"1GB","storage":"25GB","cpu":"1 vCPU","bandwidth":"1TB"}',53.85,true),
-('k8s-production','Kubernetes','Cloudbase','CB-K8S-PROD','us-east-1',72,100,'monthly','{"nodes":"3-10 nodes","cpu":"4 vCPU each","ram":"8GB each"}',38.89,true),
-('gpu-a100','GPU Servers','NVIDIA','A100-80GB','us-west-2',2.2,3,'hourly','{"vram":"40GB/80GB HBM2e","useCase":"Heavy Training, Research"}',36.36,true),
-('db-professional','Database','Cloudbase','CB-DB-PRO','eu-central-1',34,50,'monthly','{"ram":"4GB","storage":"50GB","connections":100}',47.06,true),
-('games-minecraft','Game Servers','Cloudbase','GAME-MC','eu-west-1',3.4,5,'monthly','{"game":"Minecraft","players":"Up to 200","icon":"⛏️"}',47.06,true)
+('vps-micro','vps','digitalocean','s-1vcpu-1gb','fra1',3.25,5,'monthly','{"ram":"1GB","storage":"25GB","cpu":"1 vCPU","bandwidth":"1TB","image":"ubuntu-22-04-x64"}',53.85,true),
+('k8s-production','kubernetes','digitalocean','do:kubernetes:cluster','nyc1',72,100,'monthly','{"version":"1.30","node_size":"s-2vcpu-4gb","node_count":3}',38.89,true),
+('db-professional','database','digitalocean','do:database:cluster','fra1',34,50,'monthly','{"engine":"pg","version":"16","size":"db-s-2vcpu-4gb","node_count":1}',47.06,true)
 on conflict (sku) do update set
   service_type = excluded.service_type,
   provider = excluded.provider,
