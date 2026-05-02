@@ -34,6 +34,7 @@ export function DashboardProvider({ children }) {
 
 	const [transactions, setTransactions] = useState(initialTransactions);
 
+	const balance = transactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
 	const [resourceEvents, setResourceEvents] = useState({});
 
