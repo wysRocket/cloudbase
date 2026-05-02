@@ -178,4 +178,42 @@ describe("syncDbStatus", () => {
       },
     });
   });
+
+  it("maps creating to provisioning", async () => {
+    mockFetch({
+      database: {
+        id: "db-abc123",
+        status: "creating",
+        connection: { host: "h", port: 5432, user: "u", password: "p", ssl: "require" },
+      },
+    });
+
+    const result = await syncDbStatus({ providerResourceId: "db-abc123" });
+    expect(result.status).toBe("provisioning");
+  });
+
+  it("maps unknown state to error", async () => {
+    mockFetch({
+      database: {
+        id: "db-abc123",
+        status: "errored",
+      },
+    });
+
+    const result = await syncDbStatus({ providerResourceId: "db-abc123" });
+    expect(result.status).toBe("error");
+  });
+
+  it("returns undefined connectionDetails when connection absent", async () => {
+    mockFetch({
+      database: {
+        id: "db-abc123",
+        status: "online",
+      },
+    });
+
+    const result = await syncDbStatus({ providerResourceId: "db-abc123" });
+    expect(result.status).toBe("active");
+    expect(result.connectionDetails).toBeUndefined();
+  });
 });

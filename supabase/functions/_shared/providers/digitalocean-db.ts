@@ -35,7 +35,7 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 
 function mapState(state: string): string {
   if (state === "online") return "active";
-  if (state === "creating" || state === "migrating" || state === "forking") return "provisioning";
+  if (state === "creating" || state === "migrating" || state === "forking" || state === "rebuilding" || state === "rebalancing") return "provisioning";
   return "error";
 }
 
