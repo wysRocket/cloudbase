@@ -40,6 +40,7 @@ Deno.serve(async (request) => {
 			.from("provision_jobs")
 			.select("id, status")
 			.eq("idempotency_key", input.idempotencyKey)
+			.eq("resource_id", input.resourceId)
 			.maybeSingle();
 
 		if (existingJob) {

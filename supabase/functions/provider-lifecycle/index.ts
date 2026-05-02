@@ -37,6 +37,8 @@ Deno.serve(async (request) => {
 			.from("provision_jobs")
 			.select("id")
 			.eq("idempotency_key", input.idempotencyKey)
+			.eq("resource_id", input.resourceId)
+			.eq("action", input.action)
 			.maybeSingle();
 		if (existingJob) return jsonResponse({ status: "accepted", jobId: existingJob.id, deduplicated: true }, 202, request);
 

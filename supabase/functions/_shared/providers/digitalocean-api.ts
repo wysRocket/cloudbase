@@ -33,6 +33,18 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 	return payload as T;
 }
 
+/**
+ * Normalize DigitalOcean droplet statuses to the app's public.resource_status enum values.
+ * DO can return: "new" | "active" | "off" | "archive"
+ */
+function normalizeDOStatus(status: string): string {
+	if (status === "active") return "active";
+	if (status === "off") return "suspended";
+	if (status === "archive") return "deleted";
+	// "new" and any other transitional states map to provisioning
+	return "provisioning";
+}
+
 export type ProvisionArgs = {
 	serviceType: string;
 	region: string;
@@ -59,7 +71,7 @@ export async function provisionResource(args: ProvisionArgs): Promise<{ provider
 		}),
 	});
 
-	return { providerResourceId: String(created.droplet.id), normalizedStatus: created.droplet.status || "provisioning" };
+	return { providerResourceId: String(created.droplet.id), normalizedStatus: normalizeDOStatus(created.droplet.status) };
 }
 
 export async function executeLifecycleAction(args: { action: string; providerResourceId: string }): Promise<string> {
@@ -86,9 +98,5 @@ export async function executeLifecycleAction(args: { action: string; providerRes
 
 export async function syncResourceStatus(providerResourceId: string): Promise<string> {
 	const result = await apiRequest<{ droplet: { status: string } }>(`/droplets/${providerResourceId}`);
-	const status = result.droplet.status;
-	if (status === "active") return "active";
-	if (status === "off") return "suspended";
-	if (status === "archive") return "deleted";
-	return "provisioning";
+	return normalizeDOStatus(result.droplet.status);
 }

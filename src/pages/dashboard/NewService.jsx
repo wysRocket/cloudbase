@@ -72,7 +72,6 @@ export default function NewService() {
 
     try {
       const resourceName = `${selectedTypeInfo.id}-${crypto.randomUUID().slice(0, 8)}`
-      await deductCredits(`${selectedTypeInfo.typeName} deployment`, quoteCost)
 
       const resource = await createServiceResource({
         serviceType: selectedTypeInfo.id === 'k8s' ? 'kubernetes' : selectedTypeInfo.id === 'db' ? 'database' : selectedTypeInfo.id,
@@ -86,6 +85,9 @@ export default function NewService() {
       })
 
       await enqueueProvisionJob({ resourceId: resource.id })
+
+      // Deduct credits only after the resource and provisioning job are successfully created
+      await deductCredits(`${selectedTypeInfo.typeName} deployment`, quoteCost)
 
       addResource({
         id: resource.id,
