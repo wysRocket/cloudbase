@@ -37,7 +37,7 @@ const REGION_ALLOWLIST = [
 const SERVICE_TYPE_ALLOWLIST = [
 	"credits",
 	"vps",
-	"k8s",
+	"kubernetes",
 	"database",
 	"gpu",
 ] as const;
