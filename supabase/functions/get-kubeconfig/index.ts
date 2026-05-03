@@ -51,7 +51,7 @@ Deno.serve(async (request) => {
 
 		if (!doRes.ok) {
 			const text = await doRes.text();
-			return jsonResponse({ error: `DO API ${doRes.status}: ${text}` }, 502, request);
+			return jsonResponse({ error: `DO API ${doRes.status}: ${text}` }, 500, request);
 		}
 
 		const kubeconfigYaml = await doRes.text();
