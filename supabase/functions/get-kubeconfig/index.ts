@@ -1,6 +1,13 @@
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { createAdminClient, createUserClient } from "../_shared/supabase.ts";
-import { syncResourceStatus } from "../_shared/providers/digitalocean-api.ts";
+
+const BASE_URL = "https://api.digitalocean.com/v2";
+
+function getToken(): string {
+	const token = Deno.env.get("DIGITALOCEAN_API_TOKEN");
+	if (!token) throw new Error("Missing DIGITALOCEAN_API_TOKEN.");
+	return token;
+}
 
 Deno.serve(async (request) => {
 	if (request.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(request) });
@@ -19,29 +26,43 @@ Deno.serve(async (request) => {
 
 		const { data: resource, error } = await adminClient
 			.from("service_resources")
-			.select("id, status, updated_at, provider_resource_id, service_type")
+			.select("provider_resource_id, service_type")
 			.eq("id", resourceId)
 			.eq("user_id", user.id)
 			.maybeSingle();
 		if (error) return jsonResponse({ error: error.message }, 500, request);
 		if (!resource) return jsonResponse({ error: "Resource not found." }, 404, request);
 
-		let normalizedStatus = resource.status;
-		if (resource.provider_resource_id) {
-			const serviceType = String(resource.service_type);
-			const syncResult = await syncResourceStatus(serviceType, {
-				providerResourceId: String(resource.provider_resource_id),
-				serviceType,
-			});
-			normalizedStatus = syncResult.status;
-			const updatePayload: Record<string, unknown> = { status: normalizedStatus };
-			if (syncResult.connectionDetails) {
-				updatePayload.connection_details = syncResult.connectionDetails;
-			}
-			await adminClient.from("service_resources").update(updatePayload).eq("id", resourceId);
+		if (resource.service_type !== "kubernetes") {
+			return jsonResponse({ error: "Resource is not a Kubernetes cluster." }, 422, request);
+		}
+		if (!resource.provider_resource_id) {
+			return jsonResponse({ error: "Cluster is not yet provisioned." }, 422, request);
 		}
 
-		return jsonResponse({ normalizedStatus, updatedAt: new Date().toISOString() }, 200, request);
+		const doRes = await fetch(
+			`${BASE_URL}/kubernetes/clusters/${resource.provider_resource_id}/kubeconfig`,
+			{
+				headers: {
+					Authorization: `Bearer ${getToken()}`,
+				},
+			},
+		);
+
+		if (!doRes.ok) {
+			const text = await doRes.text();
+			return jsonResponse({ error: `DO API ${doRes.status}: ${text}` }, 500, request);
+		}
+
+		const kubeconfigYaml = await doRes.text();
+
+		return new Response(kubeconfigYaml, {
+			status: 200,
+			headers: {
+				"Content-Type": "text/plain",
+				...getCorsHeaders(request),
+			},
+		});
 	} catch (error) {
 		return jsonResponse({ error: error instanceof Error ? error.message : "Invalid request." }, 500, request);
 	}

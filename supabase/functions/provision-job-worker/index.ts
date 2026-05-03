@@ -53,23 +53,33 @@ Deno.serve(async (request) => {
 			let providerResourceId = resource.provider_resource_id as string | null;
 
 			if (job.action === "provision") {
-				const provisioned = await provisionResource({
-					serviceType: resource.service_type,
+				const provisioned = await provisionResource(String(resource.service_type), {
+					providerResourceId: resource.provider_resource_id ?? "",
 					region: resource.region,
 					displayName: resource.display_name,
-					metadata: (resource.metadata || {}) as Record<string, unknown>,
+					metadata: (resource.metadata || {}) as Record<string, string>,
 				});
 				targetStatus = provisioned.normalizedStatus;
 				providerResourceId = provisioned.providerResourceId;
+				const updatePayload: Record<string, unknown> = {
+					status: targetStatus,
+					provider_resource_id: providerResourceId,
+				};
+				if (provisioned.connectionDetails) {
+					updatePayload.connection_details = provisioned.connectionDetails;
+				}
+				await adminClient
+					.from("service_resources")
+					.update(updatePayload)
+					.eq("id", job.resource_id);
 			} else {
 				if (!providerResourceId) throw new Error("Missing provider_resource_id for lifecycle action.");
-				targetStatus = await executeLifecycleAction({ action: job.action, serviceType: resource.service_type, providerResourceId });
+				targetStatus = await executeLifecycleAction(String(resource.service_type), { action: job.action, providerResourceId });
+				await adminClient
+					.from("service_resources")
+					.update({ status: targetStatus, provider_resource_id: providerResourceId })
+					.eq("id", job.resource_id);
 			}
-
-			await adminClient
-				.from("service_resources")
-				.update({ status: targetStatus, provider_resource_id: providerResourceId })
-				.eq("id", job.resource_id);
 
 			await adminClient.from("provision_jobs").update({ status: "succeeded", last_error: null, locked_at: null, locked_by: null }).eq("id", job.id);
 			await adminClient.from("provision_events").insert({

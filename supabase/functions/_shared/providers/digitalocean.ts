@@ -30,13 +30,25 @@ type ServiceCatalogRow = {
 	sell_price_cents: number;
 };
 
-type QueryResponse<T> = Promise<{ data: T | null; error: { message: string } | null }>;
+type QueryResponse<T> = Promise<{
+	data: T | null;
+	error: { message: string } | null;
+}>;
 
 type ServiceCatalogQuery = {
 	select: (columns: string) => {
-		eq: (column: string, value: unknown) => {
-			eq: (column2: string, value2: unknown) => {
-				eq: (column3: string, value3: unknown) => {
+		eq: (
+			column: string,
+			value: unknown,
+		) => {
+			eq: (
+				column2: string,
+				value2: unknown,
+			) => {
+				eq: (
+					column3: string,
+					value3: unknown,
+				) => {
 					maybeSingle: () => QueryResponse<ServiceCatalogRow>;
 				};
 			};
@@ -91,7 +103,8 @@ export async function quoteFromCatalog(
 		unitPriceCents,
 		lineTotalCents: (() => {
 			const total = unitPriceCents * input.quantity;
-			if (!Number.isSafeInteger(total)) throw new Error("Total price calculation exceeds safe integer range.");
+			if (!Number.isSafeInteger(total))
+				throw new Error("Total price calculation exceeds safe integer range.");
 			return total;
 		})(),
 		availability: "available",

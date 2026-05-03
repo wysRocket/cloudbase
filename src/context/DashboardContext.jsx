@@ -18,12 +18,16 @@ function mapResourceRow(resource) {
 	return {
 		id: resource.id,
 		name: resource.display_name,
+		service_type: resource.service_type,
 		type: resource.service_type,
 		region: resource.region,
 		price: "-",
 		status: resource.status,
-		uptime: resource.updated_at ? new Date(resource.updated_at).toLocaleString() : "-",
+		uptime: resource.updated_at
+			? new Date(resource.updated_at).toLocaleString()
+			: "-",
 		ip: resource.connection_details?.ipv4 || "Pending",
+		connection_details: resource.connection_details,
 	};
 }
 
@@ -44,20 +48,28 @@ export function DashboardProvider({ children }) {
 	});
 	const [resourceActionState, setResourceActionState] = useState({});
 
-	const mapResource = useCallback((res) => ({
-		...res,
-		status: res.status || "Unknown",
-		events: (res.provision_events || []).slice().sort((a, b) =>
-			new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-		),
-	}), []);
+	const mapResource = useCallback(
+		(res) => ({
+			...res,
+			status: res.status || "Unknown",
+			events: (res.provision_events || [])
+				.slice()
+				.sort(
+					(a, b) =>
+						new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+				),
+		}),
+		[],
+	);
 
 	const loadResources = useCallback(async () => {
 		if (!user) return;
 
 		const { data, error } = await supabase
 			.from("service_resources")
-			.select("id, display_name, service_type, region, status, updated_at, connection_details")
+			.select(
+				"id, display_name, service_type, region, status, updated_at, connection_details",
+			)
 			.eq("user_id", user.id)
 			.order("created_at", { ascending: false });
 
@@ -141,8 +153,16 @@ export function DashboardProvider({ children }) {
 
 	useEffect(() => {
 		if (!user?.id) return;
-		localStorage.setItem(`wys_resources_${user.id}`, JSON.stringify(resources));
-		localStorage.setItem(`wys_transactions_${user.id}`, JSON.stringify(transactions));
+		const sanitized = resources.map((res) => {
+			if (!res.connection_details) return res;
+			const { password: _pw, ...safeDetails } = res.connection_details;
+			return { ...res, connection_details: safeDetails };
+		});
+		localStorage.setItem(`wys_resources_${user.id}`, JSON.stringify(sanitized));
+		localStorage.setItem(
+			`wys_transactions_${user.id}`,
+			JSON.stringify(transactions),
+		);
 		localStorage.setItem("wys_plan", JSON.stringify(currentPlan));
 	}, [user?.id, resources, transactions, currentPlan]);
 
@@ -151,7 +171,6 @@ export function DashboardProvider({ children }) {
 		loadResources();
 		loadResourceEvents();
 	}, [loadTransactions, loadResources, loadResourceEvents]);
-
 
 	useEffect(() => {
 		if (!user) return;
@@ -198,7 +217,11 @@ export function DashboardProvider({ children }) {
 			setActionLoading(id, action, true);
 			try {
 				if (action === "delete") {
-					const { error } = await supabase.from("service_resources").delete().eq("id", id).eq("user_id", user.id);
+					const { error } = await supabase
+						.from("service_resources")
+						.delete()
+						.eq("id", id)
+						.eq("user_id", user.id);
 					if (error) throw error;
 				} else {
 					const { error } = await supabase

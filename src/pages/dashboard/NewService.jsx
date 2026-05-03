@@ -7,7 +7,8 @@ const serviceTypes = [
   { id: 'vps', name: 'Virtual Private Server', description: 'High-performance NVMe VPS', fallbackPriceLabel: '100 credits/mo', fallbackCost: 100, typeName: 'VPS (Standard)', planCode: 'do-vps-basic-2vcpu-4gb' },
   { id: 'k8s', name: 'Kubernetes Cluster', description: 'Managed K8s control plane', fallbackPriceLabel: '1000 credits/mo', fallbackCost: 1000, typeName: 'Kubernetes (Managed)', planCode: 'do-k8s-basic-3node' },
   { id: 'db', name: 'Managed Database', description: 'Postgres, MySQL, Redis', fallbackPriceLabel: '300 credits/mo', fallbackCost: 300, typeName: 'Database (PG/MySQL)', planCode: 'do-db-pg-basic' },
-  { id: 'gpu', name: 'GPU Instance', description: 'NVIDIA H100 / A100', fallbackPriceLabel: '50 credits/hr', fallbackCost: 50, typeName: 'GPU (H100)', planCode: 'do-gpu-l40s-1x' },
+  { id: 'gpu', name: 'GPU Instance', description: 'NVIDIA H100 / A100', fallbackPriceLabel: '50 credits/hr', fallbackCost: 50, typeName: 'GPU (H100)', planCode: 'do-gpu-h100-1x' },
+  { id: 'game_server', name: 'Game Server', description: 'SteamCMD-ready Ubuntu droplet', fallbackPriceLabel: '140 credits/mo', fallbackCost: 140, typeName: 'Game Server', planCode: 'do-game-basic-2vcpu-4gb' },
 ]
 
 const regions = [
@@ -149,6 +150,7 @@ export default function NewService() {
                         {type.id === 'k8s' && <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>}
                         {type.id === 'db' && <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.58 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.58 4 8 4s8-1.79 8-4M4 7c0-2.21 3.58-4 8-4s8 1.79 8 4m0 5c0 2.21-3.58 4-8 4s-8-1.79-8-4"></path></svg>}
                         {type.id === 'gpu' && <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>}
+                        {type.id === 'game_server' && <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 12h.01M10 12h.01M15 13h.01M18 11h.01M7.5 16h9a4.5 4.5 0 004.39-5.5l-.62-2.7A3 3 0 0017.35 5.5H6.65A3 3 0 003.73 7.8l-.62 2.7A4.5 4.5 0 007.5 16z"></path></svg>}
                       </div>
                       <div className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-colors ${
                         selectedType === type.id ? 'bg-cyan-500/20 text-cyan-400' : 'bg-white/5 text-slate-600'
