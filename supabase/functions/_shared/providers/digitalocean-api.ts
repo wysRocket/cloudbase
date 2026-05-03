@@ -136,10 +136,10 @@ export async function provisionResource(args: ProvisionArgs): Promise<{ provider
 	throw new Error(`Provisioning for service type '${args.serviceType}' is not implemented yet.`);
 }
 
-export async function executeLifecycleAction(args: { action: string; providerResourceId: string }): Promise<string> {
+export async function executeLifecycleAction(args: { action: string; serviceType: string; providerResourceId: string }): Promise<string> {
 	const id = args.providerResourceId;
 
-	if (/^\d+$/.test(id)) {
+	if (args.serviceType === "vps" || args.serviceType === "gpu") {
 		switch (args.action) {
 			case "suspend":
 				await apiRequest(`/droplets/${id}/actions`, { method: "POST", body: JSON.stringify({ type: "power_off" }) });
@@ -157,7 +157,7 @@ export async function executeLifecycleAction(args: { action: string; providerRes
 		}
 	}
 
-	if (/^[0-9a-f-]{36}$/i.test(id)) {
+	if (args.serviceType === "kubernetes") {
 		switch (args.action) {
 			case "delete":
 				await apiRequest(`/kubernetes/clusters/${id}`, { method: "DELETE" });
@@ -167,7 +167,7 @@ export async function executeLifecycleAction(args: { action: string; providerRes
 		}
 	}
 
-	if (/^[0-9a-f]{16,64}$/i.test(id)) {
+	if (args.serviceType === "database") {
 		switch (args.action) {
 			case "delete":
 				await apiRequest(`/databases/${id}`, { method: "DELETE" });
@@ -177,27 +177,28 @@ export async function executeLifecycleAction(args: { action: string; providerRes
 		}
 	}
 
-	throw new Error("Invalid provider resource ID format.");
+	throw new Error(`Lifecycle actions for service type '${args.serviceType}' are not implemented.`);
 }
 
-export async function syncResourceStatus(providerResourceId: string): Promise<string> {
-	const id = providerResourceId;
-	if (/^\d+$/.test(id)) {
+export async function syncResourceStatus(args: { serviceType: string; providerResourceId: string }): Promise<string> {
+	const id = args.providerResourceId;
+
+	if (args.serviceType === "vps" || args.serviceType === "gpu") {
 		const result = await apiRequest<{ droplet: { status: string } }>(`/droplets/${id}`);
 		return normalizeDOStatus(result.droplet.status);
 	}
 
-	if (/^[0-9a-f-]{36}$/i.test(id)) {
+	if (args.serviceType === "kubernetes") {
 		const result = await apiRequest<{ kubernetes_cluster: { status: { state: string } } }>(`/kubernetes/clusters/${id}`);
 		const state = String(result.kubernetes_cluster.status?.state || "provisioning").toLowerCase();
 		return state === "running" ? "active" : "provisioning";
 	}
 
-	if (/^[0-9a-f]{16,64}$/i.test(id)) {
+	if (args.serviceType === "database") {
 		const result = await apiRequest<{ database: { status: string } }>(`/databases/${id}`);
 		const status = String(result.database.status || "creating").toLowerCase();
 		return status === "online" ? "active" : "provisioning";
 	}
 
-	throw new Error("Invalid provider resource ID format.");
+	throw new Error(`Status sync for service type '${args.serviceType}' is not implemented.`);
 }

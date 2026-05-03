@@ -119,7 +119,6 @@ Deno.serve(async (request) => {
 				order_id: order.id,
 				service_catalog_id: serviceCatalog.id,
 				plan_code: serviceCatalog.plan_code,
-				service_type: serviceCatalog.service_type,
 				region: serviceCatalog.region,
 				quantity,
 				unit_price_minor: unitPriceMinor,

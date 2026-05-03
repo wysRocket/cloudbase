@@ -63,7 +63,7 @@ Deno.serve(async (request) => {
 				providerResourceId = provisioned.providerResourceId;
 			} else {
 				if (!providerResourceId) throw new Error("Missing provider_resource_id for lifecycle action.");
-				targetStatus = await executeLifecycleAction({ action: job.action, providerResourceId });
+				targetStatus = await executeLifecycleAction({ action: job.action, serviceType: resource.service_type, providerResourceId });
 			}
 
 			await adminClient
