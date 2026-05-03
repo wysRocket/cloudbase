@@ -1,6 +1,6 @@
 import { jsonResponse } from "../_shared/cors.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
-import { executeLifecycleAction, provisionResource } from "../_shared/providers/digitalocean-api.ts";
+import { executeLifecycleAction, provisionResource, syncResourceStatus } from "../_shared/providers/digitalocean-api.ts";
 
 Deno.serve(async (request) => {
 	if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, request);
@@ -13,6 +13,36 @@ Deno.serve(async (request) => {
 
 	const adminClient = createAdminClient();
 	const nowIso = new Date().toISOString();
+
+	// Sync-only mode: update status of all resources stuck in "provisioning"
+	const url = new URL(request.url);
+	if (url.searchParams.get("action") === "sync_provisioning") {
+		const { data: stuckResources, error: queryError } = await adminClient
+			.from("service_resources")
+			.select("id, service_type, provider_resource_id")
+			.eq("status", "provisioning")
+			.neq("provider_resource_id", null);
+
+		if (queryError) return jsonResponse({ error: queryError.message, phase: "query" }, 500, request);
+
+		let synced = 0;
+		const errors: string[] = [];
+		for (const res of stuckResources || []) {
+			try {
+				const result = await syncResourceStatus(String(res.service_type), {
+					providerResourceId: String(res.provider_resource_id),
+					serviceType: String(res.service_type),
+				});
+				const updatePayload: Record<string, unknown> = { status: result.status };
+				if (result.connectionDetails) updatePayload.connection_details = result.connectionDetails;
+				await adminClient.from("service_resources").update(updatePayload).eq("id", res.id);
+				synced += 1;
+			} catch (err) {
+				errors.push(err instanceof Error ? err.message : "unknown error");
+			}
+		}
+		return jsonResponse({ ok: true, synced, found: (stuckResources || []).length, errors }, 200, request);
+	}
 
 	const { data: jobs, error: jobsError } = await adminClient
 		.from("provision_jobs")
