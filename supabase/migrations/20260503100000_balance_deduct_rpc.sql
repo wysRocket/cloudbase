@@ -39,7 +39,7 @@ begin
     p_description,
     -p_amount,
     'debit',
-    'Completed'
+    'completed'
   );
 end;
 $$;
@@ -54,29 +54,34 @@ grant execute on function public.deduct_credits_for_provision(uuid, integer, tex
 -- window where credits are deducted but no job is ever created (or vice-versa).
 -- Handles idempotency: if a job for (p_resource_id, p_idempotency_key) already
 -- exists the function returns its id immediately without re-charging credits.
+-- Returns (job_id uuid, is_new boolean) so callers can distinguish a newly
+-- created job from a deduplicated one.
 create or replace function public.deduct_credits_and_enqueue_provision(
   p_user_id         uuid,
   p_resource_id     uuid,
   p_idempotency_key text,
   p_amount          integer,
-  p_description     text
-) returns uuid
+  p_description     text,
+  out job_id        uuid,
+  out is_new        boolean
+)
+returns record
 language plpgsql
 security definer
 set search_path = public
 as $$
 declare
   v_balance integer;
-  v_job_id  uuid;
 begin
   -- Idempotency: return the existing job id without re-charging.
-  select id into v_job_id
+  select id into job_id
     from public.provision_jobs
    where idempotency_key = p_idempotency_key
      and resource_id = p_resource_id;
 
-  if v_job_id is not null then
-    return v_job_id;
+  if job_id is not null then
+    is_new := false;
+    return;
   end if;
 
   -- Lock the user's credit_transaction rows to prevent concurrent double-spends,
@@ -107,7 +112,7 @@ begin
     'queued',
     '{}'::jsonb
   )
-  returning id into v_job_id;
+  returning id into job_id;
 
   -- Deduct credits atomically with the job insert.
   if p_amount > 0 then
@@ -122,11 +127,11 @@ begin
       p_description,
       -p_amount,
       'debit',
-      'Completed'
+      'completed'
     );
   end if;
 
-  return v_job_id;
+  is_new := true;
 end;
 $$;
 

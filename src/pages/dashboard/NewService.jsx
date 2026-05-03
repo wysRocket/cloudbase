@@ -117,7 +117,9 @@ export default function NewService() {
       } catch (err) {
         // Remove the orphaned pending resource so the user isn't left with
         // a stuck entry that has no provision job behind it.
-        await deleteServiceResource(resource.id).catch(() => {})
+        await deleteServiceResource(resource.id).catch((e) => {
+          console.error('Failed to clean up orphaned resource:', e)
+        })
         throw err
       }
 

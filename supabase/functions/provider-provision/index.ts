@@ -89,7 +89,7 @@ Deno.serve(async (request) => {
 		// Atomically check balance, deduct credits, and enqueue the provision job.
 		// The RPC handles idempotency: it returns the existing job id if the job
 		// was already created for this (resource_id, idempotency_key) pair.
-		const { data: jobId, error: rpcError } = await adminClient.rpc(
+		const { data: rpcResult, error: rpcError } = await adminClient.rpc(
 			"deduct_credits_and_enqueue_provision",
 			{
 				p_user_id: user.id,
@@ -107,10 +107,13 @@ Deno.serve(async (request) => {
 			return jsonResponse({ error: rpcError.message }, 500, request);
 		}
 
+		const jobId = (rpcResult as Record<string, unknown>)?.job_id;
+		const deduplicated = !((rpcResult as Record<string, unknown>)?.is_new ?? true);
+
 		// Kick off the worker immediately so the job isn't waiting for a cron tick.
 		await triggerWorker();
 
-		return jsonResponse({ status: "accepted", jobId, deduplicated: false }, 202, request);
+		return jsonResponse({ status: "accepted", jobId, deduplicated }, 202, request);
 	} catch (error) {
 		return jsonResponse({ error: error instanceof Error ? error.message : "Invalid request." }, 422, request);
 	}
