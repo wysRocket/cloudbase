@@ -80,3 +80,28 @@ export async function syncResourceStatus({ resourceId }) {
 
   return data
 }
+
+export async function getKubeconfig({ resourceId }) {
+  const { data: sessionData } = await supabase.auth.getSession()
+  const token = sessionData?.session?.access_token
+  if (!token) throw new Error('You must be signed in.')
+
+  const res = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-kubeconfig`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ resourceId }),
+    }
+  )
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Request failed.' }))
+    throw new Error(err.error || 'Unable to fetch kubeconfig.')
+  }
+
+  return res.text()
+}
