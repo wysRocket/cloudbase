@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDashboard } from '../../context/DashboardContext'
-import { createServiceResource, enqueueProvisionJob, getProviderQuote } from '../../lib/resellerApi'
+import { createServiceResource, deleteServiceResource, enqueueProvisionJob, getProviderQuote } from '../../lib/resellerApi'
 
 const serviceTypes = [
   {
@@ -52,7 +52,7 @@ function quoteLabel(quote, fallbackLabel) {
 
 export default function NewService() {
   const navigate = useNavigate()
-  const { addResource, balance } = useDashboard()
+  const { addResource, balance, refreshTransactions } = useDashboard()
   const [selectedType, setSelectedType] = useState(serviceTypes[0].id)
   const [selectedRegion, setSelectedRegion] = useState(regions[0].id)
   const [isDeploying, setIsDeploying] = useState(false)
@@ -112,11 +112,17 @@ export default function NewService() {
         },
       })
 
-      await enqueueProvisionJob({
-        resourceId: resource.id,
-        creditsToDeduct: quoteCost,
-        creditDescription: `${selectedTypeInfo.typeName} deployment`,
-      })
+      try {
+        await enqueueProvisionJob({ resourceId: resource.id })
+      } catch (err) {
+        // Remove the orphaned pending resource so the user isn't left with
+        // a stuck entry that has no provision job behind it.
+        await deleteServiceResource(resource.id).catch(() => {})
+        throw err
+      }
+
+      // Refresh the balance/transaction list so the debit shows immediately.
+      await refreshTransactions()
 
       addResource({
         id: resource.id,

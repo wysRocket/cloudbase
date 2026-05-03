@@ -39,24 +39,48 @@ export async function createServiceResource({ serviceType, displayName, region, 
   return data
 }
 
-export async function enqueueProvisionJob({ resourceId, creditsToDeduct = 0, creditDescription = 'Service deployment' }) {
-  const idempotencyKey = `provision-${resourceId}`
-  const { data, error } = await supabase.functions.invoke('provider-provision', {
-    body: {
-      resourceId,
-      idempotencyKey,
-      creditsToDeduct,
-      creditDescription,
-    },
-  })
+export async function enqueueProvisionJob({ resourceId }) {
+  const { data: sessionData } = await supabase.auth.getSession()
+  const token = sessionData?.session?.access_token
+  if (!token) throw new Error('You must be signed in.')
 
-  if (error) {
-    throw new Error(error.message || 'Unable to enqueue provision job.')
+  const idempotencyKey = `provision-${resourceId}`
+  const res = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/provider-provision`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ resourceId, idempotencyKey }),
+    }
+  )
+
+  const json = await res.json().catch(() => ({ error: 'Request failed.' }))
+  if (!res.ok) {
+    throw new Error(json.error || 'Unable to enqueue provision job.')
   }
 
-  return data
+  return json
 }
 
+export async function deleteServiceResource(resourceId) {
+  const { data: userResult, error: userError } = await supabase.auth.getUser()
+  if (userError || !userResult?.user) {
+    throw new Error('You must be signed in to delete resources.')
+  }
+
+  const { error } = await supabase
+    .from('service_resources')
+    .delete()
+    .eq('id', resourceId)
+    .eq('user_id', userResult.user.id)
+
+  if (error) {
+    throw new Error(error.message || 'Unable to delete service resource.')
+  }
+}
 
 export async function requestLifecycleAction({ resourceId, action }) {
   const idempotencyKey = `${action}-${resourceId}`
