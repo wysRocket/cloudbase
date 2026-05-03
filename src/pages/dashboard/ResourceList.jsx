@@ -26,6 +26,7 @@ export default function ResourceList({ typeFilter, title }) {
 	const [actionError, setActionError] = useState({});
 	const [expandedResourceId, setExpandedResourceId] = useState(null);
 	const [kubeconfigState, setKubeconfigState] = useState({});
+	const [revealedCredentials, setRevealedCredentials] = useState({});
 
 	const filteredResources = typeFilter
 		? resources.filter((r) =>
@@ -117,13 +118,48 @@ export default function ResourceList({ typeFilter, title }) {
 
 		if (serviceType === "database") {
 			const details = res.connection_details;
-			const connectionText =
-				details?.connection_string || JSON.stringify(details || {}, null, 2);
+			const revealed = revealedCredentials[res.id] || false;
+
+			if (!details) {
+				return (
+					<p className="text-sm text-slate-400">
+						No connection details available yet.
+					</p>
+				);
+			}
+
+			const masked = { ...details };
+			if (masked.password) {
+				masked.password = revealed ? masked.password : "••••••••";
+			}
+
+			const displayText = details.connection_string
+				? details.connection_string.replace(
+						/:([^:@]+)@/,
+						revealed ? ":$1@" : ":••••••••@",
+					)
+				: JSON.stringify(masked, null, 2);
 
 			return (
-				<pre className="whitespace-pre-wrap break-all rounded-lg border border-white/10 bg-black/20 p-4 text-xs text-slate-200">
-					{connectionText}
-				</pre>
+				<div className="flex flex-col gap-2">
+					<pre className="whitespace-pre-wrap break-all rounded-lg border border-white/10 bg-black/20 p-4 text-xs text-slate-200">
+						{displayText}
+					</pre>
+					{(details.password || details.connection_string) && (
+						<button
+							type="button"
+							onClick={() =>
+								setRevealedCredentials((prev) => ({
+									...prev,
+									[res.id]: !prev[res.id],
+								}))
+							}
+							className="self-start rounded-lg bg-white/5 px-3 py-1 text-xs text-slate-300 hover:bg-white/10 hover:text-white"
+						>
+							{revealed ? "Hide credentials" : "Reveal credentials"}
+						</button>
+					)}
+				</div>
 			);
 		}
 

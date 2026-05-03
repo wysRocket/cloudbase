@@ -153,7 +153,12 @@ export function DashboardProvider({ children }) {
 
 	useEffect(() => {
 		if (!user?.id) return;
-		localStorage.setItem(`wys_resources_${user.id}`, JSON.stringify(resources));
+		const sanitized = resources.map((res) => {
+			if (!res.connection_details) return res;
+			const { password: _pw, ...safeDetails } = res.connection_details;
+			return { ...res, connection_details: safeDetails };
+		});
+		localStorage.setItem(`wys_resources_${user.id}`, JSON.stringify(sanitized));
 		localStorage.setItem(
 			`wys_transactions_${user.id}`,
 			JSON.stringify(transactions),
