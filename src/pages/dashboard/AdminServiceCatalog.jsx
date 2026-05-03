@@ -11,7 +11,7 @@ export default function AdminServiceCatalog() {
 		async function load() {
 			const { data } = await supabase
 				.from("service_catalog")
-				.select("id,sku,service_type,sell_price,margin_percent,active")
+				.select("id,plan_code,service_type,sell_price_cents,base_cost_cents,is_active")
 				.order("service_type");
 			setItems(data || []);
 		}
@@ -25,6 +25,13 @@ export default function AdminServiceCatalog() {
 		await supabase.from("service_catalog").update(patch).eq("id", id);
 	};
 
+	const setMargin = (item, pct) => {
+		const sell_price_cents = item.base_cost_cents > 0 && pct < 100
+			? Math.round(item.base_cost_cents / (1 - pct / 100))
+			: item.sell_price_cents;
+		updateItem(item.id, { sell_price_cents });
+	};
+
 	return (
 		<div>
 			<h1 className="text-3xl font-bold mb-6">Service Catalog Admin</h1>
@@ -34,21 +41,26 @@ export default function AdminServiceCatalog() {
 						<tr><th className="p-3">SKU</th><th>Type</th><th>Sell Price</th><th>Margin %</th><th>Active</th></tr>
 					</thead>
 					<tbody>
-						{items.map((item) => (
+						{items.map((item) => {
+							const marginPct = item.sell_price_cents > 0
+								? Math.round((item.sell_price_cents - item.base_cost_cents) / item.sell_price_cents * 100)
+								: 0;
+							return (
 							<tr key={item.id} className="border-t border-white/5">
-								<td className="p-3 font-mono">{item.sku}</td>
+								<td className="p-3 font-mono">{item.plan_code}</td>
 								<td>{item.service_type}</td>
-								<td>€{item.sell_price}</td>
+								<td>€{(item.sell_price_cents / 100).toFixed(2)}</td>
 								<td>
-									<input className="bg-white/10 rounded px-2 py-1 w-24" type="number" value={item.margin_percent}
-										onChange={(e)=>updateItem(item.id,{margin_percent:Number(e.target.value)})} />
+									<input className="bg-white/10 rounded px-2 py-1 w-24" type="number" value={marginPct}
+										onChange={(e) => setMargin(item, Number(e.target.value))} />
 								</td>
 								<td>
-									<input type="checkbox" checked={item.active}
-										onChange={(e)=>updateItem(item.id,{active:e.target.checked})} />
+									<input type="checkbox" checked={item.is_active}
+										onChange={(e) => updateItem(item.id, { is_active: e.target.checked })} />
 								</td>
 							</tr>
-						))}
+							);
+						})}
 					</tbody>
 				</table>
 			</div>
