@@ -3,9 +3,11 @@ import {
 	useCallback,
 	useContext,
 	useEffect,
+	useRef,
 	useState,
 } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { syncResourceStatus } from "../lib/resellerApi";
 import { useAuth } from "./AuthContext";
 
 const DashboardContext = createContext();
@@ -78,7 +80,38 @@ export function DashboardProvider({ children }) {
 			return;
 		}
 
-		setResources((data || []).map(mapResourceRow));
+		const mapped = (data || []).map(mapResourceRow);
+		setResources(mapped);
+
+		// Auto-sync any resources still in provisioning state
+		if (!syncingRef.current) {
+			const provisioning = mapped.filter((r) => r.status === "provisioning");
+			if (provisioning.length > 0) {
+				syncingRef.current = true;
+				Promise.all(
+					provisioning.map((r) =>
+						syncResourceStatus({ resourceId: r.id }).catch(() => {}),
+					),
+				)
+					.then(() => {
+						syncingRef.current = false;
+						// Re-fetch after syncing to reflect updated statuses
+						supabase
+							.from("service_resources")
+							.select(
+								"id, display_name, service_type, region, status, updated_at, connection_details",
+							)
+							.eq("user_id", user.id)
+							.order("created_at", { ascending: false })
+							.then(({ data: refreshed }) => {
+								if (refreshed) setResources(refreshed.map(mapResourceRow));
+							});
+					})
+					.catch(() => {
+						syncingRef.current = false;
+					});
+			}
+		}
 	}, [user]);
 
 	const loadResourceEvents = useCallback(async () => {
@@ -172,11 +205,13 @@ export function DashboardProvider({ children }) {
 		loadResourceEvents();
 	}, [loadTransactions, loadResources, loadResourceEvents]);
 
+	const syncingRef = useRef(false);
+
 	useEffect(() => {
 		if (!user) return;
 
-		const intervalId = setInterval(() => {
-			loadResources();
+		const intervalId = setInterval(async () => {
+			await loadResources();
 			loadResourceEvents();
 		}, 15000);
 
