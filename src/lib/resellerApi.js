@@ -86,7 +86,7 @@ export async function deleteServiceResource(resourceId) {
 }
 
 export async function requestLifecycleAction({ resourceId, action }) {
-  const idempotencyKey = `${action}-${resourceId}`
+  const idempotencyKey = `${action}-${resourceId}-${Date.now()}`
   const { data, error } = await supabase.functions.invoke('provider-lifecycle', {
     body: { resourceId, action, idempotencyKey },
   })

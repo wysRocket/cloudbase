@@ -13,6 +13,16 @@ function parsePayload(body: unknown): { resourceId: string; action: LifecycleAct
 	return { resourceId, action, idempotencyKey };
 }
 
+async function triggerWorker() {
+	const workerSecret = Deno.env.get("PROVISION_WORKER_SECRET");
+	const supabaseUrl = Deno.env.get("SUPABASE_URL");
+	if (!workerSecret || !supabaseUrl) return;
+	await fetch(`${supabaseUrl}/functions/v1/provision-job-worker`, {
+		method: "POST",
+		headers: { "x-worker-secret": workerSecret },
+	}).catch(() => {}); // fire-and-forget
+}
+
 Deno.serve(async (request) => {
 	if (request.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(request) });
 	if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, request);
@@ -40,7 +50,10 @@ Deno.serve(async (request) => {
 			.eq("resource_id", input.resourceId)
 			.eq("action", input.action)
 			.maybeSingle();
-		if (existingJob) return jsonResponse({ status: "accepted", jobId: existingJob.id, deduplicated: true }, 202, request);
+		if (existingJob) {
+			triggerWorker();
+			return jsonResponse({ status: "accepted", jobId: existingJob.id, deduplicated: true }, 202, request);
+		}
 
 		const { data: job, error: insertError } = await adminClient
 			.from("provision_jobs")
@@ -54,6 +67,9 @@ Deno.serve(async (request) => {
 			.select("id")
 			.single();
 		if (insertError) return jsonResponse({ error: insertError.message }, 500, request);
+
+		// Trigger worker to process the job immediately (fire-and-forget)
+		triggerWorker();
 
 		return jsonResponse({ status: "accepted", jobId: job.id, deduplicated: false }, 202, request);
 	} catch (error) {
