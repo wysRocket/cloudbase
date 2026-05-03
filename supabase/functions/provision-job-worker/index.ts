@@ -5,32 +5,56 @@ import { MAIL_FROM, sendEmail } from "../_shared/mailer.ts";
 
 type ConnectionDetails = Record<string, unknown>;
 
+/** Escapes characters that have special meaning in HTML to prevent injection. */
+function escapeHtml(value: unknown): string {
+	return String(value ?? "")
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#x27;");
+}
+
 function buildCredentialEmail(
 	displayName: string,
 	serviceType: string,
 	region: string,
 	details: ConnectionDetails,
 ): { subject: string; html: string } {
-	const regionLabel = region.toUpperCase();
+	const regionLabel = escapeHtml(region.toUpperCase());
+	const safeDisplayName = escapeHtml(displayName);
+	const safeServiceType = escapeHtml(serviceType.replace("_", " "));
 
 	let credentialsHtml = "";
 
 	if (serviceType === "database") {
+		// Passwords are not included in email — user retrieves them from the secure dashboard.
 		credentialsHtml = `
       <table style="border-collapse:collapse;width:100%;font-family:monospace;font-size:14px;">
-        <tr><td style="padding:6px 12px;background:#f4f4f4;font-weight:bold;">Host</td><td style="padding:6px 12px;">${details.host ?? "—"}</td></tr>
-        <tr><td style="padding:6px 12px;background:#f4f4f4;font-weight:bold;">Port</td><td style="padding:6px 12px;">${details.port ?? "—"}</td></tr>
-        <tr><td style="padding:6px 12px;background:#f4f4f4;font-weight:bold;">User</td><td style="padding:6px 12px;">${details.user ?? "—"}</td></tr>
-        <tr><td style="padding:6px 12px;background:#f4f4f4;font-weight:bold;">Password</td><td style="padding:6px 12px;">${details.password ?? "—"}</td></tr>
-        <tr><td style="padding:6px 12px;background:#f4f4f4;font-weight:bold;">SSL Mode</td><td style="padding:6px 12px;">${details.ssl ?? "require"}</td></tr>
-      </table>`;
+        <tr><td style="padding:6px 12px;background:#f4f4f4;font-weight:bold;">Host</td><td style="padding:6px 12px;">${escapeHtml(details.host ?? "—")}</td></tr>
+        <tr><td style="padding:6px 12px;background:#f4f4f4;font-weight:bold;">Port</td><td style="padding:6px 12px;">${escapeHtml(details.port ?? "—")}</td></tr>
+        <tr><td style="padding:6px 12px;background:#f4f4f4;font-weight:bold;">User</td><td style="padding:6px 12px;">${escapeHtml(details.user ?? "—")}</td></tr>
+        <tr><td style="padding:6px 12px;background:#f4f4f4;font-weight:bold;">SSL Mode</td><td style="padding:6px 12px;">${escapeHtml(details.ssl ?? "require")}</td></tr>
+      </table>
+      <p style="margin-top:12px;font-size:13px;color:#666;">
+        Your database password is available securely in the
+        <a href="https://cloudbaseservice.com/dashboard" style="color:#0e7490;">Cloudbase dashboard</a>.
+      </p>`;
 	} else if (serviceType === "kubernetes") {
 		credentialsHtml = `
       <p>Your Kubernetes cluster is ready. Download your kubeconfig from the <strong>Dashboard → Resources</strong> page.</p>`;
 	} else {
-		// VPS, GPU, game_server — surface the IP(s)
-		const ips: string[] = Array.isArray(details.ipv4) ? (details.ipv4 as string[]) : [];
-		const ipList = ips.length > 0 ? ips.join(", ") : "Pending — check the dashboard in a moment";
+		// VPS, GPU, game_server — surface the IP. The provider returns ipv4 as a string or array.
+		const rawIpv4 = details.ipv4;
+		let ips: string[];
+		if (Array.isArray(rawIpv4)) {
+			ips = rawIpv4 as string[];
+		} else if (typeof rawIpv4 === "string" && rawIpv4) {
+			ips = [rawIpv4];
+		} else {
+			ips = [];
+		}
+		const ipList = ips.length > 0 ? ips.map(escapeHtml).join(", ") : "Pending — check the dashboard in a moment";
 		credentialsHtml = `
       <table style="border-collapse:collapse;width:100%;font-family:monospace;font-size:14px;">
         <tr><td style="padding:6px 12px;background:#f4f4f4;font-weight:bold;">IP Address</td><td style="padding:6px 12px;">${ipList}</td></tr>
@@ -44,7 +68,7 @@ function buildCredentialEmail(
 	const html = `
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#222;">
       <h2 style="color:#0e7490;">Your server is ready 🚀</h2>
-      <p><strong>${displayName}</strong> (${serviceType.replace("_", " ")}, ${regionLabel}) has been provisioned and is now active.</p>
+      <p><strong>${safeDisplayName}</strong> (${safeServiceType}, ${regionLabel}) has been provisioned and is now active.</p>
       <h3 style="margin-top:24px;">Connection Details</h3>
       ${credentialsHtml}
       <p style="margin-top:24px;font-size:13px;color:#666;">
@@ -182,8 +206,8 @@ Deno.serve(async (request) => {
 					.update(updatePayload)
 					.eq("id", job.resource_id);
 
-				// Email the user their server credentials.
-				if (provisioned.connectionDetails && resource.user_id) {
+				// Email the user their server credentials after any successful provision.
+				if (resource.user_id) {
 					const { data: userData } = await adminClient.auth.admin.getUserById(resource.user_id);
 					const userEmail = userData?.user?.email;
 					if (userEmail) {
@@ -191,7 +215,7 @@ Deno.serve(async (request) => {
 							resource.display_name,
 							resource.service_type,
 							resource.region,
-							provisioned.connectionDetails as ConnectionDetails,
+							(provisioned.connectionDetails ?? {}) as ConnectionDetails,
 						);
 						await sendEmail({ from: MAIL_FROM, to: userEmail, subject, html });
 					}

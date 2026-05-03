@@ -1,5 +1,6 @@
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { createAdminClient, createUserClient } from "../_shared/supabase.ts";
+import { triggerWorker } from "../_shared/worker.ts";
 
 type LifecycleAction = "suspend" | "resume" | "resize" | "delete";
 
@@ -11,16 +12,6 @@ function parsePayload(body: unknown): { resourceId: string; action: LifecycleAct
 	if (!idempotencyKey) throw new Error("idempotencyKey is required.");
 	if (!["suspend", "resume", "resize", "delete"].includes(action)) throw new Error("Invalid lifecycle action.");
 	return { resourceId, action, idempotencyKey };
-}
-
-async function triggerWorker() {
-	const workerSecret = Deno.env.get("PROVISION_WORKER_SECRET");
-	const supabaseUrl = Deno.env.get("SUPABASE_URL");
-	if (!workerSecret || !supabaseUrl) return;
-	await fetch(`${supabaseUrl}/functions/v1/provision-job-worker`, {
-		method: "POST",
-		headers: { "x-worker-secret": workerSecret },
-	}).catch(() => {}); // fire-and-forget
 }
 
 Deno.serve(async (request) => {
