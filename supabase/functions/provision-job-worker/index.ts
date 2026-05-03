@@ -1,6 +1,7 @@
 import { jsonResponse } from "../_shared/cors.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
 import { executeLifecycleAction, provisionResource, syncResourceStatus } from "../_shared/providers/digitalocean-api.ts";
+import { MAIL_FROM, sendEmail } from "../_shared/mailer.ts";
 
 Deno.serve(async (request) => {
 	if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, request);
@@ -88,7 +89,7 @@ Deno.serve(async (request) => {
 		try {
 			const { data: resource, error: resourceError } = await adminClient
 				.from("service_resources")
-				.select("id, service_type, provider_resource_id, display_name, region, metadata")
+				.select("id, service_type, provider_resource_id, display_name, region, metadata, user_id")
 				.eq("id", job.resource_id)
 				.single();
 			if (resourceError || !resource) throw new Error(resourceError?.message || "Resource not found");
@@ -142,6 +143,37 @@ Deno.serve(async (request) => {
 				message: `Job action ${job.action} completed by worker.`,
 				payload: { providerResourceId },
 			});
+
+			// Send customer email for provision success
+			if (job.action === "provision") {
+				const { data: authUser } = await adminClient.auth.admin.getUserById(resource.user_id);
+				const userEmail = authUser?.user?.email;
+				if (userEmail) {
+					const connDetails = (resource as Record<string, unknown>).connection_details as Record<string, string> | null;
+					const ipLine = connDetails?.ipv4 ? `<tr><td><strong>IP Address</strong></td><td style="font-family:monospace">${connDetails.ipv4}</td></tr>` : "";
+					await sendEmail({
+						from: MAIL_FROM,
+						to: userEmail,
+						subject: `Your ${resource.display_name} is ready — CloudBase`,
+						html: `
+							<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1e293b">
+								<h2 style="color:#0891b2">Your server is live! 🚀</h2>
+								<p>Your resource has been provisioned and is ready to use.</p>
+								<table cellpadding="8" style="border-collapse:collapse;font-size:14px;width:100%">
+									<tr style="background:#f1f5f9"><td><strong>Name</strong></td><td>${resource.display_name}</td></tr>
+									<tr><td><strong>Type</strong></td><td>${String(resource.service_type).toUpperCase()}</td></tr>
+									<tr style="background:#f1f5f9"><td><strong>Region</strong></td><td>${resource.region}</td></tr>
+									${ipLine}
+								</table>
+								<p style="margin-top:24px">
+									<a href="https://cloudbaseservice.com/dashboard" style="background:#0891b2;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600">Go to Dashboard →</a>
+								</p>
+								<p style="font-size:12px;color:#94a3b8;margin-top:24px">CloudBase · cloudbaseservice.com</p>
+							</div>
+						`,
+					});
+				}
+			}
 		} catch (error) {
 			failed += 1;
 			const errMsg = error instanceof Error ? error.message : "Unknown worker error";

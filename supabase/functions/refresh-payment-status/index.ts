@@ -261,6 +261,29 @@ Deno.serve(async (request) => {
 						</table>
 					`,
 				});
+				// Send customer confirmation
+				if (user.email) {
+					await sendEmail({
+						from: MAIL_FROM,
+						to: user.email,
+						subject: `Payment confirmed — ${order.credits_to_add} credits added`,
+						html: `
+							<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1e293b">
+								<h2 style="color:#0891b2">Payment confirmed ✅</h2>
+								<p>Your credits have been added to your account.</p>
+								<table cellpadding="8" style="border-collapse:collapse;font-size:14px;width:100%">
+									<tr style="background:#f1f5f9"><td><strong>Invoice</strong></td><td>${order.invoice}</td></tr>
+									<tr><td><strong>Amount Paid</strong></td><td>${formatMinorAmount(order.amount_minor, order.currency)}</td></tr>
+									<tr style="background:#f1f5f9"><td><strong>Credits Added</strong></td><td>${order.credits_to_add}</td></tr>
+								</table>
+								<p style="margin-top:24px">
+									<a href="https://cloudbaseservice.com/dashboard/billing" style="background:#0891b2;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600">View Billing →</a>
+								</p>
+								<p style="font-size:12px;color:#94a3b8;margin-top:24px">CloudBase · cloudbaseservice.com</p>
+							</div>
+						`,
+					});
+				}
 			}
 		}
 
