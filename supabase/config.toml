@@ -379,6 +379,9 @@ verify_jwt = false
 [functions.refresh-payment-status]
 verify_jwt = false
 
+[functions.admin-credit-adjustment]
+verify_jwt = false
+
 [functions.start-reseller-order]
 verify_jwt = false
 

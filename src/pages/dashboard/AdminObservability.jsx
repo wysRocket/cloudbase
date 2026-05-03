@@ -1,7 +1,8 @@
+import { motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
+import { grantManualCredits } from "../../lib/adminCredits";
 import { supabase } from "../../lib/supabaseClient";
 
 // ─── Chart helpers ────────────────────────────────────────────────────────────
@@ -117,6 +118,14 @@ export default function AdminObservability() {
 	const [profiles, setProfiles] = useState([]);
 	const [roles, setRoles] = useState([]);
 	const [transactions, setTransactions] = useState([]);
+	const [manualCreditUserId, setManualCreditUserId] = useState("");
+	const [manualCreditAmount, setManualCreditAmount] = useState("1000");
+	const [manualCreditReason, setManualCreditReason] = useState(
+		"Admin support adjustment",
+	);
+	const [manualCreditSubmitting, setManualCreditSubmitting] = useState(false);
+	const [manualCreditMessage, setManualCreditMessage] = useState("");
+	const [manualCreditError, setManualCreditError] = useState("");
 
 	const [serviceFlags, setServiceFlags] = useState([]);
 	const [reconciliationRows, setReconciliationRows] = useState([]);
@@ -185,6 +194,12 @@ export default function AdminObservability() {
 		loadBackofficeData();
 	}, [loadBackofficeData]);
 
+	useEffect(() => {
+		if (!manualCreditUserId && profiles.length > 0) {
+			setManualCreditUserId(profiles[0].id);
+		}
+	}, [manualCreditUserId, profiles]);
+
 	// ─── Role map ────────────────────────────────────────────────────────────────
 
 	const roleMap = useMemo(() => {
@@ -195,6 +210,22 @@ export default function AdminObservability() {
 		});
 		return map;
 	}, [roles]);
+
+	const userCreditBalances = useMemo(() => {
+		const map = new Map();
+		transactions.forEach((tx) => {
+			map.set(tx.user_id, (map.get(tx.user_id) || 0) + (tx.amount || 0));
+		});
+		return map;
+	}, [transactions]);
+
+	const selectedManualCreditUser = useMemo(
+		() => profiles.find((profile) => profile.id === manualCreditUserId) || null,
+		[profiles, manualCreditUserId],
+	);
+
+	const selectedManualCreditBalance =
+		userCreditBalances.get(manualCreditUserId) || 0;
 
 	// ─── Date range cutoff ───────────────────────────────────────────────────────
 
@@ -360,6 +391,39 @@ export default function AdminObservability() {
 		},
 	];
 
+	const handleManualCreditGrant = async (event) => {
+		event.preventDefault();
+		setManualCreditSubmitting(true);
+		setManualCreditError("");
+		setManualCreditMessage("");
+
+		try {
+			const amount = Number(manualCreditAmount);
+			const response = await grantManualCredits({
+				userId: manualCreditUserId,
+				amount,
+				reason: manualCreditReason,
+			});
+
+			setManualCreditMessage(
+				`Granted ${amount.toLocaleString()} credits to ${
+					response?.recipient?.email ||
+					selectedManualCreditUser?.email ||
+					"the selected user"
+				}.`,
+			);
+			await loadBackofficeData();
+		} catch (error) {
+			setManualCreditError(
+				error instanceof Error
+					? error.message
+					: "Unable to grant manual credits.",
+			);
+		} finally {
+			setManualCreditSubmitting(false);
+		}
+	};
+
 	// ─── Guards ──────────────────────────────────────────────────────────────────
 
 	if (adminLoading || loading) {
@@ -454,6 +518,127 @@ export default function AdminObservability() {
 					{error}
 				</div>
 			)}
+
+			<div className="rounded-2xl border border-white/10 bg-[#0d1527] p-5">
+				<div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between mb-5">
+					<div>
+						<h2 className="font-bold text-lg">Manual Credit Top-Up</h2>
+						<p className="text-xs text-slate-500 mt-1">
+							Grant completed credits to a customer account for support,
+							compensation, or migration adjustments.
+						</p>
+					</div>
+					<div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 min-w-[180px]">
+						<p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+							Selected Balance
+						</p>
+						<p className="text-xl font-bold text-emerald-300 mt-1">
+							{selectedManualCreditBalance.toLocaleString()}
+						</p>
+					</div>
+				</div>
+
+				<form
+					onSubmit={handleManualCreditGrant}
+					className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_180px_minmax(0,1fr)_auto] gap-3"
+				>
+					<div>
+						<label
+							htmlFor="manual-credit-user"
+							className="text-xs text-slate-400 mb-1.5 block"
+						>
+							User
+						</label>
+						<select
+							id="manual-credit-user"
+							value={manualCreditUserId}
+							onChange={(event) => setManualCreditUserId(event.target.value)}
+							className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500/50"
+						>
+							{profiles.length === 0 ? (
+								<option value="">No users available</option>
+							) : (
+								profiles.map((profile) => (
+									<option key={profile.id} value={profile.id}>
+										{profile.email || profile.id}
+									</option>
+								))
+							)}
+						</select>
+						{selectedManualCreditUser && (
+							<p className="text-[11px] text-slate-600 font-mono truncate mt-1">
+								{selectedManualCreditUser.id}
+							</p>
+						)}
+					</div>
+
+					<div>
+						<label
+							htmlFor="manual-credit-amount"
+							className="text-xs text-slate-400 mb-1.5 block"
+						>
+							Credits
+						</label>
+						<input
+							id="manual-credit-amount"
+							type="number"
+							min="1"
+							max="1000000"
+							step="1"
+							value={manualCreditAmount}
+							onChange={(event) => setManualCreditAmount(event.target.value)}
+							className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500/50"
+							required
+						/>
+					</div>
+
+					<div>
+						<label
+							htmlFor="manual-credit-reason"
+							className="text-xs text-slate-400 mb-1.5 block"
+						>
+							Reason
+						</label>
+						<input
+							id="manual-credit-reason"
+							type="text"
+							minLength={5}
+							maxLength={180}
+							value={manualCreditReason}
+							onChange={(event) => setManualCreditReason(event.target.value)}
+							className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/50"
+							placeholder="Support adjustment"
+							required
+						/>
+					</div>
+
+					<div className="flex items-end">
+						<button
+							type="submit"
+							disabled={
+								manualCreditSubmitting ||
+								!manualCreditUserId ||
+								profiles.length === 0
+							}
+							className="w-full lg:w-auto px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors"
+						>
+							{manualCreditSubmitting ? "Granting..." : "Grant Credits"}
+						</button>
+					</div>
+				</form>
+
+				{(manualCreditMessage || manualCreditError) && (
+					<div
+						className={`mt-4 rounded-xl px-4 py-3 text-sm border ${
+							manualCreditError
+								? "bg-red-500/10 border-red-500/20 text-red-300"
+								: "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+						}`}
+					>
+						{manualCreditError || manualCreditMessage}
+					</div>
+				)}
+			</div>
 
 			{/* KPI Strip */}
 			<div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
