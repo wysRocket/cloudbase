@@ -13,6 +13,16 @@ function parsePayload(body: unknown): { resourceId: string; action: LifecycleAct
 	return { resourceId, action, idempotencyKey };
 }
 
+async function triggerWorker(): Promise<void> {
+	const supabaseUrl = Deno.env.get("SUPABASE_URL");
+	const workerSecret = Deno.env.get("PROVISION_WORKER_SECRET");
+	if (!supabaseUrl || !workerSecret) return;
+	fetch(`${supabaseUrl}/functions/v1/provision-job-worker`, {
+		method: "POST",
+		headers: { "x-worker-secret": workerSecret },
+	}).catch(() => {});
+}
+
 Deno.serve(async (request) => {
 	if (request.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(request) });
 	if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, request);
@@ -54,6 +64,8 @@ Deno.serve(async (request) => {
 			.select("id")
 			.single();
 		if (insertError) return jsonResponse({ error: insertError.message }, 500, request);
+
+		await triggerWorker();
 
 		return jsonResponse({ status: "accepted", jobId: job.id, deduplicated: false }, 202, request);
 	} catch (error) {
