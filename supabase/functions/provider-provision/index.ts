@@ -6,6 +6,25 @@ type ProvisionRequest = {
 	idempotencyKey: string;
 };
 
+type ServiceResource = {
+	id: string;
+	user_id: string;
+	status: string;
+	region: string;
+	metadata: Record<string, unknown>;
+};
+
+type CatalogEntry = {
+	sell_price_cents: number;
+	display_name: string;
+	billing_cycle: string;
+};
+
+type EnqueueRpcResult = {
+	job_id: string;
+	is_new: boolean;
+};
+
 function parseProvisionRequest(body: unknown): ProvisionRequest {
 	const resourceId = String((body as Record<string, unknown>)?.resourceId || "").trim();
 	const idempotencyKey = String((body as Record<string, unknown>)?.idempotencyKey || "").trim();
@@ -45,6 +64,7 @@ Deno.serve(async (request) => {
 			.select("id, user_id, status, region, metadata")
 			.eq("id", input.resourceId)
 			.eq("user_id", user.id)
+			.returns<ServiceResource>()
 			.maybeSingle();
 
 		if (resourceError) return jsonResponse({ error: resourceError.message }, 500, request);
@@ -53,11 +73,11 @@ Deno.serve(async (request) => {
 		// Look up the authoritative sell price from the service catalog.
 		// Try the regional plan code first (e.g. do-vps-basic-2vcpu-4gb-nyc3),
 		// then fall back to the base plan code for backward compatibility.
-		const basePlanCode = String((resource.metadata as Record<string, unknown>)?.planCode || "");
+		const basePlanCode = String(resource.metadata?.planCode || "");
 		const region = String(resource.region || "");
 		const regionalPlanCode = basePlanCode && region ? `${basePlanCode}-${region}` : "";
 
-		let catalogEntry: { sell_price_cents: number; display_name: string; billing_cycle: string } | null = null;
+		let catalogEntry: CatalogEntry | null = null;
 
 		if (regionalPlanCode) {
 			const { data } = await adminClient
@@ -65,6 +85,7 @@ Deno.serve(async (request) => {
 				.select("sell_price_cents, display_name, billing_cycle")
 				.eq("plan_code", regionalPlanCode)
 				.eq("is_active", true)
+				.returns<CatalogEntry>()
 				.maybeSingle();
 			catalogEntry = data;
 		}
@@ -75,6 +96,7 @@ Deno.serve(async (request) => {
 				.select("sell_price_cents, display_name, billing_cycle")
 				.eq("plan_code", basePlanCode)
 				.eq("is_active", true)
+				.returns<CatalogEntry>()
 				.maybeSingle();
 			catalogEntry = data;
 		}
@@ -98,7 +120,7 @@ Deno.serve(async (request) => {
 				p_amount: creditsToDeduct,
 				p_description: creditDescription,
 			},
-		);
+		).returns<EnqueueRpcResult>();
 
 		if (rpcError) {
 			if (rpcError.message?.includes("insufficient_balance")) {
@@ -107,8 +129,8 @@ Deno.serve(async (request) => {
 			return jsonResponse({ error: rpcError.message }, 500, request);
 		}
 
-		const jobId = (rpcResult as Record<string, unknown>)?.job_id;
-		const deduplicated = !((rpcResult as Record<string, unknown>)?.is_new ?? true);
+		const jobId = rpcResult?.job_id;
+		const deduplicated = !(rpcResult?.is_new ?? true);
 
 		// Kick off the worker immediately so the job isn't waiting for a cron tick.
 		await triggerWorker();

@@ -57,7 +57,10 @@ export async function enqueueProvisionJob({ resourceId }) {
     }
   )
 
-  const json = await res.json().catch(() => ({ error: 'Request failed.' }))
+  const json = await res.json().catch((parseErr) => {
+    console.error('Failed to parse provider-provision response:', parseErr)
+    return { error: 'Request failed (unparseable response).' }
+  })
   if (!res.ok) {
     throw new Error(json.error || 'Unable to enqueue provision job.')
   }
