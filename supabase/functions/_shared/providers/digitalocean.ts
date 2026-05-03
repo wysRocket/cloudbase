@@ -35,25 +35,13 @@ type QueryResponse<T> = Promise<{
 	error: { message: string } | null;
 }>;
 
+type EqChain = {
+	eq: (column: string, value: unknown) => EqChain;
+	maybeSingle: () => QueryResponse<ServiceCatalogRow>;
+};
+
 type ServiceCatalogQuery = {
-	select: (columns: string) => {
-		eq: (
-			column: string,
-			value: unknown,
-		) => {
-			eq: (
-				column2: string,
-				value2: unknown,
-			) => {
-				eq: (
-					column3: string,
-					value3: unknown,
-				) => {
-					maybeSingle: () => QueryResponse<ServiceCatalogRow>;
-				};
-			};
-		};
-	};
+	select: (columns: string) => EqChain;
 };
 
 type AdminClientLike = {
@@ -72,16 +60,35 @@ export async function quoteFromCatalog(
 	adminClient: AdminClientLike,
 	input: CatalogQuoteInput,
 ): Promise<CatalogQuoteResult> {
-	const { data: row, error } = await adminClient
+	// Seed data stores plan codes with region suffix (e.g. "do-vps-basic-2vcpu-4gb-nyc3").
+	// Try that form first, then fall back to the legacy region-as-column approach.
+	const regionalPlanCode = `${input.planCode}-${input.region}`;
+
+	let { data: row, error } = await adminClient
 		.from("service_catalog")
 		.select("plan_code, service_type, billing_cycle, sell_price_cents")
-		.eq("plan_code", input.planCode)
-		.eq("region", input.region)
+		.eq("plan_code", regionalPlanCode)
 		.eq("is_active", true)
 		.maybeSingle();
 
 	if (error) {
 		throw new Error(`Unable to read service catalog: ${error.message}`);
+	}
+
+	if (!row) {
+		const { data: fallbackRow, error: fallbackError } = await adminClient
+			.from("service_catalog")
+			.select("plan_code, service_type, billing_cycle, sell_price_cents")
+			.eq("plan_code", input.planCode)
+			.eq("region", input.region)
+			.eq("is_active", true)
+			.maybeSingle();
+
+		if (fallbackError) {
+			throw new Error(`Unable to read service catalog: ${fallbackError.message}`);
+		}
+
+		row = fallbackRow;
 	}
 
 	if (!row) {

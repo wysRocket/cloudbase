@@ -39,12 +39,14 @@ export async function createServiceResource({ serviceType, displayName, region, 
   return data
 }
 
-export async function enqueueProvisionJob({ resourceId }) {
+export async function enqueueProvisionJob({ resourceId, creditsToDeduct = 0, creditDescription = 'Service deployment' }) {
   const idempotencyKey = `provision-${resourceId}`
   const { data, error } = await supabase.functions.invoke('provider-provision', {
     body: {
       resourceId,
       idempotencyKey,
+      creditsToDeduct,
+      creditDescription,
     },
   })
 

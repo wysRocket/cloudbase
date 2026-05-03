@@ -4,11 +4,36 @@ import { useDashboard } from '../../context/DashboardContext'
 import { createServiceResource, enqueueProvisionJob, getProviderQuote } from '../../lib/resellerApi'
 
 const serviceTypes = [
-  { id: 'vps', name: 'Virtual Private Server', description: 'High-performance NVMe VPS', fallbackPriceLabel: '100 credits/mo', fallbackCost: 100, typeName: 'VPS (Standard)', planCode: 'do-vps-basic-2vcpu-4gb' },
-  { id: 'k8s', name: 'Kubernetes Cluster', description: 'Managed K8s control plane', fallbackPriceLabel: '1000 credits/mo', fallbackCost: 1000, typeName: 'Kubernetes (Managed)', planCode: 'do-k8s-basic-3node' },
-  { id: 'db', name: 'Managed Database', description: 'Postgres, MySQL, Redis', fallbackPriceLabel: '300 credits/mo', fallbackCost: 300, typeName: 'Database (PG/MySQL)', planCode: 'do-db-pg-basic' },
-  { id: 'gpu', name: 'GPU Instance', description: 'NVIDIA H100 / A100', fallbackPriceLabel: '50 credits/hr', fallbackCost: 50, typeName: 'GPU (H100)', planCode: 'do-gpu-h100-1x' },
-  { id: 'game_server', name: 'Game Server', description: 'SteamCMD-ready Ubuntu droplet', fallbackPriceLabel: '140 credits/mo', fallbackCost: 140, typeName: 'Game Server', planCode: 'do-game-basic-2vcpu-4gb' },
+  {
+    id: 'vps', name: 'Virtual Private Server', description: 'High-performance NVMe VPS',
+    fallbackPriceLabel: '1500 credits/mo', fallbackCost: 1500,
+    typeName: 'VPS (Standard)', planCode: 'do-vps-basic-2vcpu-4gb',
+    metadata: { sizeSlug: 's-2vcpu-4gb', imageSlug: 'ubuntu-22-04-x64' },
+  },
+  {
+    id: 'k8s', name: 'Kubernetes Cluster', description: 'Managed K8s control plane',
+    fallbackPriceLabel: '4500 credits/mo', fallbackCost: 4500,
+    typeName: 'Kubernetes (Managed)', planCode: 'do-k8s-basic-3node',
+    metadata: { nodeSize: 's-2vcpu-4gb', nodeCount: '3' },
+  },
+  {
+    id: 'db', name: 'Managed Database', description: 'Postgres, MySQL, Redis',
+    fallbackPriceLabel: '1900 credits/mo', fallbackCost: 1900,
+    typeName: 'Database (PG/MySQL)', planCode: 'do-db-pg-basic',
+    metadata: { engine: 'pg', version: '16', size: 'db-s-1vcpu-1gb' },
+  },
+  {
+    id: 'gpu', name: 'GPU Instance', description: 'NVIDIA H100 / A100',
+    fallbackPriceLabel: '350 credits/hr', fallbackCost: 350,
+    typeName: 'GPU (H100)', planCode: 'do-gpu-h100-1x',
+    metadata: { sizeSlug: 'gpu-h100x1-80gb' },
+  },
+  {
+    id: 'game_server', name: 'Game Server', description: 'SteamCMD-ready Ubuntu droplet',
+    fallbackPriceLabel: '1800 credits/mo', fallbackCost: 1800,
+    typeName: 'Game Server', planCode: 'do-game-basic-2vcpu-4gb',
+    metadata: { sizeSlug: 's-2vcpu-4gb' },
+  },
 ]
 
 const regions = [
@@ -21,13 +46,13 @@ const regions = [
 
 function quoteLabel(quote, fallbackLabel) {
   if (!quote || quote.availability !== 'available') return fallbackLabel
-  const amount = (Number(quote.lineTotalCents || 0) / 100).toFixed(2)
-  return `$${amount}/${quote.billingCycle || 'monthly'}`
+  const cycle = quote.billingCycle === 'hourly' ? 'hr' : 'mo'
+  return `${(quote.lineTotalCents || 0).toLocaleString()} credits/${cycle}`
 }
 
 export default function NewService() {
   const navigate = useNavigate()
-  const { addResource, balance, deductCredits } = useDashboard()
+  const { addResource, balance } = useDashboard()
   const [selectedType, setSelectedType] = useState(serviceTypes[0].id)
   const [selectedRegion, setSelectedRegion] = useState(regions[0].id)
   const [isDeploying, setIsDeploying] = useState(false)
@@ -36,7 +61,7 @@ export default function NewService() {
   const [isLoadingQuote, setIsLoadingQuote] = useState(false)
 
   const selectedTypeInfo = useMemo(() => serviceTypes.find((t) => t.id === selectedType), [selectedType])
-  const quoteCost = quote?.availability === 'available' ? Math.ceil((quote.lineTotalCents || 0) / 100) : selectedTypeInfo.fallbackCost
+  const quoteCost = quote?.availability === 'available' ? (quote.lineTotalCents || 0) : selectedTypeInfo.fallbackCost
   const totalLabel = quoteLabel(quote, selectedTypeInfo.fallbackPriceLabel)
   const canDeploy = balance >= quoteCost
 
@@ -74,21 +99,24 @@ export default function NewService() {
     try {
       const resourceName = `${selectedTypeInfo.id}-${crypto.randomUUID().slice(0, 8)}`
 
+      const serviceTypeMap = { k8s: 'kubernetes', db: 'database' }
+      const resolvedServiceType = serviceTypeMap[selectedTypeInfo.id] || selectedTypeInfo.id
+
       const resource = await createServiceResource({
-        serviceType: selectedTypeInfo.id === 'k8s' ? 'kubernetes' : selectedTypeInfo.id === 'db' ? 'database' : selectedTypeInfo.id,
+        serviceType: resolvedServiceType,
         displayName: resourceName,
         region: regionInfo.id,
         metadata: {
           planCode: selectedTypeInfo.planCode,
-          sizeSlug: selectedTypeInfo.id === 'vps' ? 's-1vcpu-2gb' : undefined,
-          imageSlug: selectedTypeInfo.id === 'vps' ? 'ubuntu-22-04-x64' : undefined,
+          ...selectedTypeInfo.metadata,
         },
       })
 
-      await enqueueProvisionJob({ resourceId: resource.id })
-
-      // Deduct credits only after the resource and provisioning job are successfully created
-      await deductCredits(`${selectedTypeInfo.typeName} deployment`, quoteCost)
+      await enqueueProvisionJob({
+        resourceId: resource.id,
+        creditsToDeduct: quoteCost,
+        creditDescription: `${selectedTypeInfo.typeName} deployment`,
+      })
 
       addResource({
         id: resource.id,
@@ -100,8 +128,13 @@ export default function NewService() {
       })
 
       navigate('/dashboard')
-    } catch {
-      setDeployError('Failed to create provisioning job. Please try again.')
+    } catch (err) {
+      const msg = err?.message || ''
+      if (msg.includes('Insufficient credit')) {
+        setDeployError('Insufficient credit balance. Please top up and try again.')
+      } else {
+        setDeployError('Failed to create provisioning job. Please try again.')
+      }
     } finally {
       setIsDeploying(false)
     }
