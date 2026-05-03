@@ -3,9 +3,11 @@ import {
 	useCallback,
 	useContext,
 	useEffect,
+	useRef,
 	useState,
 } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { syncResourceStatus } from "../lib/resellerApi";
 import { useAuth } from "./AuthContext";
 
 const DashboardContext = createContext();
@@ -23,6 +25,7 @@ function mapResourceRow(resource) {
 		region: resource.region,
 		price: "-",
 		status: resource.status,
+		updated_at: resource.updated_at,
 		uptime: resource.updated_at
 			? new Date(resource.updated_at).toLocaleString()
 			: "-",
@@ -78,7 +81,45 @@ export function DashboardProvider({ children }) {
 			return;
 		}
 
-		setResources((data || []).map(mapResourceRow));
+		const mapped = (data || []).map(mapResourceRow);
+		setResources(mapped);
+
+		// Auto-sync resources in provisioning state that are older than 90 seconds
+		// (give DO time to create the droplet before querying its status)
+		if (!syncingRef.current) {
+			const cutoff = Date.now() - 90_000;
+			const provisioning = mapped.filter(
+				(r) =>
+					r.status === "provisioning" &&
+					r.updated_at &&
+					new Date(r.updated_at).getTime() < cutoff,
+			);
+			if (provisioning.length > 0) {
+				syncingRef.current = true;
+				Promise.all(
+					provisioning.map((r) =>
+						syncResourceStatus({ resourceId: r.id }).catch(() => {}),
+					),
+				)
+					.then(() => {
+						syncingRef.current = false;
+						// Re-fetch after syncing to reflect updated statuses
+						supabase
+							.from("service_resources")
+							.select(
+								"id, display_name, service_type, region, status, updated_at, connection_details",
+							)
+							.eq("user_id", user.id)
+							.order("created_at", { ascending: false })
+							.then(({ data: refreshed }) => {
+								if (refreshed) setResources(refreshed.map(mapResourceRow));
+							});
+					})
+					.catch(() => {
+						syncingRef.current = false;
+					});
+			}
+		}
 	}, [user]);
 
 	const loadResourceEvents = useCallback(async () => {
@@ -172,11 +213,13 @@ export function DashboardProvider({ children }) {
 		loadResourceEvents();
 	}, [loadTransactions, loadResources, loadResourceEvents]);
 
+	const syncingRef = useRef(false);
+
 	useEffect(() => {
 		if (!user) return;
 
-		const intervalId = setInterval(() => {
-			loadResources();
+		const intervalId = setInterval(async () => {
+			await loadResources();
 			loadResourceEvents();
 		}, 15000);
 

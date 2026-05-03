@@ -379,10 +379,25 @@ verify_jwt = false
 [functions.refresh-payment-status]
 verify_jwt = false
 
+[functions.admin-credit-adjustment]
+verify_jwt = false
+
 [functions.start-reseller-order]
 verify_jwt = false
 
 [functions.provider-provision]
+verify_jwt = false
+
+[functions.provider-quote]
+verify_jwt = false
+
+[functions.provider-lifecycle]
+verify_jwt = false
+
+[functions.provider-sync-status]
+verify_jwt = false
+
+[functions.get-kubeconfig]
 verify_jwt = false
 
 [analytics]

@@ -169,6 +169,10 @@ function App() {
 								<Route index element={<Dashboard />} />
 								<Route path="new" element={<NewService />} />
 								<Route
+									path="services"
+									element={<ResourceList title="All Services" />}
+								/>
+								<Route
 									path="vps"
 									element={
 										<ResourceList title="VPS Instances" typeFilter="VPS" />

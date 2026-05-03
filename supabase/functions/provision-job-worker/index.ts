@@ -1,7 +1,7 @@
 import { jsonResponse } from "../_shared/cors.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
+import { executeLifecycleAction, provisionResource, syncResourceStatus } from "../_shared/providers/digitalocean-api.ts";
 import { MAIL_FROM, sendEmail } from "../_shared/mailer.ts";
-import { executeLifecycleAction, provisionResource } from "../_shared/providers/digitalocean-api.ts";
 
 type ConnectionDetails = Record<string, unknown>;
 
@@ -71,6 +71,58 @@ Deno.serve(async (request) => {
 	const adminClient = createAdminClient();
 	const nowIso = new Date().toISOString();
 
+	// Sync-only mode: update status of all resources stuck in "provisioning"
+	// Only sync resources older than 90 seconds (give DO time to create the droplet)
+	const url = new URL(request.url);
+	if (url.searchParams.get("action") === "sync_provisioning") {
+		const cutoff = new Date(Date.now() - 90_000).toISOString();
+		const { data: stuckResources, error: queryError } = await adminClient
+			.from("service_resources")
+			.select("id, service_type, provider_resource_id")
+			.eq("status", "provisioning")
+			.neq("provider_resource_id", null)
+			.lt("updated_at", cutoff);
+
+		if (queryError) return jsonResponse({ error: queryError.message, phase: "query" }, 500, request);
+
+		let synced = 0;
+		const errors: string[] = [];
+		for (const res of stuckResources || []) {
+			try {
+				const result = await syncResourceStatus(String(res.service_type), {
+					providerResourceId: String(res.provider_resource_id),
+					serviceType: String(res.service_type),
+				});
+				const updatePayload: Record<string, unknown> = { status: result.status };
+				if (result.connectionDetails) updatePayload.connection_details = result.connectionDetails;
+				await adminClient.from("service_resources").update(updatePayload).eq("id", res.id);
+				synced += 1;
+			} catch (err) {
+				// 404 = DO not done yet, skip silently. Other errors are real failures.
+				const msg = err instanceof Error ? err.message : "unknown error";
+				if (!msg.includes("404")) errors.push(msg);
+			}
+		}
+		return jsonResponse({ ok: true, synced, found: (stuckResources || []).length, errors }, 200, request);
+	}
+
+	// Diagnostic: list actual DO droplets to debug ID mismatches
+	if (url.searchParams.get("action") === "list_do_droplets") {
+		const token = Deno.env.get("DIGITALOCEAN_API_TOKEN");
+		if (!token) return jsonResponse({ error: "Missing DIGITALOCEAN_API_TOKEN" }, 500, request);
+		const res = await fetch("https://api.digitalocean.com/v2/droplets?per_page=50", {
+			headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+		});
+		const data = await res.json();
+		const simplified = (data.droplets || []).map((d: Record<string, unknown>) => ({
+			id: d.id,
+			name: d.name,
+			status: d.status,
+			ip: ((d.networks as Record<string, unknown[]>)?.v4 || []).find((n: Record<string, unknown>) => n.type === "public")?.ip_address,
+		}));
+		return jsonResponse({ ok: true, droplets: simplified, total: simplified.length }, 200, request);
+	}
+
 	const { data: jobs, error: jobsError } = await adminClient
 		.from("provision_jobs")
 		.select("id, resource_id, action, attempt_count, max_attempts")
@@ -93,7 +145,7 @@ Deno.serve(async (request) => {
 		try {
 			const { data: resource, error: resourceError } = await adminClient
 				.from("service_resources")
-				.select("id, user_id, service_type, provider_resource_id, display_name, region, metadata")
+				.select("id, service_type, provider_resource_id, display_name, region, metadata, user_id")
 				.eq("id", job.resource_id)
 				.single();
 			if (resourceError || !resource) throw new Error(resourceError?.message || "Resource not found");
@@ -162,8 +214,33 @@ Deno.serve(async (request) => {
 				message: `Job action ${job.action} completed by worker.`,
 				payload: { providerResourceId },
 			});
+
 		} catch (error) {
 			failed += 1;
+			const errMsg = error instanceof Error ? error.message : "Unknown worker error";
+
+			// If the provider returns 404 on a lifecycle action, the resource is gone — mark deleted immediately.
+			if (errMsg.includes("404") && job.action !== "provision") {
+				await adminClient.from("service_resources").update({ status: "deleted" }).eq("id", job.resource_id);
+				await adminClient.from("provision_jobs").update({
+					status: "dead_letter",
+					attempt_count: (job.attempt_count ?? 0) + 1,
+					last_error: "Resource no longer exists on provider (404). Marked deleted.",
+					locked_at: null,
+					locked_by: null,
+				}).eq("id", job.id);
+				await adminClient.from("provision_events").insert({
+					job_id: job.id,
+					resource_id: job.resource_id,
+					level: "warn",
+					event_type: "job.resource_not_found",
+					message: "Provider returned 404 — resource no longer exists. Marked deleted.",
+					payload: { action: job.action },
+				});
+				deadLettered += 1;
+				continue;
+			}
+
 			const nextAttempt = (job.attempt_count ?? 0) + 1;
 			const maxAttempts = job.max_attempts ?? 5;
 			const isDeadLetter = nextAttempt >= maxAttempts;
@@ -173,7 +250,7 @@ Deno.serve(async (request) => {
 				status: isDeadLetter ? "dead_letter" : "queued",
 				attempt_count: nextAttempt,
 				next_run_at: new Date(Date.now() + nextAttempt * 60_000).toISOString(),
-				last_error: error instanceof Error ? error.message : "Unknown worker error",
+				last_error: errMsg,
 				locked_at: null,
 				locked_by: null,
 			}).eq("id", job.id);
