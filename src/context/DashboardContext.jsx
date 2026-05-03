@@ -25,6 +25,7 @@ function mapResourceRow(resource) {
 		region: resource.region,
 		price: "-",
 		status: resource.status,
+		updated_at: resource.updated_at,
 		uptime: resource.updated_at
 			? new Date(resource.updated_at).toLocaleString()
 			: "-",
@@ -83,9 +84,16 @@ export function DashboardProvider({ children }) {
 		const mapped = (data || []).map(mapResourceRow);
 		setResources(mapped);
 
-		// Auto-sync any resources still in provisioning state
+		// Auto-sync resources in provisioning state that are older than 90 seconds
+		// (give DO time to create the droplet before querying its status)
 		if (!syncingRef.current) {
-			const provisioning = mapped.filter((r) => r.status === "provisioning");
+			const cutoff = Date.now() - 90_000;
+			const provisioning = mapped.filter(
+				(r) =>
+					r.status === "provisioning" &&
+					r.updated_at &&
+					new Date(r.updated_at).getTime() < cutoff,
+			);
 			if (provisioning.length > 0) {
 				syncingRef.current = true;
 				Promise.all(

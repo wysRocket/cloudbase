@@ -15,13 +15,16 @@ Deno.serve(async (request) => {
 	const nowIso = new Date().toISOString();
 
 	// Sync-only mode: update status of all resources stuck in "provisioning"
+	// Only sync resources older than 90 seconds (give DO time to create the droplet)
 	const url = new URL(request.url);
 	if (url.searchParams.get("action") === "sync_provisioning") {
+		const cutoff = new Date(Date.now() - 90_000).toISOString();
 		const { data: stuckResources, error: queryError } = await adminClient
 			.from("service_resources")
 			.select("id, service_type, provider_resource_id")
 			.eq("status", "provisioning")
-			.neq("provider_resource_id", null);
+			.neq("provider_resource_id", null)
+			.lt("updated_at", cutoff);
 
 		if (queryError) return jsonResponse({ error: queryError.message, phase: "query" }, 500, request);
 
@@ -38,7 +41,9 @@ Deno.serve(async (request) => {
 				await adminClient.from("service_resources").update(updatePayload).eq("id", res.id);
 				synced += 1;
 			} catch (err) {
-				errors.push(err instanceof Error ? err.message : "unknown error");
+				// 404 = DO not done yet, skip silently. Other errors are real failures.
+				const msg = err instanceof Error ? err.message : "unknown error";
+				if (!msg.includes("404")) errors.push(msg);
 			}
 		}
 		return jsonResponse({ ok: true, synced, found: (stuckResources || []).length, errors }, 200, request);
