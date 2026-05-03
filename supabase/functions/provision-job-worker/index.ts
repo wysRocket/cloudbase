@@ -49,6 +49,23 @@ Deno.serve(async (request) => {
 		return jsonResponse({ ok: true, synced, found: (stuckResources || []).length, errors }, 200, request);
 	}
 
+	// Diagnostic: list actual DO droplets to debug ID mismatches
+	if (url.searchParams.get("action") === "list_do_droplets") {
+		const token = Deno.env.get("DIGITALOCEAN_API_TOKEN");
+		if (!token) return jsonResponse({ error: "Missing DIGITALOCEAN_API_TOKEN" }, 500, request);
+		const res = await fetch("https://api.digitalocean.com/v2/droplets?per_page=50", {
+			headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+		});
+		const data = await res.json();
+		const simplified = (data.droplets || []).map((d: Record<string, unknown>) => ({
+			id: d.id,
+			name: d.name,
+			status: d.status,
+			ip: ((d.networks as Record<string, unknown[]>)?.v4 || []).find((n: Record<string, unknown>) => n.type === "public")?.ip_address,
+		}));
+		return jsonResponse({ ok: true, droplets: simplified, total: simplified.length }, 200, request);
+	}
+
 	const { data: jobs, error: jobsError } = await adminClient
 		.from("provision_jobs")
 		.select("id, resource_id, action, attempt_count, max_attempts")
@@ -127,6 +144,30 @@ Deno.serve(async (request) => {
 			});
 		} catch (error) {
 			failed += 1;
+			const errMsg = error instanceof Error ? error.message : "Unknown worker error";
+
+			// If the provider returns 404 on a lifecycle action, the resource is gone — mark deleted immediately.
+			if (errMsg.includes("404") && job.action !== "provision") {
+				await adminClient.from("service_resources").update({ status: "deleted" }).eq("id", job.resource_id);
+				await adminClient.from("provision_jobs").update({
+					status: "dead_letter",
+					attempt_count: (job.attempt_count ?? 0) + 1,
+					last_error: "Resource no longer exists on provider (404). Marked deleted.",
+					locked_at: null,
+					locked_by: null,
+				}).eq("id", job.id);
+				await adminClient.from("provision_events").insert({
+					job_id: job.id,
+					resource_id: job.resource_id,
+					level: "warn",
+					event_type: "job.resource_not_found",
+					message: "Provider returned 404 — resource no longer exists. Marked deleted.",
+					payload: { action: job.action },
+				});
+				deadLettered += 1;
+				continue;
+			}
+
 			const nextAttempt = (job.attempt_count ?? 0) + 1;
 			const maxAttempts = job.max_attempts ?? 5;
 			const isDeadLetter = nextAttempt >= maxAttempts;
@@ -136,7 +177,7 @@ Deno.serve(async (request) => {
 				status: isDeadLetter ? "dead_letter" : "queued",
 				attempt_count: nextAttempt,
 				next_run_at: new Date(Date.now() + nextAttempt * 60_000).toISOString(),
-				last_error: error instanceof Error ? error.message : "Unknown worker error",
+				last_error: errMsg,
 				locked_at: null,
 				locked_by: null,
 			}).eq("id", job.id);

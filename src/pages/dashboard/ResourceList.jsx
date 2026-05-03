@@ -30,9 +30,10 @@ export default function ResourceList({ typeFilter, title }) {
 
 	const filteredResources = typeFilter
 		? resources.filter((r) =>
-				r.type.toLowerCase().includes(typeFilter.toLowerCase()),
+				r.type.toLowerCase().includes(typeFilter.toLowerCase()) &&
+				r.status !== "deleted",
 			)
-		: resources;
+		: resources.filter((r) => r.status !== "deleted");
 
 	async function runAction(resourceId, action) {
 		setActionState((prev) => ({ ...prev, [`${resourceId}:${action}`]: true }));
@@ -326,59 +327,62 @@ export default function ResourceList({ typeFilter, title }) {
 													</div>
 												</td>
 												<td className="p-4 text-right pr-6">
-													<div className="flex justify-end gap-2 flex-wrap">
-														<button
-															type="button"
-															onClick={(event) => {
-																event.stopPropagation();
-																runAction(res.id, "suspend");
-															}}
-															disabled={actionState[`${res.id}:suspend`]}
-															className="text-xs px-2 py-1 rounded bg-white/5 text-amber-300 disabled:opacity-50"
-														>
-															Suspend
-														</button>
-														<button
-															type="button"
-															onClick={(event) => {
-																event.stopPropagation();
-																runAction(res.id, "resume");
-															}}
-															disabled={actionState[`${res.id}:resume`]}
-															className="text-xs px-2 py-1 rounded bg-white/5 text-green-300 disabled:opacity-50"
-														>
-															Resume
-														</button>
-														<button
-															type="button"
-															onClick={(event) => {
-																event.stopPropagation();
-																runAction(res.id, "delete");
-															}}
-															disabled={actionState[`${res.id}:delete`]}
-															className="text-xs px-2 py-1 rounded bg-white/5 text-red-300 disabled:opacity-50"
-														>
-															Delete
-														</button>
-														<button
-															type="button"
-															onClick={(event) => {
-																event.stopPropagation();
-																runSync(res.id);
-															}}
-															disabled={actionState[`${res.id}:sync`]}
-															className="text-xs px-2 py-1 rounded bg-white/5 text-cyan-300 disabled:opacity-50"
-														>
-															Sync
-														</button>
-													</div>
-													{actionError[res.id] && (
-														<p className="text-[11px] text-red-400 mt-1">
-															{actionError[res.id]}
-														</p>
-													)}
-												</td>
-											</tr>
+										<div className="flex justify-end gap-2 flex-wrap">
+											{!["deleted", "failed", "dead_letter"].includes(res.status) && (
+												<>
+													<button
+														type="button"
+														onClick={(event) => {
+															event.stopPropagation();
+															runAction(res.id, "suspend");
+														}}
+														disabled={actionState[`${res.id}:suspend`] || res.status === "suspended"}
+														className="text-xs px-2 py-1 rounded bg-white/5 text-amber-300 disabled:opacity-50"
+													>
+														Suspend
+													</button>
+													<button
+														type="button"
+														onClick={(event) => {
+															event.stopPropagation();
+															runAction(res.id, "resume");
+														}}
+														disabled={actionState[`${res.id}:resume`] || res.status === "active"}
+														className="text-xs px-2 py-1 rounded bg-white/5 text-green-300 disabled:opacity-50"
+													>
+														Resume
+													</button>
+													<button
+														type="button"
+														onClick={(event) => {
+															event.stopPropagation();
+															runAction(res.id, "delete");
+														}}
+														disabled={actionState[`${res.id}:delete`]}
+														className="text-xs px-2 py-1 rounded bg-white/5 text-red-300 disabled:opacity-50"
+													>
+														Delete
+													</button>
+												</>
+											)}
+											<button
+												type="button"
+												onClick={(event) => {
+													event.stopPropagation();
+													runSync(res.id);
+												}}
+												disabled={actionState[`${res.id}:sync`]}
+												className="text-xs px-2 py-1 rounded bg-white/5 text-cyan-300 disabled:opacity-50"
+											>
+												Sync
+											</button>
+										</div>
+										{actionError[res.id] && (
+											<p className="text-[11px] text-red-400 mt-1">
+												{actionError[res.id]}
+											</p>
+										)}
+									</td>									</tr>
 											{isExpanded && (
 												<tr
 													key={`${res.id}:details`}
