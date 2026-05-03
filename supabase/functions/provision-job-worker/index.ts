@@ -41,6 +41,14 @@ Deno.serve(async (request) => {
 				.single();
 			if (resourceError || !resource) throw new Error(resourceError?.message || "Resource not found");
 
+			if (resource.service_type === "kubernetes") {
+				resource.metadata = {
+					...(resource.metadata || {}),
+					nodeSize: (resource.metadata as Record<string, unknown>)?.nodeSize || (resource.metadata as Record<string, unknown>)?.node_size,
+					nodeCount: (resource.metadata as Record<string, unknown>)?.nodeCount || (resource.metadata as Record<string, unknown>)?.node_count,
+				};
+			}
+
 			let targetStatus = "active";
 			let providerResourceId = resource.provider_resource_id as string | null;
 
