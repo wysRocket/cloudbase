@@ -32,7 +32,9 @@ alter table if exists public.order_items
 alter table if exists public.service_resources
   add column if not exists unit_price_minor integer,
   add column if not exists unit_price_currency text,
-  add column if not exists unit_price_snapshot jsonb;
+  add column if not exists unit_price_snapshot jsonb,
+  add column if not exists provision_status text not null default 'pending',
+  add column if not exists updated_at timestamptz not null default now();
 
 -- add provisioning SLA metadata and terminal compensation tracking.
 alter table if exists public.provision_jobs
@@ -40,7 +42,9 @@ alter table if exists public.provision_jobs
   add column if not exists terminal_failed_at timestamptz,
   add column if not exists compensation_status text,
   add column if not exists compensation_credit_transaction_id bigint,
-  add column if not exists compensation_refund_reference text;
+  add column if not exists compensation_refund_reference text,
+  add column if not exists retry_count integer not null default 0,
+  add column if not exists updated_at timestamptz not null default now();
 
 create index if not exists provision_jobs_expected_complete_by_idx
   on public.provision_jobs (expected_complete_by)
