@@ -12,6 +12,11 @@ create table if not exists public.orders (
   updated_at timestamptz not null default now()
 );
 
+alter table public.orders
+  add column if not exists payment_order_id uuid references public.payment_orders(id) on delete set null,
+  add column if not exists total_credits integer not null default 0 check (total_credits >= 0),
+  add column if not exists sku_lock_expires_at timestamptz;
+
 create table if not exists public.order_items (
   id uuid primary key default gen_random_uuid(),
   order_id uuid not null references public.orders(id) on delete cascade,
@@ -24,6 +29,33 @@ create table if not exists public.order_items (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.order_items
+  add column if not exists sku text not null default '',
+  add column if not exists region text not null default '',
+  add column if not exists unit_credits integer not null default 0 check (unit_credits >= 0),
+  add column if not exists status text not null default 'reserved',
+  add column if not exists resource_ref text,
+  add column if not exists updated_at timestamptz not null default now();
+
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'order_items'
+      and column_name = 'plan_code'
+  ) then
+    update public.order_items
+    set
+      sku = coalesce(nullif(sku, ''), plan_code),
+      region = coalesce(nullif(region, ''), region_code),
+      unit_credits = greatest(unit_credits, coalesce(unit_amount_minor, 0))
+    where (sku = '' or region = '' or unit_credits = 0)
+      and (plan_code is not null or region_code is not null or unit_amount_minor is not null);
+  end if;
+end $$;
 
 create table if not exists public.provision_jobs (
   id uuid primary key default gen_random_uuid(),
