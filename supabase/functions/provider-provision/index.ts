@@ -1,5 +1,6 @@
 import { getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { createAdminClient, createUserClient } from "../_shared/supabase.ts";
+import { triggerWorker } from "../_shared/worker.ts";
 
 type ProvisionRequest = {
 	resourceId: string;
@@ -32,18 +33,6 @@ function parseProvisionRequest(body: unknown): ProvisionRequest {
 	if (!resourceId) throw new Error("resourceId is required.");
 	if (!idempotencyKey) throw new Error("idempotencyKey is required.");
 	return { resourceId, idempotencyKey };
-}
-
-async function triggerWorker(): Promise<void> {
-	const supabaseUrl = Deno.env.get("SUPABASE_URL");
-	const workerSecret = Deno.env.get("PROVISION_WORKER_SECRET");
-	if (!supabaseUrl || !workerSecret) return;
-	const workerUrl = `${supabaseUrl}/functions/v1/provision-job-worker`;
-	// Fire-and-forget; if this fails the job will be picked up by the next scheduled run.
-	fetch(workerUrl, {
-		method: "POST",
-		headers: { "x-worker-secret": workerSecret },
-	}).catch(() => {});
 }
 
 Deno.serve(async (request) => {
