@@ -73,6 +73,13 @@ function mapState(state: string): string {
 	return "provisioning";
 }
 
+function buildResourceTags(args: ProvisionArgs): string[] {
+	const tags = ["cloudbase"];
+	if (args.userId) tags.push(`user:${args.userId.slice(0, 8)}`);
+	tags.push("service:kubernetes");
+	return tags;
+}
+
 export async function provisionK8s(
 	args: ProvisionArgs,
 ): Promise<ProvisionResult> {
@@ -88,6 +95,7 @@ export async function provisionK8s(
 			region: args.region,
 			version,
 			node_pools: [{ size: nodeSize, name: "default", count: 1 }],
+			tags: buildResourceTags(args),
 		}),
 	});
 

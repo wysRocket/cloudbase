@@ -20,6 +20,7 @@ export interface ProvisionArgs {
 	region: string;
 	metadata: Record<string, unknown>;
 	serviceType?: string;
+	userId?: string;
 }
 
 export interface ProvisionResult {

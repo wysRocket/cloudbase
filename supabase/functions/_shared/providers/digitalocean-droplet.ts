@@ -51,6 +51,13 @@ mkdir -p /opt/steamcmd && cd /opt/steamcmd
 wget -q https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
 tar -xzf steamcmd_linux.tar.gz`;
 
+function buildResourceTags(args: ProvisionArgs): string[] {
+	const tags = ["cloudbase"];
+	if (args.serviceType) tags.push(`service:${args.serviceType}`);
+	if (args.userId) tags.push(`user:${args.userId.slice(0, 8)}`);
+	return tags;
+}
+
 export async function provisionDroplet(
 	args: ProvisionArgs,
 ): Promise<ProvisionResult> {
@@ -76,6 +83,7 @@ export async function provisionDroplet(
 		size,
 		image,
 		monitoring: true,
+		tags: buildResourceTags(args),
 	};
 	if (userData) body.user_data = userData;
 
