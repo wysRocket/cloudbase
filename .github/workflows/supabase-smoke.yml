@@ -1,0 +1,35 @@
+name: Supabase Smoke Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    name: Migration + Smoke Tests
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase local database
+        run: supabase start --exclude gotrue,realtime,storage-api,imgproxy,kong,inbucket,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+      - name: Apply migrations
+        run: supabase db reset --local
+
+      - name: Run reseller order orchestration smoke test
+        run: |
+          DB_URL=$(supabase status --output json | jq -r '.DB_URL')
+          psql "$DB_URL" -v ON_ERROR_STOP=1 \
+            -f supabase/tests/reseller_order_orchestration.smoke.sql
