@@ -1,7 +1,7 @@
 import { jsonResponse } from "../_shared/cors.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
 import { executeLifecycleAction, provisionResource, syncResourceStatus } from "../_shared/providers/digitalocean-api.ts";
-import { MAIL_FROM, sendEmail } from "../_shared/mailer.ts";
+import { MAIL_FROM, sendEmailOrThrow } from "../_shared/mailer.ts";
 
 type ConnectionDetails = Record<string, unknown>;
 
@@ -130,6 +130,23 @@ Deno.serve(async (request) => {
 		return jsonResponse({ ok: true, synced, found: (stuckResources || []).length, errors }, 200, request);
 	}
 
+	// Diagnostic: test SMTP delivery — surfaces real errors instead of swallowing them
+	if (url.searchParams.get("action") === "test_email") {
+		const to = url.searchParams.get("to");
+		if (!to) return jsonResponse({ error: "?to=email@example.com required" }, 400, request);
+		try {
+			await sendEmailOrThrow({
+				from: MAIL_FROM,
+				to,
+				subject: "CloudBase SMTP test",
+				html: "<p>SMTP is working correctly. This is a test email from CloudBase.</p>",
+			});
+			return jsonResponse({ ok: true, message: `Test email sent to ${to}` }, 200, request);
+		} catch (err) {
+			return jsonResponse({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500, request);
+		}
+	}
+
 	// Diagnostic: list actual DO droplets to debug ID mismatches
 	if (url.searchParams.get("action") === "list_do_droplets") {
 		const token = Deno.env.get("DIGITALOCEAN_API_TOKEN");
@@ -217,7 +234,9 @@ Deno.serve(async (request) => {
 							resource.region,
 							(provisioned.connectionDetails ?? {}) as ConnectionDetails,
 						);
-						await sendEmail({ from: MAIL_FROM, to: userEmail, subject, html });
+						await sendEmailOrThrow({ from: MAIL_FROM, to: userEmail, subject, html }).catch((err) => {
+							console.error("Provision email failed:", err instanceof Error ? err.message : err);
+						});
 					}
 				}
 			} else {

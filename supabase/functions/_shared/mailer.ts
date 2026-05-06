@@ -11,13 +11,19 @@ export interface EmailPayload {
 }
 
 export async function sendEmail(payload: EmailPayload): Promise<void> {
+	await sendEmailOrThrow(payload).catch((err) => {
+		console.error("SMTP send error:", err instanceof Error ? err.message : err);
+	});
+}
+
+/** Like sendEmail but throws on failure — use in diagnostic/test endpoints. */
+export async function sendEmailOrThrow(payload: EmailPayload): Promise<void> {
 	const host = Deno.env.get("SMTP_HOST");
 	const user = Deno.env.get("SMTP_USER");
 	const password = Deno.env.get("SMTP_PASSWORD");
 
 	if (!host || !user || !password) {
-		console.warn("SMTP credentials not configured — email skipped.");
-		return;
+		throw new Error("SMTP credentials not configured (SMTP_HOST/SMTP_USER/SMTP_PASSWORD missing).");
 	}
 
 	const port = Number(Deno.env.get("SMTP_PORT") || "465");
@@ -40,9 +46,6 @@ export async function sendEmail(payload: EmailPayload): Promise<void> {
 			subject: payload.subject,
 			html: payload.html,
 		});
-	} catch (err) {
-		console.error("SMTP send error:", err);
-		// Non-fatal — log and continue so callers are not interrupted.
 	} finally {
 		await client.close();
 	}
