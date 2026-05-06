@@ -1,4 +1,4 @@
--- public.service_catalog was created in 20260501100000_reseller_control_plane.sql.
+-- public.service_catalog was created in 20260501100600_reseller_control_plane.sql.
 -- Upsert catalog entries for VPS, Kubernetes, and Managed Database plans.
 insert into public.service_catalog (
   plan_code, service_type, provider, provider_sku, region,
