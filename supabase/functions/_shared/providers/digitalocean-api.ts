@@ -1,13 +1,13 @@
 import {
-	executeDropletLifecycle,
-	provisionDroplet,
-	syncDropletStatus,
-} from "./digitalocean-droplet.ts";
-import {
 	executeDbLifecycle,
 	provisionDb,
 	syncDbStatus,
 } from "./digitalocean-db.ts";
+import {
+	executeDropletLifecycle,
+	provisionDroplet,
+	syncDropletStatus,
+} from "./digitalocean-droplet.ts";
 import {
 	executeK8sLifecycle,
 	provisionK8s,
@@ -42,6 +42,17 @@ export interface SyncArgs {
 export interface SyncResult {
 	status: string;
 	connectionDetails?: Record<string, string>;
+}
+
+export function buildResourceTags(
+	args: Pick<ProvisionArgs, "serviceType" | "userId">,
+	fallbackServiceType?: string,
+): string[] {
+	const tags = ["cloudbase"];
+	const serviceType = args.serviceType ?? fallbackServiceType;
+	if (serviceType) tags.push(`service:${serviceType}`);
+	if (args.userId) tags.push(`user:${args.userId.slice(0, 8)}`);
+	return tags;
 }
 
 type ServiceType = "vps" | "gpu" | "game_server" | "kubernetes" | "database";

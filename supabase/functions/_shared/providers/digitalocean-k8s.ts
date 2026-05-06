@@ -5,6 +5,7 @@ import type {
 	SyncArgs,
 	SyncResult,
 } from "./digitalocean-api.ts";
+import { buildResourceTags } from "./digitalocean-api.ts";
 
 const FALLBACK_K8S_VERSION = "1.32.2-do.0";
 const DEFAULT_NODE_SIZE = "s-2vcpu-4gb";
@@ -73,13 +74,6 @@ function mapState(state: string): string {
 	return "provisioning";
 }
 
-function buildResourceTags(args: ProvisionArgs): string[] {
-	const tags = ["cloudbase"];
-	if (args.userId) tags.push(`user:${args.userId.slice(0, 8)}`);
-	tags.push("service:kubernetes");
-	return tags;
-}
-
 export async function provisionK8s(
 	args: ProvisionArgs,
 ): Promise<ProvisionResult> {
@@ -95,7 +89,7 @@ export async function provisionK8s(
 			region: args.region,
 			version,
 			node_pools: [{ size: nodeSize, name: "default", count: 1 }],
-			tags: buildResourceTags(args),
+			tags: buildResourceTags(args, "kubernetes"),
 		}),
 	});
 

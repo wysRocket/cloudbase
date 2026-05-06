@@ -5,6 +5,7 @@ import type {
 	SyncArgs,
 	SyncResult,
 } from "./digitalocean-api.ts";
+import { buildResourceTags } from "./digitalocean-api.ts";
 
 const BASE_URL = "https://api.digitalocean.com/v2";
 
@@ -50,13 +51,6 @@ apt-get install -y lib32gcc-s1 wget
 mkdir -p /opt/steamcmd && cd /opt/steamcmd
 wget -q https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
 tar -xzf steamcmd_linux.tar.gz`;
-
-function buildResourceTags(args: ProvisionArgs): string[] {
-	const tags = ["cloudbase"];
-	if (args.serviceType) tags.push(`service:${args.serviceType}`);
-	if (args.userId) tags.push(`user:${args.userId.slice(0, 8)}`);
-	return tags;
-}
 
 export async function provisionDroplet(
 	args: ProvisionArgs,

@@ -5,6 +5,7 @@ import type {
 	SyncArgs,
 	SyncResult,
 } from "./digitalocean-api.ts";
+import { buildResourceTags } from "./digitalocean-api.ts";
 
 const DEFAULT_ENGINE = "pg";
 const DEFAULT_VERSION = "16";
@@ -66,13 +67,6 @@ function extractConnection(
 	};
 }
 
-function buildResourceTags(args: ProvisionArgs): string[] {
-	const tags = ["cloudbase"];
-	if (args.userId) tags.push(`user:${args.userId.slice(0, 8)}`);
-	tags.push("service:database");
-	return tags;
-}
-
 export async function provisionDb(
 	args: ProvisionArgs,
 ): Promise<ProvisionResult> {
@@ -94,7 +88,7 @@ export async function provisionDb(
 			region: args.region,
 			size: DEFAULT_SIZE,
 			num_nodes: 1,
-			tags: buildResourceTags(args),
+			tags: buildResourceTags(args, "database"),
 		}),
 	});
 

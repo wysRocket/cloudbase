@@ -23,7 +23,19 @@ Deno.serve(async (request) => {
 
 	// If any resources were suspended, trigger the worker to process those suspension jobs
 	if (data?.suspended > 0) {
-		await triggerWorker();
+		try {
+			await triggerWorker();
+		} catch (err) {
+			console.error("Failed to trigger suspension worker:", err);
+			return jsonResponse(
+				{
+					error: "Billing succeeded but suspension worker failed.",
+					detail: err instanceof Error ? err.message : String(err),
+				},
+				500,
+				request,
+			);
+		}
 	}
 
 	return jsonResponse({ ok: true, result: data }, 200, request);

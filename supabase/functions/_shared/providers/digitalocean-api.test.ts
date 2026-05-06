@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("./digitalocean-droplet.ts", () => ({
 	provisionDroplet: vi.fn().mockResolvedValue({
@@ -28,15 +28,18 @@ vi.mock("./digitalocean-db.ts", () => ({
 }));
 
 import {
+	buildResourceTags,
+	executeLifecycleAction,
 	provisionResource,
 	syncResourceStatus,
-	executeLifecycleAction,
 } from "./digitalocean-api";
-import { provisionDroplet, syncDropletStatus } from "./digitalocean-droplet";
-import { provisionK8s } from "./digitalocean-k8s";
 import { provisionDb } from "./digitalocean-db";
-import { executeDropletLifecycle } from "./digitalocean-droplet";
-import { executeK8sLifecycle } from "./digitalocean-k8s";
+import {
+	executeDropletLifecycle,
+	provisionDroplet,
+	syncDropletStatus,
+} from "./digitalocean-droplet";
+import { executeK8sLifecycle, provisionK8s } from "./digitalocean-k8s";
 
 const baseArgs = {
 	providerResourceId: "",
@@ -50,6 +53,26 @@ beforeEach(() => {
 });
 
 describe("provisionResource routing", () => {
+	it("builds shared DigitalOcean resource tags", () => {
+		expect(
+			buildResourceTags({
+				serviceType: "gpu",
+				userId: "12345678-90ab-cdef-1234-567890abcdef",
+			}),
+		).toEqual(["cloudbase", "service:gpu", "user:12345678"]);
+	});
+
+	it("uses a fallback service type for provider-specific callers", () => {
+		expect(
+			buildResourceTags(
+				{
+					userId: "abcdef12-3456-7890-abcd-ef1234567890",
+				},
+				"database",
+			),
+		).toEqual(["cloudbase", "service:database", "user:abcdef12"]);
+	});
+
 	it('routes "vps" to provisionDroplet', async () => {
 		await provisionResource("vps", baseArgs);
 		expect(provisionDroplet).toHaveBeenCalledOnce();
