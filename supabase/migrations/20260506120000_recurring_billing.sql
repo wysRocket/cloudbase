@@ -388,7 +388,7 @@ grant execute on function public.process_recurring_billing() to service_role;
 -- The function gates on last_billed_at intervals, so:
 --   GPU (hourly):  fires on nearly every run (>55 min check)
 --   Monthly:       only fires when 30 days have elapsed
-do $$
+do $billing$
 begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
     execute $cron$
@@ -400,10 +400,10 @@ begin
       select cron.schedule(
         'cloudbase-recurring-billing',
         '5 * * * *',
-        $$select public.process_recurring_billing();$$
+        $job$select public.process_recurring_billing();$job$
       )
     $cron$;
   end if;
-end $$;
+end $billing$;
 
 notify pgrst, 'reload schema';
