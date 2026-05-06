@@ -161,8 +161,8 @@ export default function NewService() {
         <p className="text-slate-400">Configure and launch your global infrastructure in seconds.</p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-10">
-        <div className="flex-1 space-y-12">
+      <div className="flex flex-col xl:flex-row gap-8">
+        <div className="flex-1 min-w-0 space-y-10">
           {/* Section 1: Service Type */}
           <section>
             <div className="flex items-center gap-3 mb-6">
@@ -170,58 +170,52 @@ export default function NewService() {
               <h2 className="text-sm font-bold text-white uppercase tracking-wider">Choose Service Type</h2>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="space-y-2.5">
               {serviceTypes.map((type) => (
                 <button
                   key={type.id}
+                  type="button"
                   onClick={() => setSelectedType(type.id)}
-                  className={`group relative text-left p-6 rounded-3xl border transition-all duration-500 overflow-hidden ${
+                  className={`group w-full text-left flex items-center gap-4 px-5 py-4 rounded-2xl border transition-all duration-300 ${
                     selectedType === type.id
-                      ? 'bg-cyan-500/5 border-cyan-500/50 shadow-[0_20px_50px_rgba(6,182,212,0.15)] ring-1 ring-cyan-500/20'
-                      : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05] text-slate-400 hover:text-white'
+                      ? 'bg-cyan-500/5 border-cyan-500/40 shadow-[0_8px_30px_rgba(6,182,212,0.12)] ring-1 ring-cyan-500/20'
+                      : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'
                   }`}
                 >
-                  {/* Subtle Background Glow for Selected */}
-                  {selectedType === type.id && (
-                    <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-cyan-500/10 blur-3xl rounded-full pointer-events-none animate-pulse"></div>
-                  )}
+                  {/* Icon */}
+                  <div className={`shrink-0 p-2.5 rounded-xl transition-colors duration-300 ${
+                    selectedType === type.id
+                      ? 'bg-cyan-500 text-white shadow-[0_0_16px_rgba(6,182,212,0.35)]'
+                      : 'bg-white/5 text-slate-500 group-hover:text-slate-300'
+                  }`}>
+                    {type.id === 'vps' && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}
+                    {type.id === 'k8s' && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg>}
+                    {type.id === 'db' && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.58 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.58 4 8 4s8-1.79 8-4M4 7c0-2.21 3.58-4 8-4s8 1.79 8 4m0 5c0 2.21-3.58 4-8 4s-8-1.79-8-4" /></svg>}
+                    {type.id === 'gpu' && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
+                    {type.id === 'game_server' && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 12h.01M10 12h.01M15 13h.01M18 11h.01M7.5 16h9a4.5 4.5 0 004.39-5.5l-.62-2.7A3 3 0 0017.35 5.5H6.65A3 3 0 003.73 7.8l-.62 2.7A4.5 4.5 0 007.5 16z" /></svg>}
+                  </div>
 
-                  <div className="relative z-10">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className={`p-3 rounded-2xl transition-colors duration-500 ${
-                        selectedType === type.id ? 'bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.4)]' : 'bg-white/5 text-slate-500 group-hover:text-white'
-                      }`}>
-                        {type.id === 'vps' && <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>}
-                        {type.id === 'k8s' && <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>}
-                        {type.id === 'db' && <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.58 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.58 4 8 4s8-1.79 8-4M4 7c0-2.21 3.58-4 8-4s8 1.79 8 4m0 5c0 2.21-3.58 4-8 4s-8-1.79-8-4"></path></svg>}
-                        {type.id === 'gpu' && <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>}
-                        {type.id === 'game_server' && <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 12h.01M10 12h.01M15 13h.01M18 11h.01M7.5 16h9a4.5 4.5 0 004.39-5.5l-.62-2.7A3 3 0 0017.35 5.5H6.65A3 3 0 003.73 7.8l-.62 2.7A4.5 4.5 0 007.5 16z"></path></svg>}
-                      </div>
-                      <div className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-colors ${
-                        selectedType === type.id ? 'bg-cyan-500/20 text-cyan-400' : 'bg-white/5 text-slate-600'
-                      }`}>
-                        Available
-                      </div>
-                    </div>
-                    
-                    <h3 className={`text-xl font-bold mb-1 transition-colors ${selectedType === type.id ? 'text-white' : 'text-slate-300'}`}>
+                  {/* Name + description */}
+                  <div className="flex-1 min-w-0">
+                    <div className={`font-bold text-[15px] leading-snug transition-colors ${selectedType === type.id ? 'text-white' : 'text-slate-300 group-hover:text-white'}`}>
                       {type.name}
-                    </h3>
-                    <p className="text-sm text-slate-500 mb-6 line-clamp-2 leading-relaxed">{type.description}</p>
-                    
-                    <div className="flex items-end justify-between">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] uppercase font-bold text-slate-600 tracking-widest mb-1">Starting at</span>
-                        <span className={`text-lg font-black ${selectedType === type.id ? 'text-cyan-400' : 'text-slate-400'}`}>
-                          {type.fallbackPriceLabel}
-                        </span>
-                      </div>
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${
-                        selectedType === type.id ? 'bg-cyan-500 text-white scale-110' : 'bg-white/5 text-slate-700 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-2'
-                      }`}>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                      </div>
                     </div>
+                    <div className="text-xs text-slate-500 truncate mt-0.5">{type.description}</div>
+                  </div>
+
+                  {/* Price */}
+                  <div className="shrink-0 text-right">
+                    <div className="text-[9px] uppercase font-bold text-slate-600 tracking-widest leading-none mb-1">from</div>
+                    <div className={`text-sm font-black whitespace-nowrap ${selectedType === type.id ? 'text-cyan-400' : 'text-slate-400 group-hover:text-slate-300'}`}>
+                      {type.fallbackPriceLabel}
+                    </div>
+                  </div>
+
+                  {/* Check indicator */}
+                  <div className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-300 ${
+                    selectedType === type.id ? 'bg-cyan-500 text-white' : 'bg-white/5 text-transparent group-hover:bg-white/10'
+                  }`}>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                   </div>
                 </button>
               ))}
@@ -285,8 +279,8 @@ export default function NewService() {
         </div>
 
         {/* Sidebar: Summary */}
-        <aside className="lg:w-96">
-          <div className="sticky top-24">
+        <aside className="xl:w-[380px] xl:shrink-0">
+          <div className="xl:sticky xl:top-24">
             <div className="bg-[#0f1629] border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
               {/* Subtle glass effect highlight */}
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"></div>
@@ -325,18 +319,18 @@ export default function NewService() {
 
                 <div className="pt-8 border-t border-white/5">
                   <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-600 mb-4">Pricing Model</div>
-                  <div className="bg-black/40 rounded-3xl p-6 border border-white/5">
-                    <div className="flex justify-between items-end gap-4">
-                      <span className="text-slate-400 font-bold text-sm">{isHourly ? 'Hourly Rate' : 'Monthly Rate'}</span>
-                      <div className="text-right">
+                  <div className="bg-black/40 rounded-3xl p-5 border border-white/5 overflow-hidden">
+                    <div className="flex justify-between items-end gap-3">
+                      <span className="text-slate-400 font-bold text-sm shrink-0">{isHourly ? 'Hourly Rate' : 'Monthly Rate'}</span>
+                      <div className="text-right min-w-0 overflow-hidden">
                         {isLoadingQuote ? (
-                          <div className="flex gap-1">
+                          <div className="flex gap-1 justify-end">
                             <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></div>
                             <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
                             <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
                           </div>
                         ) : (
-                          <span className="text-3xl font-black text-cyan-400 tracking-tighter">{totalLabel}</span>
+                          <span className="text-2xl font-black text-cyan-400 tracking-tighter break-all">{totalLabel}</span>
                         )}
                       </div>
                     </div>
