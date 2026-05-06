@@ -60,9 +60,13 @@ export default function NewService() {
   const [quote, setQuote] = useState(null)
   const [isLoadingQuote, setIsLoadingQuote] = useState(false)
 
+  const [resourceName, setResourceName] = useState('')
+  const namePlaceholder = useMemo(() => `${selectedType}-${crypto.randomUUID().slice(0, 8)}`, [selectedType])
+
   const selectedTypeInfo = useMemo(() => serviceTypes.find((t) => t.id === selectedType), [selectedType])
   const quoteCost = quote?.availability === 'available' ? (quote.lineTotalCents || 0) : selectedTypeInfo.fallbackCost
   const totalLabel = quoteLabel(quote, selectedTypeInfo.fallbackPriceLabel)
+  const isHourly = quote ? quote.billingCycle === 'hourly' : selectedTypeInfo.fallbackPriceLabel.includes('/hr')
   const canDeploy = balance >= quoteCost
 
   useEffect(() => {
@@ -97,14 +101,14 @@ export default function NewService() {
     setDeployError('')
 
     try {
-      const resourceName = `${selectedTypeInfo.id}-${crypto.randomUUID().slice(0, 8)}`
+      const finalName = resourceName.trim() || namePlaceholder
 
       const serviceTypeMap = { k8s: 'kubernetes', db: 'database' }
       const resolvedServiceType = serviceTypeMap[selectedTypeInfo.id] || selectedTypeInfo.id
 
       const resource = await createServiceResource({
         serviceType: resolvedServiceType,
-        displayName: resourceName,
+        displayName: finalName,
         region: regionInfo.id,
         metadata: {
           planCode: selectedTypeInfo.planCode,
@@ -128,7 +132,7 @@ export default function NewService() {
 
       addResource({
         id: resource.id,
-        name: resourceName,
+        name: finalName,
         type: selectedTypeInfo.typeName,
         region: regionInfo.id,
         price: totalLabel,
@@ -163,10 +167,10 @@ export default function NewService() {
           <section>
             <div className="flex items-center gap-3 mb-6">
               <span className="flex items-center justify-center w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 text-sm font-bold border border-cyan-500/30">1</span>
-              <h2 className="text-xl font-bold text-white uppercase tracking-wider text-sm">Choose Service Type</h2>
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider">Choose Service Type</h2>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {serviceTypes.map((type) => (
                 <button
                   key={type.id}
@@ -224,11 +228,32 @@ export default function NewService() {
             </div>
           </section>
 
-          {/* Section 2: Region Selection */}
+          {/* Section 2: Resource Name */}
           <section>
             <div className="flex items-center gap-3 mb-6">
               <span className="flex items-center justify-center w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 text-sm font-bold border border-cyan-500/30">2</span>
-              <h2 className="text-xl font-bold text-white uppercase tracking-wider text-sm">Select Deployment Region</h2>
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider">Name Your Resource</h2>
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                value={resourceName}
+                onChange={(e) => setResourceName(e.target.value)}
+                placeholder={namePlaceholder}
+                maxLength={48}
+                className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:border-cyan-500/50 focus:outline-none text-white placeholder:text-slate-600 rounded-2xl px-5 py-4 font-mono text-sm transition-colors duration-200"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-slate-600 font-bold uppercase tracking-widest pointer-events-none">
+                {resourceName.length > 0 ? `${resourceName.length}/48` : 'optional'}
+              </span>
+            </div>
+          </section>
+
+          {/* Section 3: Region Selection */}
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <span className="flex items-center justify-center w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 text-sm font-bold border border-cyan-500/30">3</span>
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider">Select Deployment Region</h2>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -270,6 +295,13 @@ export default function NewService() {
 
               <div className="space-y-8 mb-10">
                 <div className="group">
+                  <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-600 mb-2 group-hover:text-cyan-500/50 transition-colors">Resource Name</div>
+                  <div className="font-mono text-sm text-slate-300 truncate">
+                    {resourceName.trim() || <span className="text-slate-600 italic">{namePlaceholder}</span>}
+                  </div>
+                </div>
+
+                <div className="group">
                   <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-600 mb-2 group-hover:text-cyan-500/50 transition-colors">Resource Type</div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-8 bg-cyan-500/20 rounded-full overflow-hidden">
@@ -295,7 +327,7 @@ export default function NewService() {
                   <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-600 mb-4">Pricing Model</div>
                   <div className="bg-black/40 rounded-3xl p-6 border border-white/5">
                     <div className="flex justify-between items-end gap-4">
-                      <span className="text-slate-400 font-bold text-sm">Monthly Rate</span>
+                      <span className="text-slate-400 font-bold text-sm">{isHourly ? 'Hourly Rate' : 'Monthly Rate'}</span>
                       <div className="text-right">
                         {isLoadingQuote ? (
                           <div className="flex gap-1">
@@ -310,6 +342,14 @@ export default function NewService() {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Balance indicator */}
+              <div className="flex items-center justify-between text-xs mb-6 px-1">
+                <span className="text-slate-600 font-bold uppercase tracking-widest">Your balance</span>
+                <span className={`font-black tabular-nums ${balance >= quoteCost ? 'text-slate-300' : 'text-amber-400'}`}>
+                  {balance.toLocaleString()} credits
+                </span>
               </div>
 
               {/* Status Messages */}
