@@ -77,6 +77,9 @@ before insert or update on public.service_resources
 for each row execute function public.ensure_paid_order_item_for_service_resource();
 
 -- remove direct-null path once orchestration is live
+delete from public.service_resources
+where order_item_id is null;
+
 alter table public.service_resources
   alter column order_item_id set not null;
 
