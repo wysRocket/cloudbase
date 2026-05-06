@@ -47,6 +47,12 @@ create table if not exists public.provision_events (
   created_at timestamptz not null default now()
 );
 
+alter table public.provision_events
+  add column if not exists order_id uuid references public.orders(id) on delete cascade,
+  add column if not exists order_item_id uuid references public.order_items(id) on delete set null,
+  add column if not exists service_resource_id uuid references public.service_resources(id) on delete set null,
+  add column if not exists details jsonb;
+
 create index if not exists orders_user_id_created_at_idx on public.orders(user_id, created_at desc);
 create index if not exists order_items_order_id_idx on public.order_items(order_id);
 create index if not exists provision_events_order_id_created_at_idx on public.provision_events(order_id, created_at desc);
