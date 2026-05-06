@@ -5,6 +5,7 @@ import type {
 	SyncArgs,
 	SyncResult,
 } from "./digitalocean-api.ts";
+import { buildResourceTags } from "./digitalocean-api.ts";
 
 const BASE_URL = "https://api.digitalocean.com/v2";
 
@@ -76,6 +77,7 @@ export async function provisionDroplet(
 		size,
 		image,
 		monitoring: true,
+		tags: buildResourceTags(args),
 	};
 	if (userData) body.user_data = userData;
 

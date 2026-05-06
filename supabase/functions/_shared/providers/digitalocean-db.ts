@@ -5,6 +5,7 @@ import type {
 	SyncArgs,
 	SyncResult,
 } from "./digitalocean-api.ts";
+import { buildResourceTags } from "./digitalocean-api.ts";
 
 const DEFAULT_ENGINE = "pg";
 const DEFAULT_VERSION = "16";
@@ -87,6 +88,7 @@ export async function provisionDb(
 			region: args.region,
 			size: DEFAULT_SIZE,
 			num_nodes: 1,
+			tags: buildResourceTags(args, "database"),
 		}),
 	});
 

@@ -17,6 +17,14 @@ create table if not exists public.provision_jobs (
   updated_at timestamptz not null default now()
 );
 
+alter table public.provision_jobs
+  add column if not exists job_type text not null default 'provision',
+  add column if not exists payload jsonb not null default '{}'::jsonb,
+  add column if not exists next_retry_at timestamptz,
+  add column if not exists last_error_code text,
+  add column if not exists last_error_message text,
+  add column if not exists provider_request_id text;
+
 create table if not exists public.provision_events (
   id bigserial primary key,
   job_id bigint not null references public.provision_jobs(id) on delete cascade,
@@ -28,6 +36,11 @@ create table if not exists public.provision_events (
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
+
+alter table public.provision_events
+  add column if not exists provider text,
+  add column if not exists provider_request_id text,
+  add column if not exists metadata jsonb not null default '{}'::jsonb;
 
 create index if not exists provision_jobs_claim_idx
   on public.provision_jobs (status, next_retry_at, created_at)

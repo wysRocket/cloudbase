@@ -73,6 +73,12 @@ create table if not exists public.order_items (
   created_at timestamptz not null default now()
 );
 
+alter table public.order_items
+  add column if not exists service_catalog_id uuid references public.service_catalog(id),
+  add column if not exists unit_price_cents integer not null default 0 check (unit_price_cents >= 0),
+  add column if not exists line_total_cents integer not null default 0 check (line_total_cents >= 0),
+  add column if not exists config jsonb not null default '{}'::jsonb;
+
 create table if not exists public.service_resources (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -88,6 +94,16 @@ create table if not exists public.service_resources (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.service_resources
+  add column if not exists service_type public.service_type not null default 'vps',
+  add column if not exists provider_resource_id text,
+  add column if not exists display_name text not null default 'Cloudbase resource',
+  add column if not exists status public.resource_status not null default 'pending',
+  add column if not exists region text not null default 'nyc3',
+  add column if not exists connection_details jsonb not null default '{}'::jsonb,
+  add column if not exists metadata jsonb not null default '{}'::jsonb,
+  add column if not exists updated_at timestamptz not null default now();
 
 create table if not exists public.provision_jobs (
   id uuid primary key default gen_random_uuid(),
@@ -108,6 +124,18 @@ create table if not exists public.provision_jobs (
   unique (idempotency_key)
 );
 
+alter table public.provision_jobs
+  add column if not exists resource_id uuid references public.service_resources(id) on delete cascade,
+  add column if not exists action text not null default 'provision',
+  add column if not exists attempt_count integer not null default 0 check (attempt_count >= 0),
+  add column if not exists max_attempts integer not null default 5 check (max_attempts > 0),
+  add column if not exists idempotency_key text not null default gen_random_uuid()::text,
+  add column if not exists next_run_at timestamptz not null default now(),
+  add column if not exists locked_at timestamptz,
+  add column if not exists locked_by text,
+  add column if not exists request_payload jsonb not null default '{}'::jsonb,
+  add column if not exists response_payload jsonb;
+
 create table if not exists public.provision_events (
   id uuid primary key default gen_random_uuid(),
   job_id uuid not null references public.provision_jobs(id) on delete cascade,
@@ -118,6 +146,12 @@ create table if not exists public.provision_events (
   payload jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
+
+alter table public.provision_events
+  add column if not exists resource_id uuid references public.service_resources(id) on delete cascade,
+  add column if not exists level public.event_level not null default 'info',
+  add column if not exists event_type text,
+  add column if not exists payload jsonb not null default '{}'::jsonb;
 
 create index if not exists idx_service_catalog_active_type on public.service_catalog (service_type, is_active) where is_active = true;
 create index if not exists idx_orders_user_created_at on public.orders (user_id, created_at desc);
@@ -259,4 +293,3 @@ create policy "provision_events_owned_via_resource"
         and r.user_id = auth.uid()
     )
   );
-

@@ -1,5 +1,8 @@
 -- Seed DigitalOcean service catalog entries using the current control-plane schema.
 -- sell_price_cents = base_cost_cents (no margin); adjust before going to production.
+alter table if exists public.service_catalog
+  drop constraint if exists service_catalog_provider_provider_sku_region_key;
+
 insert into public.service_catalog (
   plan_code, service_type, provider, provider_sku, region,
   display_name, base_cost_cents, sell_price_cents, billing_cycle,

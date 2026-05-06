@@ -208,6 +208,8 @@ Deno.serve(async (request) => {
 					region: resource.region,
 					displayName: resource.display_name,
 					metadata: (resource.metadata || {}) as Record<string, string>,
+					serviceType: String(resource.service_type),
+					userId: resource.user_id ?? undefined,
 				});
 				targetStatus = provisioned.normalizedStatus;
 				providerResourceId = provisioned.providerResourceId;

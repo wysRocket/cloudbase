@@ -113,8 +113,8 @@ insert into public.service_catalog (
   vcpu, memory_mb, storage_gb, quota, metadata, is_active
 )
 select
-  plan_code, service_type, provider, provider_sku, region,
-  display_name, base_cost_cents, sell_price_cents, billing_cycle,
+  plan_code, service_type::public.service_type, provider, provider_sku, region,
+  display_name, base_cost_cents, sell_price_cents, billing_cycle::public.billing_cycle,
   vcpu, memory_mb, storage_gb, quota, metadata, is_active
 from expanded
 on conflict (plan_code) do update set

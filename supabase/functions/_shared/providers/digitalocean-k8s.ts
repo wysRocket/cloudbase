@@ -5,6 +5,7 @@ import type {
 	SyncArgs,
 	SyncResult,
 } from "./digitalocean-api.ts";
+import { buildResourceTags } from "./digitalocean-api.ts";
 
 const FALLBACK_K8S_VERSION = "1.32.2-do.0";
 const DEFAULT_NODE_SIZE = "s-2vcpu-4gb";
@@ -88,6 +89,7 @@ export async function provisionK8s(
 			region: args.region,
 			version,
 			node_pools: [{ size: nodeSize, name: "default", count: 1 }],
+			tags: buildResourceTags(args, "kubernetes"),
 		}),
 	});
 
